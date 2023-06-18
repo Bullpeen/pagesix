@@ -1,0 +1,32 @@
+<div class=" thing odd  controversial subreddit " id="" onclick="click_thing(this)">
+    <p class="parent"></p>
+    <div class="midcol">
+        <span class="fancy-toggle-button subscribe-button toggle" style="">
+            <a class="option active remove login-required" href="#" tabindex="100">unsubscribe</a>
+            <a class="option add" href="#">subscribe</a>
+        </span>
+    </div>
+    <div class="entry likes">
+        <p class="titlerow"><a href="URL" class="title">/r/<%= self.name %></a></p>
+        <div class="description">
+            <form action="#" class="usertext warn-on-unload" onsubmit="return post_form(this, 'editusertext')" id="form">
+            <input type="hidden" name="thing_id" value="">
+            <div class="usertext-body may-blank-within md-container ">
+                <div class="md">
+                    <p><%= self.description %></p>
+                </div>
+            </div>
+            </form>
+        </div>
+        <p class="tagline">
+            <span class="score likes"><span class="number">###<% %></span> <span class="word">subscribers</span></span> 
+        </p>
+        <ul class="flat-list buttons">
+            <li class="report-button"><a href="javascript:void(0)" class="reportbtn access-required">report</a></li>
+        </ul>
+        <div class="reportform report-"></div>
+    </div>
+    <div class="child"></div>
+    <div class="clearleft"></div>
+</div>
+<div class="clearleft"></div>

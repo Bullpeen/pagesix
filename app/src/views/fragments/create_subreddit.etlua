@@ -1,0 +1,2 @@
+h1("Hello, " .. params.name)
+p("Create a new subreddit")

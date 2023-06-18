@@ -1,0 +1,2 @@
+--- Subreddits model
+-- @module models.subreddit

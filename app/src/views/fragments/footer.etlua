@@ -1,0 +1,78 @@
+<div class="footer-parent">
+	<div by-zero class="footer rounded">
+		<div class="col">
+			<ul
+                class="flat-vert hover">
+				<li class="flat-vert title">about</li>
+				<li>
+					<a href=""
+                        class="choice">What is Page Six?</a>
+				</li>
+				<li>
+					<span
+                        class="separator"></span>
+					<a href="/r/pagesix/" class="choice">official sub</a>
+				</li>
+				<li>
+					<span
+                        class="separator"></span>
+					<a href="/faq" class="choice">faq</a>
+				</li>
+			</ul>
+		</div>
+		<div class="col">
+			<ul
+                class="flat-vert hover">
+				<li class="flat-vert title">help</li>
+				<li>
+					<a href="" class="choice">report spam and site abuse</a>
+				</li>
+				<li>
+					<span class="separator"></span>
+					<a href="/subreddits" class="choice">list of subs</a>
+				</li>
+				<li>
+					<span class="separator"></span>
+					<a href="/help/" class="choice">contact</a>
+				</li>
+				<li>
+					<span
+                        class="separator"></span>
+					<a href="" class="choice">terms &amp; content policy</a>
+				</li>
+			</ul>
+		</div>
+		<div
+            class="col">
+			<ul class="flat-vert hover">
+				<li class="flat-vert title">tech</li>
+				<li>
+					<a href="https://github.com/bullpeen/pagesix" class="choice">open source code</a>
+				</li>
+				<li>
+					<span class="separator"></span>
+					<a href="" class="choice">api</a>
+				</li>
+			</ul>
+		</div>
+		<div class="col">
+			<ul
+                class="flat-vert hover">
+				<li class="flat-vert title"></li>
+				<li>
+					<a href="" class="choice"></a>
+				</li>
+				<li>
+					<span
+                        class="separator"></span>
+					<a href="" class="choice"></a>
+				</li>
+			</ul>
+		</div>
+	</div>
+	<p class="bottommenu">2023
+		<br>
+        <br>
+    </p>
+</div>
+<div class="footer-banner"></div>

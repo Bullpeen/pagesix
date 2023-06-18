@@ -1,0 +1,5 @@
+<% if params.is_self ~= nil then %>
+    self post
+<% end %>
+
+<p>Submitted by <%= user_id %> at <%= created_utc %>. <a href="/r/<%= params.subreddit %>/comments/<%= params.post_id %>" alt="permalink">Permalink</a></p>

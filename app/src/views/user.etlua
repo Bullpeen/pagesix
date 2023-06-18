@@ -1,0 +1,3 @@
+<% render('views.fragments.user_profile') %>
+<% render('views.fragments.nav') %>
+<% render('views.fragments.comments') %>

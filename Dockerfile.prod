@@ -14,11 +14,10 @@ RUN curl -O https://openresty.org/download/openresty-${OPENRESTY_VERSION}.tar.gz
 ARG OPENSSL_DIR="/usr/local/openresty/openssl"
 
 # Environment
-ENV LAPIS_ENV="development"
+ENV LAPIS_ENV="production"
 
 # Prepare volumes
 VOLUME /var/data
-VOLUME /var/www
 
 RUN eval $(luarocks --lua-version=5.1 path)
 RUN export LUA_PATH="$LUA_PATH;/usr/local/openresty/lualib/?.lua"
@@ -35,5 +34,15 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 EXPOSE 80
 
 WORKDIR /var/www
+
+COPY app/app.lua ./app.lua
+COPY app/config.lua ./config.lua
+
+COPY app/migrations.lua ./migrations.lua
+COPY app/mime.types ./mime.types
+COPY app/nginx.conf ./nginx.conf
+
+COPY app/src ./src
+COPY app/static ./static
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

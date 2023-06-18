@@ -1,0 +1,59 @@
+<div class="commentarea">
+    <div class="sitetable nestedlisting">
+        <% if comments ~= nil then
+            for _, comment in ipairs(comments) do %>
+                <div class="thing comment">
+                    <p class="parent"></p>
+                    <div class="midcol">
+                        <div class="arrow up login-required access-required" data-event-action="upvote" role="button" aria-label="upvote" tabindex="0"></div>
+                        <div class="arrow down login-required access-required" data-event-action="downvote" role="button" aria-label="downvote" tabindex="0"></div>
+                    </div>
+                    <div class="entry">
+                        <p class="tagline">
+                            <a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a>
+                            <a class="author" href="<% %>"><%= comment.user_id %></a>
+                            <span class="userattrs"></span>
+                            <span class="score likes" title="<% %>"><% %># points</span>
+                            <time title="<% %>" datetime="" class=""><% %> ago</time>
+                            <span class="awardings-bar"></span>&nbsp;
+                            <a href="javascript:void(0)">(# children)</a>
+                        </p>
+                        <form action="#" class="usertext warn-on-unload">
+                            <input type="hidden" name="thing_id" value="">
+                            <div class="usertext-body may-blank-within md-container">
+                                <div class="md">
+                                    <p><%= comment.body %></p>
+                                </div>
+                            </div>
+                        </form>
+                        <ul class="flat-list buttons">
+                            <li class="first">
+                                <a href="<%= comment.permalink %>" data-event-action="permalink" class="bylink" rel="nofollow">permalink</a>
+                            </li>
+                            <li>
+                                <a href="javascript:void(0)" class="embed-comment">embed</a>
+                            </li>
+                            <li class="comment-save-button save-button login-required">
+                                <a href="javascript:void(0)">save</a>
+                            </li>
+                            <li class="report-button login-required">
+                                <a href="javascript:void(0)" class="reportbtn access-required" data-event-action="report">report</a>
+                            </li>
+                            <li class="give-gold-button">
+                                <a href="" title="give an award in appreciation of this post." class="give-gold login-required access-required gold-give-gold" rel="nofollow">give award</a>
+                            </li>
+                            <li class="reply-button login-required">
+                                <a class="access-required" href="javascript:void(0)" data-event-action="comment" onclick="return reply(this)">reply</a>
+                            </li>
+                        </ul>
+                        <div class="reportform"></div>
+                    </div>
+                </div>
+                <div class="child"></div>
+                <div class="clearleft"></div>
+            <% end %>
+        <% else %>
+            Nothing to see here.
+        <% end %>
+    </div>
+</div>

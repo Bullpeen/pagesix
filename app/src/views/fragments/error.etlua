@@ -1,0 +1,7 @@
+<div id="error">
+<h3>ERROR</h3>
+<% for _, err in ipairs(errors) do %>
+<p><%= err %></p>
+<% end %>
+</div>
+
