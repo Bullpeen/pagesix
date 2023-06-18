@@ -1,0 +1,17 @@
+# fly.toml app configuration file generated for pagesix on 2023-06-17T23:24:22-07:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "pagesix"
+primary_region = "sea"
+
+[build]
+  image = "karai17/lapis-centos:latest"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
