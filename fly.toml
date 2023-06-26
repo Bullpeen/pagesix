@@ -7,11 +7,23 @@ app = "pagesix"
 primary_region = "sea"
 
 [build]
-  image = "karai17/lapis-centos:latest"
+    dockerfile = "Dockerfile.prod"
+
+[deploy]
+    release_command = "lapis migrate"
+    strategy = "immediate"
 
 [http_service]
-  internal_port = 8080
-  force_https = true
-  auto_stop_machines = true
-  auto_start_machines = true
-  min_machines_running = 0
+    internal_port = 8080
+    force_https = true
+    auto_stop_machines = true
+    auto_start_machines = true
+    min_machines_running = 0
+
+[mounts]
+    source="data"
+    destination="/var/data"
+
+[[statics]]
+    guest_path = "/app/static"
+    url_prefix = "/static"

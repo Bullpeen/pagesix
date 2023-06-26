@@ -55,3 +55,4 @@ image_cache/
 /.luarocks
 
 *.sqlite
+doc/

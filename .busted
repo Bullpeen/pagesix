@@ -1,0 +1,14 @@
+return {
+  _all = {
+    coverage = true
+  },
+  default = {
+    verbose = true
+  },
+  apiUnit = {
+    tags = "api",
+    ROOT = {"spec/unit"},
+    verbose = true
+  }
+}
+
