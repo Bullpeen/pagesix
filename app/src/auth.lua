@@ -1,3 +1,6 @@
+--- Auth URLs
+-- @module src.auth
+
 function auth(app)
 
     app:match("password", "/password", function(self) end) -- stub

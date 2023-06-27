@@ -10,7 +10,7 @@ local Model  = require("lapis.db.model").Model
 local json = require("cjson")
 
 -- local Users  = Model:extend("users")
-local Users = Model:extend("users", {
+local Users, Users_mt = Model:extend("users", {
 	-- url_params = function(self, req, ...)
 	-- 	return "user_profile", { id = self.id }, ...
 	-- end,
@@ -80,6 +80,7 @@ local Users = Model:extend("users", {
 	}
 })
 
+print("RUNNING MODELS.Users")
 
 --- Create a new user
 -- @tparam table params User data
@@ -147,51 +148,31 @@ end
 
 --- Get all users
 -- @treturn table users List of users
-function Users:get_all()
-	local users = db.select("order by username asc")
-	return users
+function Users_mt:get_all_comments(uid)
+	-- loop up number of rows in subreddits table
+	local res = db.select("count(*) from 'subreddits'")
+	local n = res[1]["count(*)"]
+
+	local all_comments = {}
+
+	-- loop over all subreddits
+	-- TODO index subreddit_id, post_id, comment_id, user_id
+	for i=1, n do
+		local tbl = i .. "_comments"
+		local subreddit = db.select("* from 'subreddits' where id=?", i)
+		-- local id = subreddit[1].id
+
+		local comments = db.select("* from ? where user_id=?", tbl, uid)
+		-- require 'pl.pretty'.dump(comments)
+
+		for k,v in ipairs(comments) do
+			all_comments[#all_comments + 1] = v
+			-- all_comments[#all_comments + k]['subreddit_id'] = subreddit[1].id
+		end
+	end
+	return all_comments
 end
 
---- Get user's profile
--- @tparam string username Username
--- @treturn table user
--- function Users:get(username)
-	-- local users = db.select("* from 'users' where id=? limit 1", user_id)
-	-- return #users == 1 and users[1] or nil, "FIXME"
--- end
-
---- Given a name, get the user's ID
--- @tparam string username
--- @treturn integer id
-function Users:get_id(username)
-	local id = db.select("id FROM 'users' WHERE name=?", username)
-	return id and username or nil, "FIXME"
-end
-
---- Given an ID, get the user's name
--- @tparam integer id
--- @treturn string name
-function Users:get_name(id)
-	local name = db.select("name from 'users' WHERE id = ?", id)
-	return name and id or nil, "FIXME"
-end
-
---- Check if a username is already taken
--- @tparam string username
--- @treturn boolean unique
-function Users:is_unique(username)
-	local user = Users:count(username)
-	return not user and true or nil, "FIXME", user
-end
-
---- Validate if a password is valid
--- @tparam string password
--- @treturn string password
--- function Users.validate_password(password)
--- 	-- TODO: handle bcrypt password
-
--- 	return password
--- end
 
 --- Given a User, return their subreddit subscriptions
 -- @tparam table user

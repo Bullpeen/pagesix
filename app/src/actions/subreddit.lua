@@ -1,63 +1,32 @@
 --- Subreddit action
 -- @module action.subreddit
 
--- local assert_error = require("lapis.application").assert_error
--- local assert_valid = require("lapis.validate").assert_valid
--- local csrf         = require "lapis.csrf"
 local db     = require "lapis.db"
-local schema = require("lapis.db.schema")
--- local types  = schema.types
-
-local Subreddits   = require("models.subreddits")
-local Sub_posts    = require("models.subreddit_posts")
--- local Sub_post_votes    = require("models.subreddit_votes")
--- local Sub_comments = require("models.subreddit_comments")
 
 return {
 	before = function(self)
-		-- query subreddits for id
-		print("MICHAEL " .. self.params.subreddit .. ".")
-		local res = db.select("id FROM 'subreddits' WHERE name=?", self.params.subreddit)
-		local id = res[1].id
-		print ("ID: " .. res[1].id)
-		-- local id = 2 -- TODO do not hardcode
-
-		local posts_table    = id .. "_posts"
-		local comments_table = id .. "_comments"
-		local votes_table    = id .. "_votes"
-		local modlog_table    = id .. "_modlog"
-		
-		print("posts table: " .. posts_table)
-		print("comments table: " .. comments_table)
-		print("votes table: " .. votes_table)
-		print("modlog table: " .. modlog_table)
-
-		-- :check(name)
-		-- 1. check if it is valid
-		-- 2. check if it exists in Subreddits table
-		-- 3. check if its tables exist
-		-- 4. if not, create them
-
 		-- Check if subreddit is nil or empty
-		-- if name == nil or name == '' then
-		-- 	print("Subreddit is unknown: " .. name)
-		-- 	return self:write({ redirect_to = self:url_for("homepage") })
-		-- end
+		local name = self.params.subreddit
+		if name == nil or name == '' then
+			print("Subreddit is unknown: " .. name)
+			return self:write({ redirect_to = self:url_for("homepage") })
+		end
 
-		-- Check if sub exist in Subreddits table
-		-- local should_exist = Subreddits:should_exist(name)
-		-- require 'pl.pretty'.dump(should_exist)
-		-- if next(should_exist) == nil then
-		-- 	print "Subreddit not found"
-		-- 	return self:write({ redirect_to = self:url_for("homepage") })
-		-- end
+		-- TODO write get_name_from_id()
+		-- TODO limit 1
+		local res = db.select("id FROM 'subreddits' WHERE name=?", name)
+		if not res then
+			print("Subreddit is invalid: " .. name)
+			return self:write({ redirect_to = self:url_for("homepage") })
+		end
 
-		-- Check if tables exist
-		-- local does_exist = Subreddit:tables_exist(posts_table)
-		-- require 'pl.pretty'.dump(does_exist)
-		-- if next(does_exist) == nil then
-		-- 	Subreddit:new(name)
-		-- end
+		local posts_table = res[1].id .. "_posts"
+
+		-- TODO subquery to return a table like
+		-- {
+		-- 		post_id: { title, url, user_id, created_at, is_self, body, upvotes, downvotes, num_comments },
+		-- 		post_id: { ... },
+		-- }
 
 		-- self.posts = self:get_posts(posts_table)
 		self.posts = db.select("* FROM ?", posts_table)

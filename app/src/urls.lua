@@ -1,3 +1,6 @@
+--- URLs model
+-- @module src.urls
+
 local r2    = require("lapis.application").respond_to
 
 function urls(app)
@@ -12,8 +15,6 @@ function urls(app)
     app:match("all",           "/r/all",              function(self) end) -- stub
     app:match("popular",       "/r/popular",          function(self) end) -- stub
     app:match("random",        "/r/random",           function(self) end) -- stub
-
-    app:match("profile",       "/user/:user(/:type)", r2(require "actions.user"))
 
     app:match("submit",        "/submit",             function(self) end) -- stub
 

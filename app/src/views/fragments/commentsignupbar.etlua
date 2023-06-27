@@ -1,0 +1,14 @@
+<section class="infobar commentsignupbar">
+	<div class="commentsignupbar__container">
+		<a href="/login" class="login-required commentsignupbar__link-wrapper">
+			<textarea class="commentsignupbar__textarea"></textarea>
+			<div class="commentsignupbar__textarea-above">
+				<h2 class="commentsignupbar__title">Want to add to the discussion?</h2>
+				<p class="commentsignupbar__desc">Post a comment!</p>
+				<div class="commentsignupbar__cta-container">
+					<span class="c-btn c-btn-primary commentsignupbar__cta-button">Create an account</span>
+				</div>
+			</div>
+		</a>
+	</div>
+</section>

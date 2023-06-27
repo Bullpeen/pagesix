@@ -36,9 +36,10 @@ app.layout = require "views.layout"
 
 app:match("homepage",   "/",              r2(require "actions.index"))
 app:match("subreddits", "/subreddits(/:type)",       r2(require "actions.subreddits"))
-app:match("subreddit",  "/r/:subreddit[%w](/:sort)", r2(require "actions.subreddit"))
+app:match("subreddit",  "/r/:subreddit[%w]", r2(require "actions.subreddit"))
 app:match("post",       "/r/:subreddit/comments/:post_id(/:title_stub)", r2(require "actions.post"))
 app:match("comment",    "/r/:subreddit/comments/:post_id/:title_stub/:comment_id(/:q)", r2(require "actions.comment"))
+app:match("profile",    "/user/:user_name(/:type)", r2(require "actions.user"))
 
 app:match("/console", console.make()) -- only available in Development builds
 

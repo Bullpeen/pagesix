@@ -6,10 +6,14 @@
 local Model = require("lapis.db.model").Model
 -- local Silva = require 'silva'
 
+-- parse url(?) to get subreddit_name
+-- lookup sub_id from subreddit_name
+-- local id = db.
 local id = 1
--- local id
+
 local sp_table = id .. "_posts"
-print("The table be used is: " .. sp_table)
+
+print("RUNNING MODELS.SUBREDDIT_POSTS " .. sp_table)
 
 local Subreddit_posts = Model:extend(sp_table, {
 	constraints = {
@@ -52,14 +56,8 @@ local Subreddit_posts = Model:extend(sp_table, {
 
     relations = {
 		{ "user",           belongs_to="Users"},
-
         { "subreddit",      has_one="Subreddits"},
-        { "comments",
-            has_many="Comments",
-            where = {sub_id = id},
-            order = "id desc",
-            key = "post_id"
-        },
+
         -- { "votes",
         --     has_many="Votes",
         --     where = {sub_id = id},

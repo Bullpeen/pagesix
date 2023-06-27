@@ -1,3 +1,6 @@
+--- API URLs
+-- @module src.api
+
 function api(app)
 
     app:get("/api", function(self) return "NOTE: The API doesn't work but most endpoints exist" end)

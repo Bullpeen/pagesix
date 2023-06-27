@@ -8,6 +8,8 @@ local Thread    = Model:extend("comments")
 
 -- comment_id, parent_comment_id, post_id
 
+print("RUNNING MODELS.Thread")
+
 --- Get a thread
 -- @tparam string post_id
 -- @tparam string comment_id

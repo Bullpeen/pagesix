@@ -1,3 +1,6 @@
+--- Admin URLs
+-- @module src.admin
+
 function admin(app)
 
     -- TODO : all the things

@@ -2,11 +2,12 @@
 -- @module models.subreddit
 
 local db     = require "lapis.db"
--- local date   = db.format_date()
 local schema = require("lapis.db.schema")
 local types  = schema.types
 
 local Model  = require("lapis.db.model").Model
+
+print("RUNNING MODELS.SUBREDDITS")
 
 local Subreddits, Subreddits_mt = Model:extend("subreddits", {
 	primary_key = "id",
@@ -67,7 +68,7 @@ function Subreddits:tables_exist(name)
 end
 
 --- Create a subreddit
--- @tparam string name Subreddit name
+-- @tparam string id Subreddit name
 -- @treturn boolean success
 -- @treturn string error
 function Subreddits_mt:create_db_tables(id)

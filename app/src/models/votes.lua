@@ -10,4 +10,6 @@ local Votes     = Model:extend("votes", {
 	}
 })
 
+print("RUNNING MODELS.VOTE")
+
 -- TODO: {user_id, post_id, comment_id} tuple should be unique

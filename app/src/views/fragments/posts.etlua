@@ -21,13 +21,13 @@
                         <span class="domain">(<a href="/domain/DOMAIN/">DOMAIN</a>)</span>
                     </p>
                     <p class="tagline ">
-                        submitted <time title="<% %>" datetime="" class="live-timestamp">11 hours ago</time> by <a href="<% %>" class="author may-blank"><% %></a>
+                        submitted <time title="<% %>" datetime="" class="live-timestamp">### TIME ago</time> by <a href="<% %>" class="author may-blank"><% %></a>
                         <span class="userattrs"></span>
                         <span class="awardings-bar" data-subredditpath="/r/technology/"></span>
                     </p>
                     <ul class="flat-list buttons">
                         <li class="first">
-                            <a href="URL"
+                            <a href="<%= post.permalink %>"
                                 data-event-action="comments"
                                 class="bylink comments may-blank" rel="nofollow"><% %> comments</a>
                         </li>

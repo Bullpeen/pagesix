@@ -15,6 +15,7 @@ local Pagesix = Model:extend("pagesix", {
 	}
 })
 
+print("RUNNING MODELS.PAGE6")
 
 function Pagesix:bootstrap()
 	Pagesix:create_users_table()

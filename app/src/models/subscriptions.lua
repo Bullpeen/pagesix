@@ -11,6 +11,8 @@ local Subscriptions = Model:extend("subscriptions", {
 	}
 })
 
+print("RUNNING MODELS.Subscriptions")
+
 -- TODO: {subreddit_id, user_id} tuple should be unique
 
 --- Subscribe to a subreddit

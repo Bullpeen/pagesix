@@ -7,9 +7,11 @@ source = {
 
 description = {
   summary = "Reddit clone",
+  detailed = [[
+  ]],
   homepage = "https://github.com/bullpeen/pagesix",
   maintainer = "Michael Burns <michael@mirwin.net>",
-  license = "APACHE"
+  license = "AGPL"
 }
 
 dependencies = {
@@ -43,6 +45,14 @@ dependencies = {
   "redis-lua",
   "feedparser",
   "lua-silva",
+  "luaossl",
+  "lua-resty-mail",
+  "luasocket",
+  "lua-resty-http",
+  "lua-cjson",
+  "luasec",
+  "inspect",
+  "luaexpat",
 }
 
 build = {
