@@ -11,10 +11,10 @@
 			<a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a>
 			<a href="https://old.reddit.com/user/digitalsurgeon" class="author may-blank id-t2_32l4j">digitalsurgeon</a>
 			<span class="userattrs"></span>
-			<span class="score dislikes" title="19">19 points</span>
-			<span class="score unvoted" title="20">20 points</span>
-			<span class="score likes" title="21">21 points</span>
-			<time title="Thu Oct 18 20:34:37 2012 UTC" datetime="2012-10-18T20:34:37+00:00" class="">### TIME ago</time>
+			<span class="score dislikes" title="VOTES-1">VOTES-1</span>
+			<span class="score unvoted" title="VOTES">VOTES</span>
+			<span class="score likes" title="VOTES+!">VOTES+!</span>
+			<time title="DATETIME" datetime="DATETIME" class="">### TIME ago</time>
 			<span class="awardings-bar" data-subredditpath="/r/technology/"></span>&nbsp;
 			<a href="javascript:void(0)" class="numchildren" onclick="return togglecomment(this)">(# children)</a>
 		</p>
@@ -22,16 +22,16 @@
 			<input type="hidden" name="thing_id" value="t1_c6oh0e7">
 				<div class="usertext-body may-blank-within md-container ">
 					<div class="md">
-						<p>only 7 hrs batter life with arm processor in a laptop body. lame.</p>
+						<p>COMMENT</p>
 					</div>
 				</div>
 			</form>
 			<ul class="flat-list buttons">
 				<li class="first">
-					<a href="https://old.reddit.com/r/technology/comments/11p5cy/google_chrome_blog_the_new_chromebook_for_everyone/c6oh0e7/" data-event-action="permalink" class="bylink" rel="nofollow">permalink</a>
+					<a href="PERMALINK" class="bylink" rel="nofollow">permalink</a>
 				</li>
 				<li>
-					<a href="javascript:void(0)" data-comment="/r/technology/comments/11p5cy/google_chrome_blog_the_new_chromebook_for_everyone/c6oh0e7/" data-media="www.redditmedia.com" data-link="/r/technology/comments/11p5cy/google_chrome_blog_the_new_chromebook_for_everyone/" data-root="true" data-title="Google Chrome Blog: The new Chromebook, for everyone" class="embed-comment">embed</a>
+					<a href="javascript:void(0)" class="embed-comment">embed</a>
 				</li>
 				<li class="comment-save-button save-button login-required">
 					<a href="javascript:void(0)">save</a>
@@ -63,7 +63,7 @@
 							<span class="score dislikes" title="16">16 points</span>
 							<span class="score unvoted" title="17">17 points</span>
 							<span class="score likes" title="18">18 points</span>
-							<time title="Thu Oct 18 22:02:47 2012 UTC" datetime="2012-10-18T22:02:47+00:00" class="">10 years ago</time>
+							<time title="Thu Oct 18 22:02:47 2012 UTC" datetime="2012-10-18T22:02:47+00:00" class="">TIME ago</time>
 							<span class="awardings-bar" data-subredditpath="/r/technology/"></span>&nbsp;
 							<a href="javascript:void(0)" class="numchildren" onclick="return togglecomment(this)">(# child)</a>
 						</p>
@@ -71,17 +71,16 @@
 							<input type="hidden" name="thing_id" value="t1_c6oiiif">
 								<div class="usertext-body may-blank-within md-container ">
 									<div class="md">
-										<p>I thought the same thing.  </p>
-										<p>A lightweight OS running on an ARM chip should have at least DOUBLE that battery life.</p>
+										COMMENT
 									</div>
 								</div>
 							</form>
 							<ul class="flat-list buttons">
 								<li class="first">
-									<a href="https://old.reddit.com/r/technology/comments/11p5cy/google_chrome_blog_the_new_chromebook_for_everyone/c6oiiif/" data-event-action="permalink" class="bylink" rel="nofollow">permalink</a>
+									<a href="PERMALINK" data-event-action="permalink" class="bylink" rel="nofollow">permalink</a>
 								</li>
 								<li>
-									<a href="javascript:void(0)" data-comment="/r/technology/comments/11p5cy/google_chrome_blog_the_new_chromebook_for_everyone/c6oiiif/" data-media="www.redditmedia.com" data-link="/r/technology/comments/11p5cy/google_chrome_blog_the_new_chromebook_for_everyone/" data-root="false" data-title="Google Chrome Blog: The new Chromebook, for everyone" class="embed-comment">embed</a>
+									<a href="javascript:void(0)" class="embed-comment">embed</a>
 								</li>
 								<li class="comment-save-button save-button login-required">
 									<a href="javascript:void(0)">save</a>
@@ -111,11 +110,11 @@
 									<div class="entry unvoted">
 										<p class="tagline">
 											<a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a>
-											<a href="https://old.reddit.com/user/mburns" class="author may-blank id-t2_chb1">mburns</a>
+											<a href="USER_NAME" class="author may-blank">USER_NAME</a>
 											<span class="userattrs"></span>
-											<span class="score dislikes" title="12">12 points</span>
-											<span class="score unvoted" title="13">13 points</span>
-											<span class="score likes" title="14">14 points</span>
+											<span class="score dislikes" title="VOTES-1">VOTES-1 </span>
+											<span class="score unvoted" title="VOTES">VOTES</span>
+											<span class="score likes" title="VOTES+!">VOTES+1</span>
 											<time title="Fri Oct 19 02:29:13 2012 UTC" datetime="2012-10-19T02:29:13+00:00" class="">### TIME ago</time>
 											<span class="awardings-bar" data-subredditpath="/r/technology/"></span>&nbsp;
 											<a href="javascript:void(0)" class="numchildren" onclick="return togglecomment(this)">(# children)</a>
@@ -124,16 +123,16 @@
 											<input type="hidden" name="thing_id" value="t1_c6omm7q">
 												<div class="usertext-body may-blank-within md-container ">
 													<div class="md">
-														<p>Your backlit screen and wireless card still suck energy like any other laptop.</p>
+														<p>COMMENT</p>
 													</div>
 												</div>
 											</form>
 											<ul class="flat-list buttons">
 												<li class="first">
-													<a href="https://old.reddit.com/r/technology/comments/11p5cy/google_chrome_blog_the_new_chromebook_for_everyone/c6omm7q/" data-event-action="permalink" class="bylink" rel="nofollow">permalink</a>
+													<a href="PERMALINK" data-event-action="permalink" class="bylink" rel="nofollow">permalink</a>
 												</li>
 												<li>
-													<a href="javascript:void(0)" data-comment="/r/technology/comments/11p5cy/google_chrome_blog_the_new_chromebook_for_everyone/c6omm7q/" data-media="www.redditmedia.com" data-link="/r/technology/comments/11p5cy/google_chrome_blog_the_new_chromebook_for_everyone/" data-root="false" data-title="Google Chrome Blog: The new Chromebook, for everyone" class="embed-comment">embed</a>
+													<a href="javascript:void(0)" class="embed-comment">embed</a>
 												</li>
 												<li class="comment-save-button save-button login-required">
 													<a href="javascript:void(0)">save</a>
@@ -145,10 +144,10 @@
 													<a href="javascript:void(0)" class="reportbtn access-required" data-event-action="report">report</a>
 												</li>
 												<li class="give-gold-button">
-													<a href="/gold?goldtype=gift&amp;months=1&amp;thing=t1_c6omm7q" title="give an award in appreciation of this post." class="give-gold login-required access-required gold-give-gold" data-event-action="gild" data-community-awards-enabled="True" rel="nofollow">give award</a>
+													<a href="/gold?goldtype=gift&amp;months=1&amp;thing=UNIQ" title="give an award in appreciation of this post." class="give-gold login-required access-required gold-give-gold" rel="nofollow">give award</a>
 												</li>
 											</ul>
-											<div class="reportform report-t1_c6omm7q"></div>
+											<div class="reportform report-UNIQ"></div>
 										</div>
 										<div class="child"></div>
 										<div class="clearleft"></div>

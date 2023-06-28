@@ -11,6 +11,12 @@ return {
 			return self:write({ redirect_to = self:url_for("homepage") })
 		end
 
+		-- check if domain has a period anywhere in it
+		if not string.find(self.domain, "%.") then
+			print("Domain is invalid: " .. self.domain)
+			return self:write({ redirect_to = self:url_for("homepage") })
+		end
+
 		-- search all _posts tables for url like %domain%
 		-- TODO subquery to return a table like
 		-- {

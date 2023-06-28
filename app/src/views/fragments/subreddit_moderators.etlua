@@ -1,12 +1,14 @@
-
-<% if moderators ~= nil and moderators ~= '' then %>
-    Moderators:
-    <ul>
-    <% for _, mod in ipairs(moderators) do %>
-        <li><%= mod %></li>
-    <% end %>
-    </ul>
-<% else %>
-    No mods. Applications welcome.
-<% end %>
-</ul>
+<div>
+    <div class="spacer">
+        <% if moderators ~= nil and moderators ~= '' then %>
+        Moderators:
+        <ul>
+        <% for _, mod in ipairs(moderators) do %>
+            <li><%= mod %></li>
+        <% end %>
+        </ul>
+        <% else %>
+            No mods. Applications welcome.
+        <% end %>
+    </div>
+</div>

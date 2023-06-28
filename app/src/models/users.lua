@@ -11,9 +11,9 @@ local json = require("cjson")
 
 -- local Users  = Model:extend("users")
 local Users, Users_mt = Model:extend("users", {
-	-- url_params = function(self, req, ...)
-	-- 	return "user_profile", { id = self.id }, ...
-	-- end,
+	url_params = function(self, req, ...)
+		return "user_profile", { id = self.id }, ...
+	end,
 
 	constraints = {
 		--- Apply constraints when updating/inserting a User row, returns truthy to indicate error
@@ -152,6 +152,7 @@ function Users_mt:get_all_comments(uid)
 	-- loop up number of rows in subreddits table
 	local res = db.select("count(*) from 'subreddits'")
 	local n = res[1]["count(*)"]
+
 
 	local all_comments = {}
 

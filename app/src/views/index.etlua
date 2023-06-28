@@ -1,6 +1,5 @@
 Welcome.
 
-<%  render('views.fragments.login') %>
 <%  render('views.fragments.form_submit') %>
 <%  render('views.fragments.subreddits') %>
 

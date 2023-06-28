@@ -34,18 +34,36 @@ app:enable("etlua")
 
 app.layout = require "views.layout"
 
-app:match("homepage",   "/",              r2(require "actions.index"))
-app:match("subreddits", "/subreddits(/:type)",       r2(require "actions.subreddits"))
-app:match("subreddit",  "/r/:subreddit[%w]", r2(require "actions.subreddit"))
-app:match("post",       "/r/:subreddit/comments/:post_id(/:title_stub)", r2(require "actions.post"))
-app:match("comment",    "/r/:subreddit/comments/:post_id/:title_stub/:comment_id(/:q)", r2(require "actions.comment"))
-app:match("profile",    "/user/:user_name(/:type)", r2(require "actions.user"))
+app:match("homepage",      "/",              r2(require "actions.index")) -- hot sort
+app:match("controversial", "/controversial", r2(require "actions.index"))
+app:match("new",           "/new",           r2(require "actions.index"))
+app:match("rising",        "/rising",        r2(require "actions.index"))
+app:match("top",           "/top",           r2(require "actions.index"))
 
+app:match("subreddits",   "/subreddits(/:type)",      r2(require "actions.subreddits"))
+-- app:match("subreddits",   "/subreddits/search",      r2(require "actions.subreddits"))
+
+app:match("domains",      "/domain/:domain",      r2(require "actions.domain"))
+app:match("user_profile", "/user/:user_name(/:type)", r2(require "actions.user"))
+
+-- app:match("all",        "/r/all",        r2(require "actions.r_all_subreddits"))
+-- app:match("popular",    "/r/popular",    r2(require "actions.r_popular_subreddits"))
+app:match("random",     "/r/random",     r2(require "actions.r_random_subreddit"))
+app:match("subreddit",  "/r/:subreddit", r2(require "actions.r_subreddit"))
+
+app:match("post",    "/r/:subreddit/comments/:post_id[%w](/:title_stub)", r2(require "actions.post"))
+app:match("comment", "/r/:subreddit/comments/:post_id[%w]/:title_stub/:comment_id[%w](/:q)", r2(require "actions.comment"))
+
+app:match("about",   "/about",   function(self) end) -- stub
+app:match("contact", "/contact", function(self) end) -- stub
+app:match("help",    "/help",    function(self) end) -- stub
+
+app:match("submit",  "/submit",  function(self) end) -- stub
+
+app:get("/admin",     function(self) return "Go away" end)
 app:match("/console", console.make()) -- only available in Development builds
 
-require("src.admin")(app) -- Admin endpoints
 require("src.api")(app)   -- API endpoints
 require("src.auth")(app)  -- User-authenticated endpoints
-require("src.urls")(app)  -- additional URLs
 
 return app

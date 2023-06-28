@@ -16,7 +16,11 @@ local sp_table = id .. "_posts"
 print("RUNNING MODELS.SUBREDDIT_POSTS " .. sp_table)
 
 local Subreddit_posts = Model:extend(sp_table, {
-	constraints = {
+	url_params = function(self, req, ...)
+		return "subreddit", { id = self.id }, ...
+	end,
+
+    constraints = {
 		--- Apply constraints
 		-- @tparam table self
         -- @tparam table value User data
