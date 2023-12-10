@@ -23,7 +23,7 @@ dependencies = {
   "luabitop",
   "argparse", -- needed for some cmd scripts
 
-  "lapis == 1.14.0",
+  "lapis >= 1.16.0",
 
   "lapis-bayes ~> 1.2",
   "lapis-console ~> 1.2",
