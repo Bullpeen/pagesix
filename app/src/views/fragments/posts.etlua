@@ -1,0 +1,79 @@
+<% if posts ~= nil then
+    for n, post in ipairs(posts) do %>
+        <div class=" thing link " id="" onclick="click_thing(this)">
+            <p class="parent"></p>
+            <span class="rank"><%= n %></span>
+            <div class="midcol unvoted">
+                <div class="arrow up login-required access-required"></div>
+                <div class="score unvoted" title="<% %>>">###</div>
+                <div class="arrow down login-required access-required" role="button"></div>
+            </div>
+            <% --[[
+            <a class="thumbnail invisible-when-pinned may-blank loggedin " href="URL">
+                <img src="THUMBNAIL" alt width="70" height="39">
+            </a>
+            ]] %>
+            <div class="entry unvoted">
+                <div class="top-matter">
+                    <p class="title">
+                        <span class="linkflairlabel " title="TAG">TAG</span>
+                        <a class="title may-blank loggedin " data-event-action="title" href="<%= post.url %>" tabindex="<%= n %>"><%= post.title %></a>
+                        <span class="domain">(<a href="/domain/DOMAIN/">DOMAIN</a>)</span>
+                    </p>
+                    <p class="tagline ">
+                        submitted <time title="<% %>" datetime="" class="live-timestamp">### TIME ago</time> by <a href="<% %>" class="author may-blank"><% %></a>
+                        <span class="userattrs"></span>
+                        <span class="awardings-bar" data-subredditpath="/r/technology/"></span>
+                    </p>
+                    <ul class="flat-list buttons">
+                        <li class="first">
+                            <a href="<%= post.permalink %>"
+                                data-event-action="comments"
+                                class="bylink comments may-blank" rel="nofollow"><% %> comments</a>
+                        </li>
+                        <li class="share">
+                            <a class="post-sharing-button" href="javascript: void 0;">share</a>
+                        </li>
+                        <li class="link-save-button save-button login-required">
+                            <a href="#">save</a>
+                        </li>
+                        <li>
+                            <form action="/post/hide" method="post"
+                                class="state-button hide-button">
+                                <input type="hidden" name="executed" value="hidden">
+                                <span>
+                                    <a href="javascript:void(0)" class=" "
+                                        data-event-action="hide"
+                                        onclick="change_state(this, 'hide', hide_thing);">hide</a>
+                                </span>
+                            </form>
+                        </li>
+                        <li class="give-gold-button">
+                            <a href="/gold"
+                                title="give an award in appreciation of this post."
+                                class="give-gold login-required access-required gold-give-gold"
+                                rel="nofollow">give award</a>
+                        </li>
+                        <li class="report-button login-required">
+                            <a href="javascript:void(0)"
+                                class="reportbtn access-required"
+                                data-event-action="report">report</a>
+                        </li>
+                        <li class="crosspost-button">
+                            <a class="post-crosspost-button" href="javascript: void 0;">crosspost</a>
+                        </li>
+                    </ul>
+                    <div class="reportform">
+                    </div>
+                </div>
+            </div>
+            <div class="child">
+            </div>
+            <div class="clearleft">
+            </div>
+        </div>
+    <% end %>
+<% else %>
+    Nothing to see here.
+<% end %>
+

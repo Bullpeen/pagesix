@@ -1,0 +1,7 @@
+<div id="subreddit_title">
+	<h1>/r/<%= params.subreddit %></h1>
+	<% if subreddit and subreddit.rules then %>
+	<h2><em><%= params.rules %></em></h2>
+	<% end %>
+</div>
+

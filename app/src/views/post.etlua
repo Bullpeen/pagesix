@@ -1,0 +1,5 @@
+<% render('views.fragments.post') %>
+<% render('views.fragments.form_comment') %>
+<% render('views.fragments.comments') %>
+
+<% render('views.fragments.nav') %>

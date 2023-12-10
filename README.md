@@ -1,15 +1,14 @@
 # Page Six
 
-A better social link-sharing website.
+A better social link-sharing site.
 
 ## TODO
 
-- [ ] change the name
 - [ ] model relationships defined:
-    * 1 User -> 1 Comment
-    * many comments -> 1 Post
-    * many posts -> 1 Subreddit
-    * many subreddits -> 1 Subreddits listing
+  * 1 User -> 1 Comment
+  * many comments -> 1 Post
+  * many posts -> 1 Subreddit
+  * many subreddits -> 1 Subreddits listing
 - [ ] add [Constraints](https://leafo.net/lapis/reference/models.html#constraints) to models (?)
 - [ ] add table indexes (hot-sorted subreddit posts, homepage, user accounts)
 - [ ] user accounts w/[CSRF](https://leafo.net/lapis/reference/utilities.html#csrf-protection )
@@ -29,6 +28,14 @@ A better social link-sharing website.
 
 From the root directory:
 
+Build:
+
+```
+docker build . -t pagesix
+```
+
+Run:
+
 ```
 docker run \
     -dti \
@@ -38,10 +45,16 @@ docker run \
     -p 8080:80 \
     --name pagesix \
     --platform=linux/amd64 \
-    karai17/lapis-centos:latest
+    -d pagesix
 ```
 
-Then, visit: http://localhost:8080/
+Run migrations to populate the DB
+
+```
+lapis migrate
+```
+
+(wait patiently) then, visit: http://localhost:8080/
 
 # Notes
 

@@ -1,0 +1,36 @@
+<div class="split-panel-section" id="login-panel">
+    <h4 class="modal-title">log in</h4>
+    <form id="login-form" method="post" action="/login" class="form-v2">
+        <input type="hidden" name="op" value="login">
+        <input type="hidden" name="dest" value="/">
+        <div class="c-form-group ">
+            <label for="user_login" class="screenreader-only">username:</label>
+            <input value="" name="user" id="user_login" class="c-form-control" type="text" maxlength="20" tabindex="3" placeholder="username" autofocus="">
+        </div>
+        <div class="c-form-group ">
+            <label for="passwd_login" class="screenreader-only">password:</label>
+            <input id="passwd_login" class="c-form-control" name="passwd" type="password" tabindex="3" placeholder="password">
+            <div class="c-form-control-feedback-wrapper ">
+                <span class="c-form-control-feedback c-form-control-feedback-throbber"></span>
+                <span class="c-form-control-feedback c-form-control-feedback-error" title=""></span>
+                <span class="c-form-control-feedback c-form-control-feedback-success"></span>
+            </div>
+        </div>
+        <div class="c-checkbox">
+            <input type="checkbox" name="rem" id="rem_login" tabindex="3">
+            <label for="rem_login">remember me</label>
+            <a href="/password" class="c-pull-right">reset password</a>
+        </div>
+        <div class="spacer">
+            <div class="c-form-group g-recaptcha" data-sitekey=""></div>
+            <span class="error BAD_CAPTCHA field-captcha" style="display:none"></span>
+        </div>
+        <div class="c-clearfix c-submit-group">
+            <span class="c-form-throbber"></span>
+            <button type="submit" class="c-btn c-btn-primary c-pull-right" tabindex="3">log in</button>
+        </div>
+        <div>
+            <div class="c-alert c-alert-danger"></div>
+        </div>
+    </form>
+</div>

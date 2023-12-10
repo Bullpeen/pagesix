@@ -1,0 +1,65 @@
+<div id="header" role="banner">
+	<div id="header2" role="banner"></div>
+	<a tabindex="1" href="#content" id="jumpToContent">jump to content</a>
+	<div id="sr-header-area">
+		<div class="width-clip">
+			<div class="dropdown srdrop" onclick="open_menu(this)">
+				<span class="selected title">my subs</span>
+			</div>
+			<div class="drop-choices srdrop">
+                <% if subs ~= nil then for _, sub in ipairs(subs) do %>
+				    <a href="/r/<%= sub.name %>" class="choice"><%= sub.name %></a>
+                <% end %><% end %>
+
+
+				<a href="/subreddits/mine/" class="bottom-option choice">edit subscriptions</a>
+				<a href="/subreddits/popular/" class="bottom-option choice">find popular subs</a>
+				<a href="/subreddits/new/" class="bottom-option choice">find new subs</a>
+			</div>
+			<div class="sr-list">
+				<ul class="flat-list sr-bar hover">
+					<li
+                        class="selected">
+						<a href="/subscribed" class="choice">subscribed</a>
+					</li>
+					<li>
+						<span class="separator">-</span>
+						<a href="/r/all" class="choice">all</a>
+					</li>
+					<li>
+						<span class="separator">-</span>
+						<a href="/r/random/" class="random choice">random</a>
+					</li>
+				</ul>
+				<a href="/subs/mine/" id="sr-more-link">- edit subs »</a>
+			</div>
+		</div>
+	</div>
+	<div id="header-bottom-left">
+		<a href="/" id="header-img" class="default-header">pagesix</a>&nbsp;
+		<span class="hover pagename redditname"></span>
+		<ul class="tabmenu ">
+			<li class="selected">
+				<a href="/" class="hot choice">hot</a>
+			</li>
+			<li>
+				<a href="/new" class="new choice">new</a>
+			</li>
+			<li>
+				<a href="/top" class="top choice">top</a>
+			</li>
+			<li>
+				<a href="/controversial" class="new choice">controversial</a>
+			</li>
+			<li>
+				<a href="/comments" class="sr-comments choice">comments</a>
+			</li>
+		</ul>
+	</div>
+
+    <div id="header-bottom-right">
+        <span class="user">Want to join? 
+            <a href="/login" class="login-required">Log in or sign up</a> in seconds.
+        </span>
+    </div>
+</div>

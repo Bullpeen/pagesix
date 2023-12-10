@@ -1,46 +1,29 @@
-FROM openresty/openresty:centos
+FROM ghcr.io/leafo/lapis-archlinux-itchio:latest
 
-# Build Args
-ARG OPENSSL_DIR="/usr/local/openresty/openssl"
+# RUN pacman -Sy sqlite --noconfirm && \
+# 	(yes | pacman -Scc || :)
 
 # Environment
-ENV LAPIS_ENV="production"
+ENV LAPIS_ENV="development"
 
 # Prepare volumes
 VOLUME /var/data
 VOLUME /var/www
 
-# Install from Yum
-RUN yum -y install \
-	epel-release \
-	gcc \
-	openresty-openssl-devel \
-	openssl-devel \
-	sqlite-devel \
-	; yum clean all
+RUN eval $(luarocks --lua-version=5.1 path)
+RUN export LUA_PATH="$LUA_PATH;/usr/local/openresty/lualib/?.lua"
 
-RUN yum config-manager --set-enabled powertools
-
-# Install from LuaRocks
-RUN luarocks install luasec
-RUN luarocks install bcrypt
-RUN luarocks install busted
-RUN luarocks install i18n
-RUN luarocks install lapis \
-	CRYPTO_DIR=${OPENSSL_DIR} \
-	CRYPTO_INCDIR=${OPENSSL_DIR}/include \
-	OPENSSL_DIR=${OPENSSL_DIR} \
-	OPENSSL_INCDIR=${OPENSSL_DIR}/include
-RUN luarocks install lsqlite3
-RUN luarocks install luacov
-RUN luarocks install mailgun
-RUN luarocks install markdown
+# install lua dependencies
+COPY pagesix-dev-1.rockspec /
+RUN luarocks --lua-version=5.1 build --tree "$HOME/.luarocks" --only-deps /pagesix-dev-1.rockspec
 
 # Entrypoint
-ADD docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Standard web port (use a reverse proxy for SSL)
 EXPOSE 80
+
+WORKDIR /var/www
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

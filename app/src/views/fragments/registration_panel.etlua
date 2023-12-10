@@ -1,0 +1,71 @@
+<div class="split-panel-section split-panel-divider">
+    <h4 class="modal-title">create a new account</h4>
+    <form id="register-form" method="post" action="/register" class="form-v2">
+        <input type="hidden" name="op" value="reg">
+        <input type="hidden" name="dest" value="/">
+        <div class="c-form-group ">
+            <label for="user_reg" class="screenreader-only">username:</label>
+            <input value="" name="user" id="user_reg" class="c-form-control" type="text" maxlength="20" tabindex="2" placeholder="choose a username" data-validate-url="/api/check_username.json" data-validate-min="3" autocomplete="off">
+            <div class="c-form-control-feedback-wrapper ">
+                <span class="c-form-control-feedback c-form-control-feedback-throbber"></span>
+                <span class="c-form-control-feedback c-form-control-feedback-error" title=""></span>
+                <span class="c-form-control-feedback c-form-control-feedback-success"></span>
+            </div>
+        </div>
+        <div class="c-form-group ">
+            <label for="passwd_reg" class="screenreader-only">password:</label>
+            <input id="passwd_reg" class="c-form-control" name="passwd" type="password" tabindex="2" placeholder="password" data-validate-url="/api/check_password.json" style="padding-right: 55px;">
+            <div class="strength-meter" style="">
+                <div class="strength-meter-fill"></div>
+            </div>
+            <div class="c-form-control-feedback-wrapper ">
+                <span class="c-form-control-feedback c-form-control-feedback-throbber"></span>
+                <span class="c-form-control-feedback c-form-control-feedback-error" title=""></span>
+                <span class="c-form-control-feedback c-form-control-feedback-success"></span>
+            </div>
+        </div>
+        <div class="c-form-group ">
+            <label for="passwd2_reg" class="screenreader-only">verify password:</label>
+            <input name="passwd2" id="passwd2_reg" class="c-form-control" type="password" tabindex="2" placeholder="verify password">
+            <div class="c-form-control-feedback-wrapper ">
+                <span class="c-form-control-feedback c-form-control-feedback-throbber"></span>
+                <span class="c-form-control-feedback c-form-control-feedback-error" title=""></span>
+                <span class="c-form-control-feedback c-form-control-feedback-success"></span>
+            </div>
+        </div>
+        <div class="c-form-group ">
+            <label for="email_reg" class="screenreader-only">email: &nbsp;
+                <i>(optional)</i>
+            </label>
+            <div class="fx-relay-email-input-wrapper">
+                <input value="" name="email" id="email_reg" class="c-form-control" type="text" tabindex="2" placeholder="email" data-validate-url="/api/check_email.json" data-validate-on="change blur" style="padding-right: 42px;">
+                <div class="fx-relay-icon" style="top: 0px; bottom: 0px;">
+                    <button class="fx-relay-button" id="fx-relay-button" type="button" title="Generate new mask"></button>
+                </div>
+            </div>
+            <div class="c-form-control-feedback-wrapper ">
+                <span class="c-form-control-feedback c-form-control-feedback-throbber"></span>
+                <span class="c-form-control-feedback c-form-control-feedback-error" title=""></span>
+                <span class="c-form-control-feedback c-form-control-feedback-success"></span>
+            </div>
+        </div>
+        <div class="c-checkbox">
+            <input type="checkbox" name="rem" id="rem_reg" tabindex="2">
+            <label for="rem_reg">remember me</label>
+        </div>
+        <input type="hidden" name="digest_subscribe" id="digest_subscribe" value="true">
+        <div class="spacer">
+            <div class="c-form-group g-recaptcha" data-sitekey="6LeTnxkTAAAAAN9QEuDZRpn90WwKk_R1TRW_g-JC"></div>
+            <span class="error BAD_CAPTCHA field-captcha" style="display:none"></span>
+        </div>
+        <div class="c-clearfix c-submit-group">
+            <span class="c-form-throbber"></span>
+            <button type="submit" class="c-btn c-btn-primary c-pull-right" tabindex="2">sign up</button>
+        </div>
+        <div>
+            <div class="c-alert c-alert-danger"></div>
+            <span class="error RATELIMIT field-ratelimit" style="display:none"></span>
+            <span class="error RATELIMIT field-vdelay" style="display:none"></span>
+        </div>
+    </form>
+</div>

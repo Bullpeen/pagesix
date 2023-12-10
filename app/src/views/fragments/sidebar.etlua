@@ -1,0 +1,21 @@
+<div class="side">
+	<div class="spacer">
+		<form action="/search" id="search" role="search">
+			<input type="text" name="q" placeholder="search" tabindex="20">
+            <input type="submit" value="" tabindex="22">
+        </form>
+    </div>
+    <div class="spacer"></div>
+    <div class="spacer">
+        <div class="sidebox submit submit-link">
+            <div class="morelink">
+                <a href="/submit" data-event-action="submit" data-type="subreddit" data-event-detail="link" class="login-required access-required" target="_top">Submit a new link</a>
+                <div class="nub"></div>
+            </div>
+        </div>
+    </div>
+
+    <%  render('views.fragments.login') %>
+
+    <% render('views.fragments.subreddit_moderators') %>
+</div>

@@ -1,0 +1,20 @@
+<form class="form primary_form" method="POST" action="/login">
+	<input type="hidden" name="csrf_token" value="">
+    <div class="input_row">
+        <label>
+            <div class="label">Username</div>
+            <input autofocus="" autocomplete="username" name="username" required="required" type="text" autocapitalize="none" autocorrect="off">
+        </label>
+    </div>
+    <div class="input_row">
+        <label>
+            <div class="label">Password</div>
+            <input autocorrect="off" autocomplete="current-password" name="password" required="required" type="password" autocapitalize="none">
+        </label>
+    </div>
+    <div class="button_row">
+        <input class="button" value="Log in" type="submit"> or 
+            <a href="/register">Register account</a> · 
+            <a href="/password">Forgot password</a>
+    </div>
+</form>

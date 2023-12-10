@@ -1,0 +1,6 @@
+<div class="searchpane raisedbox">
+    <h4 style="color:gray">search subs by name</h4>
+    <div id="previoussearch">
+        <form action="/subs/search" id="search" role="search"><input type="text" name="q" placeholder="search" tabindex="20"><input type="submit" value="" tabindex="22"></form>
+    </div>
+</div>
