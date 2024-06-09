@@ -39,6 +39,8 @@ app:match("controversial", "/controversial", r2(require "actions.index"))
 app:match("new",           "/new",           r2(require "actions.index"))
 app:match("rising",        "/rising",        r2(require "actions.index"))
 app:match("top",           "/top",           r2(require "actions.index"))
+app:match("comments",      "/comments",      r2(require "actions.index"))
+app:match("subscribed",    "/subscribed",    r2(require "actions.index")) -- only for logged in users
 
 app:match("subreddits",   "/subreddits(/:type)",      r2(require "actions.subreddits"))
 -- app:match("subreddits",   "/subreddits/search",      r2(require "actions.subreddits"))
@@ -46,9 +48,9 @@ app:match("subreddits",   "/subreddits(/:type)",      r2(require "actions.subred
 app:match("domains",      "/domain/:domain",      r2(require "actions.domain"))
 app:match("user_profile", "/user/:user_name(/:type)", r2(require "actions.user"))
 
--- app:match("all",        "/r/all",        r2(require "actions.r_all_subreddits"))
--- app:match("popular",    "/r/popular",    r2(require "actions.r_popular_subreddits"))
-app:match("random",     "/r/random",     r2(require "actions.r_random_subreddit"))
+app:match("all",        "/r/all",        r2(require "actions.r_all"))
+app:match("popular",    "/r/popular",    r2(require "actions.r_popular"))
+app:match("random",     "/r/random",     r2(require "actions.r_random"))
 app:match("subreddit",  "/r/:subreddit", r2(require "actions.r_subreddit"))
 
 app:match("post",    "/r/:subreddit/comments/:post_id[%w](/:title_stub)", r2(require "actions.post"))

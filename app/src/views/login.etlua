@@ -1,0 +1,5 @@
+Welcome, <%= session.current_user %>.
+
+<% render('views.fragments.login') %>
+
+<% render('views.fragments.nav') %>

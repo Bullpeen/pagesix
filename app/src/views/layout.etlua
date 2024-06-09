@@ -12,5 +12,6 @@
 		<% content_for("inner") %>
 	</div>
 	<%  render('views.fragments.footer') %>
-	<script src="/static/js/base.js"> 
+	<script src="/static/js/base.js">
+	<script src="https://unpkg.com/htmx.org@1.9.12" integrity="sha384-ujb1lZYygJmzgSwoxRggbCHcjc0rB2XoQrxeTUQyRjrOnlCoYta87iKBWq3EsdM2" crossorigin="anonymous"></script>
 </main>

@@ -1,3 +1,5 @@
+local db = require("lapis.db")
+
 -- local csrf = require("lapis.csrf")
 
 -- local capture_errors = require("lapis.application").capture_errors
@@ -25,9 +27,38 @@
 
 return {
 	before = function(self)
+		-- if self.session.current_user then
+			-- self.user = self.session.current_user or "Anon"
+			-- self:write({ redirect_to = self:url_for("homepage") })
+		-- end
+
 	end,
 
 	GET = function(self)
 		return { render = "login" }
+	end,
+
+	POST = function(self)
+		-- TODO lookup user_name in Users table, compare password to user_pass
+
+		if self.params.username then
+			self.user = db.select("* FROM users WHERE user_name = ? AND user_pass = ? LIMIT 1",
+							self.params.username,
+							self.params.password)
+
+			-- self.user = self.account[1]
+			if self.user[1] then
+				print("Found user: " .. self.user[1].user_name)
+			else
+				print("USER NOT FOUND")
+			end
+		else
+			print("NO USERNAME SUPPLIED")
+		end
+
+		self.session.current_user = self.user[1].user_name
+			-- try_to_login(self.params.username, self.params.password)
+
+		return { redirect_to = "/" }
 	end
 }

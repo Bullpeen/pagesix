@@ -8,13 +8,13 @@ return {
 		-- Check if domain is nil or empty
 		if self.domain == nil or self.domain == '' then
 			print("Domain is unknown: " .. self.domain)
-			return self:write({ redirect_to = self:url_for("homepage") })
+			-- return self:write({ redirect_to = self:url_for("homepage") })
 		end
 
 		-- check if domain has a period anywhere in it
 		if not string.find(self.domain, "%.") then
 			print("Domain is invalid: " .. self.domain)
-			return self:write({ redirect_to = self:url_for("homepage") })
+			-- return self:write({ redirect_to = self:url_for("homepage") })
 		end
 
 		-- search all _posts tables for url like %domain%
