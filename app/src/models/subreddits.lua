@@ -129,6 +129,61 @@ function Subreddits_mt:create_db_tables(id)
 		{ "reason",     types.text },
 		{ "created_at", types.integer { default="1970-01-01 00:00:00" }}
 	})
+
+	local subreddit_table_name = id .. "_posts"
+
+	-- hot
+		-- all
+	-- new
+		-- all
+	-- rising
+		-- all
+	-- controversial
+		-- day
+		-- week
+		-- month
+		-- year
+		-- all
+	-- top
+		-- day
+		-- week
+		-- month
+		-- year
+		-- all
+
+	local sorts = {"hot", "new", "rising"}
+	for k,v in pairs(sorts) do
+		local view_name = "v_" .. id .. "_" .. v
+
+		-- TODO add upvotes, downvotes
+		db.query(
+			[[
+				CREATE VIEW IF NOT EXISTS ?
+				AS
+				SELECT id, title, url, user_id
+				FROM ?
+			]],
+			view_name,
+			subreddit_table_name)
+	end
+
+	-- local sorts2 = {"controversial", "top"}
+	-- local t = {"day", "week", "month", "year", "all"}
+
+	-- for j,u in pairs(sorts2) do
+	-- 	for k,v in pairs(t) do
+	-- 		local tbl = "v_" .. id .. "_" .. u .. "_" .. v
+	-- 		db.query(
+	-- 			[[
+	-- 				CREATE VIEW IF NOT EXISTS ?
+	-- 				AS
+	-- 				SELECT id, title, url, user_id
+	-- 				FROM ?
+	-- 			]],
+	-- 			tbl,
+	-- 			subreddit_table_name)
+	-- 	end
+	-- end
 end
 
 return Subreddits

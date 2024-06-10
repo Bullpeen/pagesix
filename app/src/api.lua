@@ -1,7 +1,7 @@
 --- API URLs
 -- @module src.api
 
-function api(app)
+local function api(app)
 
     app:get("/api(*)", function(self) return "NOTE: The API doesn't work but most endpoints exist" end)
 
@@ -176,4 +176,5 @@ function api(app)
 
     return app
 end
+
 return api

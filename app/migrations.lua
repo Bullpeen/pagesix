@@ -40,15 +40,15 @@ return {
       file:close()
       data = json.decode(content)
       -- require 'pl.pretty'.dump(data)
-      -- print("Read in " .. #data .. " subreddits from " .. path)
+      print("Read in " .. #data .. " subreddits from " .. path)
     end
 
     for _, sub in ipairs(data) do
-      -- print("About to create new sub: " .. sub.name .. ".")
+      print("About to create new sub: " .. sub.name .. ".")
       local s, e = Subreddits:create({
-        name = sub.name,
+        name        = sub.name,
         description = sub.description or "",
-        creator_id = sub.creator_id or 1,
+        creator_id  = sub.creator_id or 1,
       })
       if not s then
         print("error creating " .. s.name)
@@ -79,9 +79,9 @@ return {
     local subs = Subreddits:select()
     local users = Users:select()
     for _, sub in ipairs(subs) do
-      -- print("About to create 5-20 posts for " .. sub.name .. ".")
+      -- print("About to create 5-10 posts for " .. sub.name .. ".")
       local table_name = sub.id .. "_posts"
-      for i = 1, math.random(5,20) do
+      for i = 1, math.random(5,10) do
         local s, e = db.insert(table_name, {
           title = Lorem:sentence(),
           permalink = "/r/" .. sub.name .. "/comments/" .. i,
@@ -110,7 +110,7 @@ return {
 
       for _, post in ipairs(posts) do
 
-        for i = 1, math.random(20,100) do
+        for i = 1, math.random(10,50) do
           local tbl = {
             post_id = post.id,
             user_id = math.random(1, #users), -- #users
@@ -136,6 +136,10 @@ return {
       end
     end
   end,
+
+  -- generate votes for posts & comments
+  -- [7] = function()
+  -- end,
 
   -- classify text : https://github.com/leafo/lapis-bayes
   [1439944992] = require("lapis.bayes.schema").run_migrations,

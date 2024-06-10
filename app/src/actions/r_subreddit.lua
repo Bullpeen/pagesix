@@ -10,7 +10,8 @@ return {
 			print("Subreddit id!!! " .. self.params.id)
 			posts_table = id .. "_posts"
 		else
-			print("Subreddit name!!!")
+			-- print("Subreddit name!!!")
+
 			-- Check if subreddit is nil or empty
 			local name = self.params.subreddit
 			if name == nil or name == '' then
@@ -20,7 +21,7 @@ return {
 
 			-- TODO write get_name_from_id()
 			-- TODO limit 1
-			local res = db.select("id FROM 'subreddits' WHERE name=?", name)
+			local res = db.select("id FROM 'subreddits' WHERE name=? LIMIT 1", name)
 			if not res then
 				print("Subreddit is invalid: " .. name)
 				return self:write({ redirect_to = self:url_for("homepage") })
@@ -34,6 +35,14 @@ return {
 		-- 		post_id: { title, url, user_id, created_at, is_self, body, upvotes, downvotes, num_comments },
 		-- 		post_id: { ... },
 		-- }
+
+		-- self.posts = db.select("id, user_id, title, url FROM ?", posts_table)
+
+		local data = {}
+		-- for k,v in self.posts do
+		-- 	data[v.id] = v.url
+		-- end
+		self.data = data
 
 		-- self.posts = self:get_posts(posts_table)
 		self.posts = db.select("* FROM ?", posts_table)

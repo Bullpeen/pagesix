@@ -5,7 +5,7 @@
         <input type="hidden" name="dest" value="/">
         <div class="c-form-group ">
             <label for="user_reg" class="screenreader-only">username:</label>
-            <input value="" name="user" id="user_reg" class="c-form-control" type="text" maxlength="20" tabindex="2" placeholder="choose a username" data-validate-url="/api/check_username.json" data-validate-min="3" autocomplete="off">
+            <input value="" name="name" id="user_reg" class="c-form-control" type="text" maxlength="20" tabindex="2" placeholder="choose a username" data-validate-url="/api/check_username.json" data-validate-min="3" autocomplete="off">
             <div class="c-form-control-feedback-wrapper ">
                 <span class="c-form-control-feedback c-form-control-feedback-throbber"></span>
                 <span class="c-form-control-feedback c-form-control-feedback-error" title=""></span>

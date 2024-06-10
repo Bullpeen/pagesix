@@ -61,6 +61,7 @@ local Subreddit_posts = Model:extend(sp_table, {
     relations = {
 		{ "user",           belongs_to="Users"},
         { "subreddit",      has_one="Subreddits"},
+        -- { "post",           has_one="Subreddit"},
 
         -- { "votes",
         --     has_many="Votes",
@@ -81,19 +82,23 @@ local Subreddit_posts = Model:extend(sp_table, {
 function Subreddit_posts:top_posts(subreddit_id)
     -- query id .. "_posts" table for top 100 posts by score
 
-    table = id .. "_posts"
+    local votes_table = id .. "_votes"
+    -- local post_id = ...
 
-    -- local upvotes = db.query("SELECT SUM(upvote) FROM '1_votes' WHERE post_id = '?' and upvote = '1'", post_id)
-    -- local downvotes = db.query("SELECT SUM(upvote) FROM '1_votes' WHERE post_id = '?' and upvote = '0'", post_id)
-    -- local votes = db.query("SELECT SUM(upvote) FROM '1_votes' WHERE post_id = '?'", post_id)
+    -- local upvotes = db.query("SELECT SUM(upvote) FROM '?' WHERE post_id = '?' and upvote = '1'", votes_table, post_id)
+    -- local downvotes = db.query("SELECT SUM(downvotevote) FROM '?' WHERE post_id = '?' and upvote = '0'", votes_table, post_id)
 
-    local posts = db.query("SELECT *, COUNT(*) AS row_count FROM ? WHERE post_id = post_id, ORDER BY score DESC LIMIT 100", id .. table, subreddit_id)
+    -- local votes = upvotes - downvotes
+
+    -- local posts = db.query("SELECT *, COUNT(*) AS row_count FROM ? WHERE post_id = post_id, ORDER BY score DESC LIMIT 100", sp_table)
 
 
 end
 
 -- function Subreddit_posts:new_posts()
+    -- local posts = db.query("SELECT *, COUNT(*) AS row_count FROM ?, ORDER BY created_at DESC LIMIT 100", sp_table)
 -- end
 
 -- function Subreddit_posts:controversial_posts()
+    -- smallest diff in abs(upvotes) vs abs(downvote) amongst top posts
 -- end

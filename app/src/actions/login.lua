@@ -1,6 +1,6 @@
 local db = require("lapis.db")
 
--- local csrf = require("lapis.csrf")
+local csrf = require("lapis.csrf")
 
 -- local capture_errors = require("lapis.application").capture_errors
 

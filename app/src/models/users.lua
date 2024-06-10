@@ -26,13 +26,17 @@ local Users, Users_mt = Model:extend("users", {
 			-- 	return "Username is reserved"
 			-- end
 
-			-- check for valid length (2-64]
-			if string.len(value) >= 64 then
-				return "Username must be less than 64 characters"
-			end
+			if value then
+				-- check for valid length (2-64]
+				if string.len(value) >= 64 then
+					return "Username must be less than 64 characters"
+				end
 
-			if string.len(value) <= 2 then
-				return "Username must be more than 2 characters"
+				if string.len(value) <= 2 then
+					return "Username must be more than 2 characters"
+				end
+			else
+				print("ERROR, value is empty")
 			end
 		end,
 
@@ -40,19 +44,25 @@ local Users, Users_mt = Model:extend("users", {
 			-- enforce password length requirements
 			local password_minimum_length = 8
 			local password_maximum_length = 64 -- 4096
-			if string.len(value) < password_minimum_length then
-				return string.format("Password must be at least %s characters", password_minimum_length)
-			end
-			if string.len(value) > password_maximum_length then
-				return string.format("Password must no more than %s characters", password_maximum_length)
+			if value then
+				if string.len(value) < password_minimum_length then
+					return string.format("Password must be at least %s characters", password_minimum_length)
+				end
+				if string.len(value) > password_maximum_length then
+					return string.format("Password must no more than %s characters", password_maximum_length)
+				end
+			else
+				print "ERROR, value is empty"
 			end
 		end,
 
 		user_email = function(self, value)
 			-- value must contain '@'
-			if not string.find(value, "@") then
-				return "Email must contain '@'"
-			end
+			-- if value and not string.find(value, "@") then
+			-- 	return "Email must contain '@'"
+			-- else
+			-- 	print("ERROR, no email provided")
+			-- end
 		end
 	},
 
@@ -80,7 +90,8 @@ local Users, Users_mt = Model:extend("users", {
 	}
 })
 
-print("RUNNING MODELS.Users")
+-- print("RUNNING MODELS.Users") -- DEBUG
+
 
 --- Create a new user
 -- @tparam table params User data
@@ -91,15 +102,25 @@ function Users:new(params, raw_password)
 
 	-- Check if username is unique
 	do
-		local unique, err = self:is_unique(params.user_name)
+		local unique, err = self:is_unique(params.name)
 		if not unique then return nil, err end
 	end
 
 	-- TODO: Verify password
+	if passwd == passwd2 then
 
+		local u = {
+			user_name  = params.name,
+			user_email = params.email,
+			user_pass  = params.passwd,
+			over_18    = False,
+			verified   = False
+		}
 
-	local user = Users:create(params)
-	return user and user or nil, { "err_create_user", { params.username } }
+		local user, err = Users:create(u)
+	end
+
+	return user and user or nil, { "err_create_user", { params.name } }
 end
 
 --- Modify a user
@@ -146,13 +167,36 @@ end
 	-- return verified and user or nil, { "err_invalid_user" }
 -- end
 
+function Users_mt:is_unique(name)
+	local res = Users:find(name)
+	if not res then
+		return true
+	end
+end
+
+-- Get the user's display name
+-- @treturn string user_name
+-- this method will be available on all User instances
+function Users_mt:get_display_name()
+	return self.display_name or self.user_name
+end
+
+function Users_mt:get_name_from_id(id)
+	local res = db.select("user_name from users WHERE id=?", id)
+	return res[1]
+end
+
+function Users_mt:get_id_from_name(name)
+	local res = db.select("id from users WHERE user_name=?", name)
+	return res[1]
+end
+
 --- Get all users
 -- @treturn table users List of users
 function Users_mt:get_all_comments(uid)
 	-- loop up number of rows in subreddits table
 	local res = db.select("count(*) from 'subreddits'")
 	local n = res[1]["count(*)"]
-
 
 	local all_comments = {}
 
@@ -173,7 +217,6 @@ function Users_mt:get_all_comments(uid)
 	end
 	return all_comments
 end
-
 
 --- Given a User, return their subreddit subscriptions
 -- @tparam table user

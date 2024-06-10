@@ -78,6 +78,8 @@ end
 -- @treturn table subreddits
 function Pagesix:get_all()
 	-- use Paginator
+
+	-- TODO filter out archived, optionally nsfw
 	local subreddits = self:select("* FROM 'subreddits'")
 	return subreddits and subreddits or false, "FIXME: listing subreddits failed"
 end

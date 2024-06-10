@@ -89,11 +89,11 @@ end
 function Posts:generate_permalink(params)
 	-- TODO:
 
-	local subreddit_name = get Subreddit:subreddit_name(params.post_id)
+	local subreddit_name = Subreddit:subreddit_name(params.post_id)
 	local title_slug = utils.slugify(params.title)
-	local post_id =  md5(title_slug .. params.user_id .. params.created_utc)
+	local post_id =  md5(title_slug .. params.post_id .. params.created_utc)
 
-	return "/r/" .. subreddit_name .. "/comments/" .. params.post_id .. "/" .. title_slug
+	return "/r/" .. subreddit_name .. "/comments/" .. post_id .. "/" .. title_slug
 end
 
 return Posts

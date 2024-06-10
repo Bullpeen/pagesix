@@ -1,5 +1,3 @@
 <div class="split-panel">
-hi
     <% render('views.fragments.registration_panel') %>
-    <% render('views.fragments.login_panel') %>
 </div>
