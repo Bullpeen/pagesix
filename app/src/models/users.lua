@@ -2,12 +2,12 @@
 -- @module models.users
 
 -- local bcrypt = require "bcrypt"
-local config = require("lapis.config").get()
-local db     = require "lapis.db"
-local Model  = require("lapis.db.model").Model
+-- local config = require("lapis.config").get()
+local db = require("lapis.db")
+local Model = require("lapis.db.model").Model
 -- local token  = config.secret
 -- local util = require("lapis.util")
-local json = require("cjson")
+-- local json = require("cjson")
 
 -- local Users  = Model:extend("users")
 local Users, Users_mt = Model:extend("users", {
@@ -52,7 +52,7 @@ local Users, Users_mt = Model:extend("users", {
 					return string.format("Password must no more than %s characters", password_maximum_length)
 				end
 			else
-				print "ERROR, value is empty"
+				print("ERROR, value is empty")
 			end
 		end,
 
@@ -63,35 +63,32 @@ local Users, Users_mt = Model:extend("users", {
 			-- else
 			-- 	print("ERROR, no email provided")
 			-- end
-		end
+		end,
 	},
 
 	relations = {
-		{ "subscriptions", has_many="Subscriptions" },
-		{ "posts",         has_many="Posts" },
-		{ "comments",      has_many="Comments" },
-		{ "moderates",
-			has_many = "Subreddits",
-			order = "id desc",
-			key = "moderator_id"
-		},
-		{ "authored_posts",
+		{ "subscriptions", has_many = "Subscriptions" },
+		{ "posts", has_many = "Posts" },
+		{ "comments", has_many = "Comments" },
+		{ "moderates", has_many = "Subreddits", order = "id desc", key = "moderator_id" },
+		{
+			"authored_posts",
 			has_many = "Posts",
 			-- where = {deleted = false},
 			order = "id desc",
-			key = "user_id"
+			key = "user_id",
 		},
-		{ "authored_comments",
+		{
+			"authored_comments",
 			has_many = "Comments",
 			-- where = {deleted = false},
 			order = "id desc",
-			key = "user_id"
-		}
-	}
+			key = "user_id",
+		},
+	},
 })
 
 -- print("RUNNING MODELS.Users") -- DEBUG
-
 
 --- Create a new user
 -- @tparam table params User data
@@ -99,22 +96,22 @@ local Users, Users_mt = Model:extend("users", {
 -- @treturn boolean success
 -- @treturn string error
 function Users:new(params, raw_password)
-
 	-- Check if username is unique
 	do
 		local unique, err = self:is_unique(params.name)
-		if not unique then return nil, err end
+		if not unique then
+			return nil, err
+		end
 	end
 
 	-- TODO: Verify password
 	if passwd == passwd2 then
-
 		local u = {
-			user_name  = params.name,
+			user_name = params.name,
 			user_email = params.email,
-			user_pass  = params.passwd,
-			over_18    = False,
-			verified   = False
+			user_pass = params.passwd,
+			over_18 = False,
+			verified = False,
 		}
 
 		local user, err = Users:create(u)
@@ -130,7 +127,7 @@ end
 -- @treturn boolean success
 -- @treturn string error
 function Users:modify(params, raw_username, raw_password)
-	db.modify("users", params, {username = raw_username})
+	db.modify("users", params, { username = raw_username })
 
 	-- TODO: password?
 end
@@ -146,9 +143,7 @@ function Users:delete(username)
 	end
 
 	-- tomebstone user
-	local success = user:update("users",
-		{deleted_tc = db.format_date()},
-		{username = username})
+	local success = user:update("users", { deleted_tc = db.format_date() }, { username = username })
 
 	return success and user or nil, "FIXME"
 end
@@ -158,13 +153,13 @@ end
 -- @treturn boolean success
 -- @treturn string error
 -- function Users:login(params)
-	-- local user = self:get(params.username)
-	-- if not user then return nil, { "err_invalid_user" } end
+-- local user = self:get(params.username)
+-- if not user then return nil, { "err_invalid_user" } end
 
-	-- local password = user.username .. params.password .. token
-	-- local verified = bcrypt.verify(password, user.password)
+-- local password = user.username .. params.password .. token
+-- local verified = bcrypt.verify(password, user.password)
 
-	-- return verified and user or nil, { "err_invalid_user" }
+-- return verified and user or nil, { "err_invalid_user" }
 -- end
 
 function Users_mt:is_unique(name)
@@ -202,7 +197,7 @@ function Users_mt:get_all_comments(uid)
 
 	-- loop over all subreddits
 	-- TODO index subreddit_id, post_id, comment_id, user_id
-	for i=1, n do
+	for i = 1, n do
 		local tbl = i .. "_comments"
 		local subreddit = db.select("* from 'subreddits' where id=?", i)
 		-- local id = subreddit[1].id
@@ -210,7 +205,7 @@ function Users_mt:get_all_comments(uid)
 		local comments = db.select("* from ? where user_id=?", tbl, uid)
 		-- require 'pl.pretty'.dump(comments)
 
-		for k,v in ipairs(comments) do
+		for k, v in ipairs(comments) do
 			all_comments[#all_comments + 1] = v
 			-- all_comments[#all_comments + k]['subreddit_id'] = subreddit[1].id
 		end
@@ -221,9 +216,13 @@ end
 --- Given a User, return their subreddit subscriptions
 -- @tparam table user
 -- @treturn table subscriptions
-function Users.get_subscriptions(user)
+function Users:get_subscriptions(user)
 	local subscriptions = db.select("* from 'subscriptions' where user_id=?", user.id)
 	return subscriptions
 end
+
+-- function Users:random()
+-- 	return Users:find(1)
+-- end
 
 return Users

@@ -1,8 +1,8 @@
 --- User action
 -- @module action.user
 
-local db = require "lapis.db"
-local Users = require "models.users"
+local db = require("lapis.db")
+local Users = require("models.users")
 
 return {
 	before = function(self)
@@ -31,5 +31,5 @@ return {
 
 	GET = function(self)
 		return { render = "user" }
-	end
+	end,
 }

@@ -21,17 +21,15 @@ local csrf = require("lapis.csrf")
 --     return "The form is valid!"
 -- end))
 
-
 --- Domain action
 -- @module action.domain
 
 return {
 	before = function(self)
 		-- if self.session.current_user then
-			-- self.user = self.session.current_user or "Anon"
-			-- self:write({ redirect_to = self:url_for("homepage") })
+		-- self.user = self.session.current_user or "Anon"
+		-- self:write({ redirect_to = self:url_for("homepage") })
 		-- end
-
 	end,
 
 	GET = function(self)
@@ -42,9 +40,15 @@ return {
 		-- TODO lookup user_name in Users table, compare password to user_pass
 
 		if self.params.username then
-			self.user = db.select("* FROM users WHERE user_name = ? AND user_pass = ? LIMIT 1",
-							self.params.username,
-							self.params.password)
+			-- self.user = db.find("* FROM users WHERE user_name = ? AND user_pass = ?",
+			-- 				self.params.username,
+			-- 				self.params.password)
+
+			self.user = db.select(
+				"* FROM users WHERE user_name = ? AND user_pass = ? LIMIT 1",
+				self.params.username,
+				self.params.password
+			)
 
 			-- self.user = self.account[1]
 			if self.user[1] then
@@ -57,8 +61,8 @@ return {
 		end
 
 		self.session.current_user = self.user[1].user_name
-			-- try_to_login(self.params.username, self.params.password)
+		-- try_to_login(self.params.username, self.params.password)
 
 		return { redirect_to = "/" }
-	end
+	end,
 }

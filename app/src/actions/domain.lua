@@ -3,10 +3,10 @@
 
 return {
 	before = function(self)
-        self.domain = self.params.domain
+		self.domain = self.params.domain
 
 		-- Check if domain is nil or empty
-		if self.domain == nil or self.domain == '' then
+		if self.domain == nil or self.domain == "" then
 			print("Domain is unknown: " .. self.domain)
 			-- return self:write({ redirect_to = self:url_for("homepage") })
 		end
@@ -29,5 +29,5 @@ return {
 
 	GET = function(self)
 		return { render = "domain" }
-	end
+	end,
 }

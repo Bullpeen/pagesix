@@ -1,21 +1,21 @@
 --- Posts model
 -- @module models.posts
 
-local db     = require "lapis.db"
+local db = require("lapis.db")
 -- local types  = schema.types
 -- local util   = require("lapis.util")
 
 local id = 99
 
-local Model     = require("lapis.db.model").Model
-local Posts     = Model:extend(id .. "_posts", {
+local Model = require("lapis.db.model").Model
+local Posts = Model:extend(id .. "_posts", {
 	relations = {
-		{ "subreddit",  belongs_to="Subreddits" },
+		{ "subreddit", belongs_to = "Subreddits" },
 		-- { "post",    belongs_to="Posts" },
-		{ "comments",   has_many="Comments" },
-		{ "votes",      has_many="Votes" },
-		{ "user",       belongs_to = "Users" }
-	}
+		{ "comments", has_many = "Comments" },
+		{ "votes", has_many = "Votes" },
+		{ "user", belongs_to = "Users" },
+	},
 })
 
 print("RUNNING MODELS.POSTS")
@@ -47,8 +47,15 @@ function Posts:get_score(post_id, subreddit)
 
 	local votes_table = subreddit .. "_votes"
 	-- select count(upvote) from ? where ? is null
-	local ups = db.select("SELECT count(*) FROM ? WHERE post_id = ? AND WHERE ? is not null", votes_table, post_id, user_id, upvote)
-	local downs = db.select("SELECT count(*) FROM ? WHERE post_id = ? AND WHERE ? is null", votes_table, post_id, user_id, upvote)
+	local ups = db.select(
+		"SELECT count(*) FROM ? WHERE post_id = ? AND WHERE ? is not null",
+		votes_table,
+		post_id,
+		user_id,
+		upvote
+	)
+	local downs =
+		db.select("SELECT count(*) FROM ? WHERE post_id = ? AND WHERE ? is null", votes_table, post_id, user_id, upvote)
 
 	if not ups or downs then
 		return false, "FIXME: getting score failed!"
@@ -91,7 +98,7 @@ function Posts:generate_permalink(params)
 
 	local subreddit_name = Subreddit:subreddit_name(params.post_id)
 	local title_slug = utils.slugify(params.title)
-	local post_id =  md5(title_slug .. params.post_id .. params.created_utc)
+	local post_id = md5(title_slug .. params.post_id .. params.created_utc)
 
 	return "/r/" .. subreddit_name .. "/comments/" .. post_id .. "/" .. title_slug
 end

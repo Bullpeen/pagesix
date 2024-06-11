@@ -20,85 +20,82 @@ local Subreddit_posts = Model:extend(sp_table, {
 		return "subreddit", { id = self.id }, ...
 	end,
 
-    constraints = {
+	constraints = {
 		--- Apply constraints
 		-- @tparam table self
-        -- @tparam table value User data
+		-- @tparam table value User data
 		-- @treturn string error
 		title = function(self, value)
-            -- title is maximum 256 characters
-            if string.len(value) > 256 then
-                return "Title is too long"
-            end
+			-- title is maximum 256 characters
+			if string.len(value) > 256 then
+				return "Title is too long"
+			end
 
-            -- title is minimum 2 characters
-            if string.len(value) < 1 then
-                return "Title is too short"
-            end
+			-- title is minimum 2 characters
+			if string.len(value) < 1 then
+				return "Title is too short"
+			end
+		end,
 
-        end,
+		url = function(self, value)
+			-- local uri, err = Silva:new(value)
 
-        url = function(self, value)
-            -- local uri, err = Silva:new(value)
+			-- if not uri then
+			--     return("invalid URL: " .. err)
+			-- end
+		end,
 
-            -- if not uri then
-            --     return("invalid URL: " .. err)
-            -- end
-        end,
+		body = function(self, value)
+			if self.is_self and string.len(value) > 0 then
+				return "Only self posts can have body text"
+			end
 
-        body = function(self, value)
-            if self.is_self and string.len(value) > 0 then
-                return "Only self posts can have body text"
-            end
+			-- body text is maximum 16kb
+			if string.len(value) > 16384 then
+				return "Body text is too long"
+			end
+		end,
+	},
 
-            -- body text is maximum 16kb
-            if string.len(value) > 16384 then
-                return "Body text is too long"
-            end
-        end,
-    },
+	relations = {
+		{ "user", belongs_to = "Users" },
+		{ "subreddit", has_one = "Subreddits" },
+		-- { "post",           has_one="Subreddit"},
 
-    relations = {
-		{ "user",           belongs_to="Users"},
-        { "subreddit",      has_one="Subreddits"},
-        -- { "post",           has_one="Subreddit"},
-
-        -- { "votes",
-        --     has_many="Votes",
-        --     where = {sub_id = id},
-        --     order = "id desc",
-        --     key = "post_id"
-        -- },
+		-- { "votes",
+		--     has_many="Votes",
+		--     where = {sub_id = id},
+		--     order = "id desc",
+		--     key = "post_id"
+		-- },
 
 		-- { "top_posts",
-        --     has_many = "Posts",
-        --     where = {sub_id = id},
-        --     order = "id desc",
-        --     key = "author"
-        -- },
-    }
+		--     has_many = "Posts",
+		--     where = {sub_id = id},
+		--     order = "id desc",
+		--     key = "author"
+		-- },
+	},
 })
 
 function Subreddit_posts:top_posts(subreddit_id)
-    -- query id .. "_posts" table for top 100 posts by score
+	-- query id .. "_posts" table for top 100 posts by score
 
-    local votes_table = id .. "_votes"
-    -- local post_id = ...
+	local votes_table = id .. "_votes"
+	-- local post_id = ...
 
-    -- local upvotes = db.query("SELECT SUM(upvote) FROM '?' WHERE post_id = '?' and upvote = '1'", votes_table, post_id)
-    -- local downvotes = db.query("SELECT SUM(downvotevote) FROM '?' WHERE post_id = '?' and upvote = '0'", votes_table, post_id)
+	-- local upvotes = db.query("SELECT SUM(upvote) FROM '?' WHERE post_id = '?' and upvote = '1'", votes_table, post_id)
+	-- local downvotes = db.query("SELECT SUM(downvotevote) FROM '?' WHERE post_id = '?' and upvote = '0'", votes_table, post_id)
 
-    -- local votes = upvotes - downvotes
+	-- local votes = upvotes - downvotes
 
-    -- local posts = db.query("SELECT *, COUNT(*) AS row_count FROM ? WHERE post_id = post_id, ORDER BY score DESC LIMIT 100", sp_table)
-
-
+	-- local posts = db.query("SELECT *, COUNT(*) AS row_count FROM ? WHERE post_id = post_id, ORDER BY score DESC LIMIT 100", sp_table)
 end
 
 -- function Subreddit_posts:new_posts()
-    -- local posts = db.query("SELECT *, COUNT(*) AS row_count FROM ?, ORDER BY created_at DESC LIMIT 100", sp_table)
+-- local posts = db.query("SELECT *, COUNT(*) AS row_count FROM ?, ORDER BY created_at DESC LIMIT 100", sp_table)
 -- end
 
 -- function Subreddit_posts:controversial_posts()
-    -- smallest diff in abs(upvotes) vs abs(downvote) amongst top posts
+-- smallest diff in abs(upvotes) vs abs(downvote) amongst top posts
 -- end

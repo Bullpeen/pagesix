@@ -1,7 +1,7 @@
 --- Subreddits action
 -- @module action.subreddits
 
-local db = require "lapis.db"
+local db = require("lapis.db")
 
 return {
 	before = function(self)
