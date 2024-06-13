@@ -29,7 +29,7 @@
                         </form>
                     </div>
                     <p class="tagline">
-                        <span class="score likes"><span class="number">###<% %></span> <span class="word">subscribers</span></span> 
+                        <span class="score likes"><span class="number"><%= sub.score %></span> <span class="word">subscribers</span></span> 
                     </p>
                     <ul class="flat-list buttons">
                         <li class="report-button"><a href="javascript:void(0)" class="reportbtn access-required">report</a></li>

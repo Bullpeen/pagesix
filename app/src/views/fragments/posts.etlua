@@ -5,7 +5,7 @@
             <span class="rank"><%= n %></span>
             <div class="midcol unvoted">
                 <div class="arrow up login-required access-required"></div>
-                <div class="score unvoted" title="<% %>>">###</div>
+                <div class="score unvoted" title=""><%= post.score %></div>
                 <div class="arrow down login-required access-required" role="button"></div>
             </div>
             <% --[[

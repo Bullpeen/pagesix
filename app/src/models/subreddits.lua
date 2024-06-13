@@ -92,6 +92,8 @@ function Subreddits_mt:create_db_tables(id)
 		{ "is_self", types.integer({ default = false }) },
 		{ "over_18", types.integer({ default = false }) },
 		{ "body", types.text({ null = true }) },
+
+		"FOREIGN KEY(user_id) REFERENCES users(id)",
 	})
 
 	-- create subreddit table containing Comments by Users
@@ -108,6 +110,10 @@ function Subreddits_mt:create_db_tables(id)
 		{ "deleted", types.integer({ default = false }) },
 		{ "is_submitter", types.integer({ default = false }) },
 		{ "stickied", types.integer({ default = false }) },
+
+		"FOREIGN KEY(user_id) REFERENCES users(id)",
+		-- "FOREIGN KEY(post_id) REFERENCES '1_posts(id)'"
+		"FOREIGN KEY(post_id) REFERENCES '" .. id .. "_posts(id)'"
 	})
 
 	-- create each subreddit table containing Votes on Posts or Comments by Users
@@ -119,76 +125,64 @@ function Subreddits_mt:create_db_tables(id)
 		{ "upvote", types.integer({ default = true }) },
 		{ "created_at", types.integer({ null = true }) },
 		{ "updated_at", types.integer({ null = true }) },
+
+		"FOREIGN KEY(user_id) REFERENCES users(id)",
+		"FOREIGN KEY(post_id) REFERENCES '" .. id .. "_posts(id)'",
+		"FOREIGN KEY(comment_id) REFERENCES '" .. id .. "_comments(id)'"
 	})
 
 	schema.create_table(modlog_table, {
 		{ "id", types.integer({ unique = true, primary_key = true }) },
 		{ "mod_id", types.text },
 		{ "user_id", types.text({ null = true }) },
-		{ "sub_id", types.text({ null = true }) },
+		{ "sub_id", types.text({ null = true }) }, -- TODO remove?
 		{ "post_id", types.text({ null = true }) },
 		{ "comment_id", types.text({ null = true }) },
 		{ "action", types.integer({ null = true }) },
 		{ "reason", types.text },
 		{ "created_at", types.integer({ null = true }) },
 		{ "updated_at", types.integer({ null = true }) },
+
+		"FOREIGN KEY(mod_id) REFERENCES users(id)", -- TODO
+		"FOREIGN KEY(user_id) REFERENCES users(id)",
+		"FOREIGN KEY(post_id) REFERENCES '" .. id .. "_posts(id)'",
+		"FOREIGN KEY(comment_id) REFERENCES '" .. id .. "_comments(id)'"
 	})
 
-	local subreddit_table_name = id .. "_posts"
-
 	-- hot
-	-- all
 	-- new
-	-- all
 	-- rising
-	-- all
 	-- controversial
-	-- day
-	-- week
-	-- month
-	-- year
-	-- all
+		-- day
+		-- week
+		-- month
+		-- year
+		-- all
 	-- top
-	-- day
-	-- week
-	-- month
-	-- year
-	-- all
+		-- day
+		-- week
+		-- month
+		-- year
+		-- all
 
-	local sorts = { "hot", "new", "rising" }
-	for k, v in pairs(sorts) do
-		local view_name = "v_" .. id .. "_" .. v
-
-		-- TODO add upvotes, downvotes
+	local sorts = { "hot" }
+	for _, sort in pairs(sorts) do
 		db.query(
 			[[
 				CREATE VIEW IF NOT EXISTS ?
 				AS
-				SELECT id, title, url, user_id
-				FROM ?
+				SELECT COUNT(*) score, a.title, a.url, a.permalink, over_18, locked
+				FROM ? a
+				INNER JOIN ? b ON a.id=b.post_id
+				WHERE a.locked = 0 AND b.comment_id IS NULL
+				GROUP BY a.id, b.post_id
+				ORDER BY COUNT(*) DESC;
 			]],
-			view_name,
-			subreddit_table_name
+			"v_" .. id .. "_" .. sort,
+			id .. "_posts",
+			id .. "_votes"
 		)
 	end
-
-	-- local sorts2 = {"controversial", "top"}
-	-- local t = {"day", "week", "month", "year", "all"}
-
-	-- for j,u in pairs(sorts2) do
-	-- 	for k,v in pairs(t) do
-	-- 		local tbl = "v_" .. id .. "_" .. u .. "_" .. v
-	-- 		db.query(
-	-- 			[[
-	-- 				CREATE VIEW IF NOT EXISTS ?
-	-- 				AS
-	-- 				SELECT id, title, url, user_id
-	-- 				FROM ?
-	-- 			]],
-	-- 			tbl,
-	-- 			subreddit_table_name)
-	-- 	end
-	-- end
 end
 
 return Subreddits

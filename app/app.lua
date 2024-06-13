@@ -46,6 +46,7 @@ app:match("rising", "/rising", cached({ exptime = 60, r2(require("actions.index"
 app:match("controversial", "/controversial", cached({ exptime = 60, r2(require("actions.index")) }))
 app:match("top", "/top", cached({ exptime = 60, r2(require("actions.index")) }))
 
+
 app:match("new_subreddit", "/r/:subreddit/new", cached({ exptime = 60, r2(require("actions.r_subreddit")) }))
 app:match("rising_subreddit", "/r/:subreddit/rising", cached({ exptime = 60, r2(require("actions.index")) }))
 app:match(
@@ -80,6 +81,8 @@ app:match(
 	"/r/:subreddit/comments/:post_id[%w]/:title_stub/:comment_id[%w](/:q)",
 	cached({ exptime = 60, r2(require("actions.comment")) })
 )
+
+app:match("prefs", "/prefs", cached({ exptime = 600, function(self) end })) -- stub
 
 app:match("about", "/about", cached({ exptime = 600, function(self) end })) -- stub
 app:match("contact", "/contact", cached({ exptime = 600, function(self) end })) -- stub

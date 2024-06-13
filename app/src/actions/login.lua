@@ -2,6 +2,8 @@ local db = require("lapis.db")
 
 local csrf = require("lapis.csrf")
 
+local Users = require("models.users")
+
 -- local capture_errors = require("lapis.application").capture_errors
 
 -- local app = lapis.Application()
@@ -40,27 +42,27 @@ return {
 		-- TODO lookup user_name in Users table, compare password to user_pass
 
 		if self.params.username then
-			-- self.user = db.find("* FROM users WHERE user_name = ? AND user_pass = ?",
-			-- 				self.params.username,
-			-- 				self.params.password)
+			self.user = Users:find({user_name = self.params.username, user_pass = self.params.password})
 
-			self.user = db.select(
-				"* FROM users WHERE user_name = ? AND user_pass = ? LIMIT 1",
-				self.params.username,
-				self.params.password
-			)
+			-- self.user = db.select(
+			-- 	"* FROM users WHERE user_name = ? AND user_pass = ? LIMIT 1",
+			-- 	self.params.username,
+			-- 	self.params.password
+			-- )
 
 			-- self.user = self.account[1]
-			if self.user[1] then
-				print("Found user: " .. self.user[1].user_name)
+			if self.user then
+				print("Found user: " .. self.user.user_name)
 			else
 				print("USER NOT FOUND")
+				return
 			end
 		else
 			print("NO USERNAME SUPPLIED")
+			return
 		end
 
-		self.session.current_user = self.user[1].user_name
+		self.session.current_user = self.user.user_name
 		-- try_to_login(self.params.username, self.params.password)
 
 		return { redirect_to = "/" }

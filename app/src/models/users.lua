@@ -88,37 +88,37 @@ local Users, Users_mt = Model:extend("users", {
 	},
 })
 
--- print("RUNNING MODELS.Users") -- DEBUG
+print("RUNNING MODELS.Users") -- DEBUG
 
 --- Create a new user
 -- @tparam table params User data
 -- @tparam string raw_password Raw password
 -- @treturn boolean success
 -- @treturn string error
-function Users:new(params, raw_password)
+-- function Users:new(params, raw_password) -- TODO use built-in :create() ?
 	-- Check if username is unique
-	do
-		local unique, err = self:is_unique(params.name)
-		if not unique then
-			return nil, err
-		end
-	end
+	-- do
+	-- 	local unique, err = self:is_unique(params.name)
+	-- 	if not unique then
+	-- 		return nil, err
+	-- 	end
+	-- end
 
 	-- TODO: Verify password
-	if passwd == passwd2 then
-		local u = {
-			user_name = params.name,
-			user_email = params.email,
-			user_pass = params.passwd,
-			over_18 = False,
-			verified = False,
-		}
+-- 	if passwd == passwd2 then
+-- 		local u = {
+-- 			user_name = params.name,
+-- 			user_email = params.email,
+-- 			user_pass = params.passwd,
+-- 			over_18 = False,
+-- 			verified = False,
+-- 		}
 
-		local user, err = Users:create(u)
-	end
+-- 		local user, err = Users:create(u)
+-- 	end
 
-	return user and user or nil, { "err_create_user", { params.name } }
-end
+-- 	return user and user or nil, { "err_create_user", { params.name } }
+-- end
 
 --- Modify a user
 -- @tparam table params User data
@@ -129,7 +129,7 @@ end
 function Users:modify(params, raw_username, raw_password)
 	db.modify("users", params, { username = raw_username })
 
-	-- TODO: password?
+	-- TODO: confirm auth
 end
 
 --- Delete user
@@ -217,12 +217,14 @@ end
 -- @tparam table user
 -- @treturn table subscriptions
 function Users:get_subscriptions(user)
+	-- TODO
+	-- local subscriptions = Subscriptions:find(user.id)
 	local subscriptions = db.select("* from 'subscriptions' where user_id=?", user.id)
 	return subscriptions
 end
 
 -- function Users:random()
--- 	return Users:find(1)
+-- 	return Users:find(Math.random(#Users))
 -- end
 
 return Users

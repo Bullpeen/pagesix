@@ -5,7 +5,7 @@ local db = require("lapis.db")
 -- local types  = schema.types
 -- local util   = require("lapis.util")
 
-local id = 99
+local id = 1
 
 local Model = require("lapis.db.model").Model
 local Posts = Model:extend(id .. "_posts", {

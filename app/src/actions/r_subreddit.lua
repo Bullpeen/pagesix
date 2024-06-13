@@ -7,10 +7,11 @@ return {
 	before = function(self)
 		local posts_table = ""
 		if self.params.id then
-			-- print("Subreddit id!!! " .. self.params.id)
+			print("Subreddit id!!! " .. self.params.id)
+			id = self.params.id
 			posts_table = id .. "_posts"
 		else
-			-- print("Subreddit name!!!")
+			print("Subreddit name!!!")
 
 			-- Check if subreddit is nil or empty
 			local name = self.params.subreddit
@@ -19,7 +20,7 @@ return {
 				return self:write({ redirect_to = self:url_for("homepage") })
 			end
 
-			-- local res = db.find("id FROM 'subreddits' WHERE name=?", name)
+			-- local res = Subreddits:find(id)
 			local res = db.select("id FROM 'subreddits' WHERE name=? LIMIT 1", name)
 			if not res then
 				print("Subreddit is invalid: " .. name)

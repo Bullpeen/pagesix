@@ -56,7 +56,7 @@ return {
 				print(e)
 			end
 			Subreddits:create_db_tables(s.id)
-			break -- TODO remove
+			-- break -- TODO remove
 		end
 	end,
 
@@ -83,7 +83,7 @@ return {
 		for _, sub in ipairs(subs) do
 			-- print("About to create 5-10 posts for " .. sub.name .. ".")
 			local table_name = sub.id .. "_posts"
-			for i = 1, math.random(5, 10) do
+			for i = 1, math.random(20) do
 				local s, e = db.insert(table_name, {
 					title = Lorem:sentence(),
 					permalink = "/r/" .. sub.name .. "/comments/" .. i,
@@ -96,7 +96,7 @@ return {
 					break
 				end
 
-				for u = 1, #users do
+				for u = 1, math.random(1, #users/2) do
 					Votes:create({
 						user_id = u,
 						post_id = i,
@@ -107,7 +107,7 @@ return {
 		end
 	end,
 
-	-- create 50-100 comments for each post in each subreddit
+	-- create 50 comments for each post in each subreddit
 	[6] = function()
 		local subs = Subreddits:select()
 		local users = Users:select()
@@ -118,7 +118,7 @@ return {
 			local posts = db.select("* from ?", table_name)
 
 			for _, post in ipairs(posts) do
-				for i = 1, math.random(10, 50) do
+				for i = 1, math.random(50) do
 					local tbl = {
 						post_id = post.id,
 						user_id = math.random(1, #users), -- #users
@@ -141,7 +141,7 @@ return {
 						break
 					end
 
-					for u = 1, math.random(1, #users) do
+					for u = 1, math.random(1, #users/2) do
 						Votes:create({
 							user_id = u,
 							post_id = post.id,

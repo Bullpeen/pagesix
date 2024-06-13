@@ -47,6 +47,9 @@ function Pagesix:create_subscriptions_table()
 		{ "user_id", types.integer },
 		{ "updated_at", types.integer({ null = true }) },
 		{ "subreddit_id", types.integer },
+
+		"FOREIGN KEY(user_id) REFERENCES users(id)",
+		"FOREIGN KEY(subreddit_id) REFERENCES subreddits(id)",
 	})
 end
 
@@ -67,10 +70,12 @@ function Pagesix:create_subreddits_table()
 		{ "created_at", types.integer({ default = "1970-01-01 00:00:00" }) },
 		{ "deleted_at", types.integer({ null = true }) },
 		{ "updated_at", types.integer({ null = true }) },
-		{ "creator_id", types.integer({ deafault = 1 }) },
+		{ "creator_id", types.integer({ deafault = 1 }) }, -- TODO rename
 		{ "description", types.text({ null = true }) },
 		{ "moderator_ids", types.text({ null = true }) },
 		{ "nsfw", types.integer({ default = false }) },
+
+		"FOREIGN KEY(creator_id) REFERENCES users(id)",
 	})
 
 	-- create_index("subreddits", "name", { unique = true })

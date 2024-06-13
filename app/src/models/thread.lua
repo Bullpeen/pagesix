@@ -22,11 +22,11 @@ function Thread:get(post_id, comment_id, parent_comment_id)
 
 	-- get comment
 	if params.parent_comment_id ~= nil then
-		Comments:get_comment(params.parent_comment_id)
+		Thread:get_comment(params.parent_comment_id)
 	end
 
 	if params.post_id ~= nil then
-		get_post(params.post_id)
+		Post:get(params.post_id)
 	end
 
 	local cmthrd = {
