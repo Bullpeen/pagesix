@@ -9,6 +9,8 @@ local Model = require("lapis.db.model").Model
 -- local util = require("lapis.util")
 -- local json = require("cjson")
 
+local Subreddits = Model:extend("subreddits") -- TODO don't hardcode `1`
+
 -- local Users  = Model:extend("users")
 local Users, Users_mt = Model:extend("users", {
 	url_params = function(self, req, ...)
@@ -81,14 +83,14 @@ local Users, Users_mt = Model:extend("users", {
 		{
 			"authored_comments",
 			has_many = "Comments",
-			-- where = {deleted = false},
+			where = {deleted = false},
 			order = "id desc",
 			key = "user_id",
 		},
 	},
 })
 
-print("RUNNING MODELS.Users") -- DEBUG
+print("RUNNING MODELS.Users")
 
 --- Create a new user
 -- @tparam table params User data
@@ -190,26 +192,47 @@ end
 -- @treturn table users List of users
 function Users_mt:get_all_comments(uid)
 	-- loop up number of rows in subreddits table
-	local res = db.select("count(*) from 'subreddits'")
-	local n = res[1]["count(*)"]
+	-- local res = db.select("count(*) FROM 'subreddits'")
+	-- local n = res[1]["count(*)"]
+	local n = Subreddits:count()
 
 	local all_comments = {}
 
 	-- loop over all subreddits
 	-- TODO index subreddit_id, post_id, comment_id, user_id
 	for i = 1, n do
-		local tbl = i .. "_comments"
-		local subreddit = db.select("* from 'subreddits' where id=?", i)
+		-- local subreddit = db.select("* FROM 'subreddits' WHERE id=?", i)
 		-- local id = subreddit[1].id
 
-		local comments = db.select("* from ? where user_id=?", tbl, uid)
-		-- require 'pl.pretty'.dump(comments)
 
-		for k, v in ipairs(comments) do
+		-- SELECT COUNT(*) score, a.title, a.url, a.permalink, over_18, locked
+		-- FROM ? a
+		-- INNER JOIN ? b ON a.id=b.post_id
+		-- WHERE a.locked = 0 AND b.comment_id IS NULL
+		-- GROUP BY a.id, b.post_id
+		-- ORDER BY COUNT(*) DESC;
+
+
+		local comments = db.select(
+			[[
+				COUNT(*) score, a.body, b.user_name
+				FROM ? a
+				INNER JOIN ? b ON a.user_id = b.id
+				WHERE a.deleted = 0
+				GROUP BY a.user_id, b.id
+				ORDER BY COUNT(*) DESC;
+			]],
+			i .. "_comments",
+			"users",
+			uid)
+		require 'pl.pretty'.dump(comments)
+
+		for _, v in ipairs(comments) do
 			all_comments[#all_comments + 1] = v
 			-- all_comments[#all_comments + k]['subreddit_id'] = subreddit[1].id
 		end
 	end
+	-- Posts:find({user_id = uid})
 	return all_comments
 end
 

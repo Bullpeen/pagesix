@@ -63,7 +63,6 @@ return {
 		end
 
 		self.session.current_user = self.user.user_name
-		-- try_to_login(self.params.username, self.params.password)
 
 		return { redirect_to = "/" }
 	end,

@@ -3,19 +3,26 @@
 
 local db = require("lapis.db")
 
+
 local Model = require("lapis.db.model").Model
-local Comments = Model:extend("comments", {
+
+local id = 1
+local Comments = Model:extend(id .. "_comments", {
 	constraints = {
 		--- Apply constraints when updating/adding a Comment, returns truthy to indicate error
 		-- @tparam table self
 		-- @tparam table value User data
 		-- @treturn string error
 		name = function(self, value)
-			if string.len(value.body) > 4096 then
-				return "Comment must be less than 4096 characters"
-			end
-			if value.body == nil or value.body == "" then
-				return "Comment cannot be empty"
+			if value then
+				if string.len(value.body) > 4096 then
+					return "Comment must be less than 4096 characters"
+				end
+				if value.body == nil or value.body == "" then
+					return "Comment cannot be empty"
+				end
+			else
+				print("NOPE")
 			end
 		end,
 	},
@@ -48,29 +55,29 @@ local Comments = Model:extend("comments", {
 --- Edit a comment
 -- @tparam table params
 -- @treturn table result
-function Comments:modify(params)
-	local comments_table = params.board .. "_comments"
+-- function Comments:modify(params)
+-- 	local comments_table = params.board .. "_comments"
 
-	local res = db.update(comments_table, {
-		edited = true,
-		body = params.body,
-		stickied = params.stickied,
-	})
+-- 	local res = db.update(comments_table, {
+-- 		edited = true,
+-- 		body = params.body,
+-- 		stickied = params.stickied,
+-- 	})
 
-	return res
-end
+-- 	return res
+-- end
 
 --- Delete a comment
 -- @tparam string subreddit_id
 -- @tparam string comment_id
 -- @treturn boolean success
-function Comments:delete(subreddit_id, comment_id)
+-- function Comments:delete(subreddit_id, comment_id)
 	-- TODO:
 
 	-- check if authorized?
 	-- local comment = Comments:find(comment_id)
 	-- return comment:delete()
-end
+-- end
 
 --- Get comments karma score
 -- @tparam string post_id

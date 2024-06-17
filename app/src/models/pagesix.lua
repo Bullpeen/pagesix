@@ -1,7 +1,7 @@
 --- Pagesix model
 -- @module models.pagesix
 
--- local db      = require "lapis.db"
+local db      = require "lapis.db"
 local schema = require("lapis.db.schema")
 local create_index = schema.create_index
 local types = schema.types
@@ -79,6 +79,25 @@ function Pagesix:create_subreddits_table()
 	})
 
 	-- create_index("subreddits", "name", { unique = true })
+
+	-- local sorts = { "hot" }
+	-- for _, sort in pairs(sorts) do
+	-- 	db.query(
+	-- 		[[
+	-- 			CREATE VIEW IF NOT EXISTS ?
+	-- 			AS
+	-- 			SELECT COUNT(*) score, a.title, a.url, a.permalink, over_18, locked
+	-- 			FROM ? a
+	-- 			INNER JOIN ? b ON a.id=b.post_id
+	-- 			WHERE a.locked = 0 AND b.comment_id IS NULL
+	-- 			GROUP BY a.id, b.post_id
+	-- 			ORDER BY COUNT(*) DESC;
+	-- 		]],
+	-- 		"v_pagesix_" .. sort,
+	-- 		id .. "_posts",
+	-- 		id .. "_votes"
+	-- 	)
+	-- end
 end
 
 --- Get all subreddits

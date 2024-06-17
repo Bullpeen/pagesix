@@ -81,7 +81,7 @@ local Subreddit_posts = Model:extend(sp_table, {
 function Subreddit_posts:top_posts(subreddit_id)
 	-- query id .. "_posts" table for top 100 posts by score
 
-	local votes_table = id .. "_votes"
+	-- local votes_table = id .. "_votes"
 	-- local post_id = ...
 
 	-- local upvotes = db.query("SELECT SUM(upvote) FROM '?' WHERE post_id = '?' and upvote = '1'", votes_table, post_id)

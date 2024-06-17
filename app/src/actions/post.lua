@@ -20,6 +20,7 @@ return {
 		local res = db.select("id FROM 'subreddits' WHERE name=?", sub_name)
 		local sub_id = res[1]["id"]
 		local comments_table = sub_id .. "_comments"
+		local posts_table = sub_id .. "_posts"
 
 		-- TODO return table like, sorted by highest score (upvotes - downvotes)
 		-- {
@@ -27,20 +28,33 @@ return {
 		--		comment_id: { ... },
 		-- }
 
-		self.comments = db.select("* FROM ? WHERE post_id = ?", comments_table, self.params.post_id)
-
+		-- self.comments = db.select("* FROM ? WHERE post_id = ?", comments_table, self.params.post_id)
+		self.comments = db.select(
+			[[
+				COUNT(*) score, c.user_name, c.created_utc, b.user_id, b.body
+				FROM ? a
+				INNER JOIN ? b ON a.id=b.post_id
+				INNER JOIN ? c ON b.user_id = c.id
+				WHERE b.parent_comment_id IS NULL
+				GROUP BY a.id, b.post_id
+				ORDER BY COUNT(*) DESC;
+			]],
+			posts_table,
+			comments_table,
+			'users'
+			)
 		print("Found " .. #self.comments .. " comments")
 
-		local posts_table = sub_id .. "_posts"
 		local post_data = db.select("* FROM ? WHERE id = ?", posts_table, self.params.post_id)
-		-- print("Post data:")
-		-- require 'pl.pretty'.dump(post_data[1])
+		print("Post data:")
+		require 'pl.pretty'.dump(post_data[1])
 
 		-- lookup user_name from user_id
 		local user_name = db.query("SELECT user_name FROM 'users' WHERE id=?", post_data[1]["user_id"])
+		print("User_name is " .. user_name[1]['user_name'])
 
 		-- pass data to template
-		self.user_name = user_name
+		self.user_name = user_name[1]['user_name']
 		self.title = post_data[1]["title"]
 		self.url = post_data[1]["url"]
 		self.permalink = post_data[1]["permalink"]
@@ -49,6 +63,7 @@ return {
 			self.is_self = true
 			self.body = post_data[1]["body"]
 		end
+
 	end,
 
 	GET = function(self)

@@ -6,10 +6,12 @@ local io = require("io")
 local json = require("cjson")
 local Lorem = require("src.utils.lorem")
 
+local Comments = require("src.models.comments")
 local Pagesix = require("src.models.pagesix")
 local Subreddits = require("src.models.subreddits")
 local Users = require("src.models.users")
 local Votes = require("src.models.votes")
+local Posts = require("src.models.posts")
 
 math.randomseed(os.clock() * 100000000000)
 
@@ -82,14 +84,16 @@ return {
 		local users = Users:select()
 		for _, sub in ipairs(subs) do
 			-- print("About to create 5-10 posts for " .. sub.name .. ".")
-			local table_name = sub.id .. "_posts"
+			-- local table_name = sub.id .. "_posts"
 			for i = 1, math.random(20) do
-				local s, e = db.insert(table_name, {
+				local p_tbl = {
 					title = Lorem:sentence(),
 					permalink = "/r/" .. sub.name .. "/comments/" .. i,
 					url = "http://www.example.com/" .. i,
 					user_id = math.random(1, #users),
-				})
+				}
+				local s, e = Posts:create(p_tbl)
+				-- local s, e = db.insert(table_name, p_tbl)
 				if not s then
 					print("error creating " .. s.title)
 					print(e)
@@ -115,7 +119,7 @@ return {
 		for _, sub in ipairs(subs) do
 			-- print("About to create 10 comments for each post in " .. sub.name .. ".")
 			local table_name = sub.id .. "_posts"
-			local posts = db.select("* from ?", table_name)
+			local posts = db.select("* FROM ?", table_name)
 
 			for _, post in ipairs(posts) do
 				for i = 1, math.random(50) do
@@ -132,9 +136,10 @@ return {
 						-- tbl.body = tbl.body .. " In reply to comment " .. tbl.parent_comment_id .. "."
 					end
 
-					local tbl_name = sub.id .. "_comments"
-					local s, e = db.insert(tbl_name, tbl)
+					-- local tbl_name = sub.id .. "_comments"
+					-- local s, e = db.insert(tbl_name, tbl)
 
+					local s, e = Comments:create(tbl)
 					if not s then
 						print("error creating " .. s.body)
 						print(e)

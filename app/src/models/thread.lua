@@ -5,6 +5,7 @@ local db = require("lapis.db")
 
 local Model = require("lapis.db.model").Model
 local Thread = Model:extend("comments")
+local Post = Model:extend("1_posts") -- TODO don't hardcode `1`
 
 -- comment_id, parent_comment_id, post_id
 
