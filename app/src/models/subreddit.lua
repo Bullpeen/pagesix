@@ -1,17 +1,10 @@
 --- Subreddits model
 -- @module models.subreddit
 
--- local db    = require "lapis.db"
-
 local Model = require("lapis.db.model").Model
 -- local Silva = require 'silva'
 
--- parse url(?) to get subreddit_name
--- lookup sub_id from subreddit_name
--- local id = db.
-local id = 1
-
-local sp_table = id .. "_posts"
+local sp_table = "posts"
 
 print("RUNNING MODELS.SUBREDDIT_POSTS " .. sp_table)
 
@@ -79,23 +72,23 @@ local Subreddit_posts = Model:extend(sp_table, {
 })
 
 function Subreddit_posts:top_posts(subreddit_id)
-	-- query id .. "_posts" table for top 100 posts by score
-
-	-- local votes_table = id .. "_votes"
 	-- local post_id = ...
 
 	-- local upvotes = db.query("SELECT SUM(upvote) FROM '?' WHERE post_id = '?' and upvote = '1'", votes_table, post_id)
-	-- local downvotes = db.query("SELECT SUM(downvotevote) FROM '?' WHERE post_id = '?' and upvote = '0'", votes_table, post_id)
+	-- local downvotes = db.query([[
+	-- 		"SELECT SUM(downvotevote)
+	-- 		FROM '?'
+	-- 		WHERE post_id = '?' and upvote = '0'"
+	-- 	]],
+	-- 	'votes',
+	-- 	post_id)
 
 	-- local votes = upvotes - downvotes
 
-	-- local posts = db.query("SELECT *, COUNT(*) AS row_count FROM ? WHERE post_id = post_id, ORDER BY score DESC LIMIT 100", sp_table)
+	-- local posts = db.query([[
+	-- 		SELECT *, COUNT(*) AS row_count
+	-- 		FROM ?
+	-- 		WHERE post_id = post_id,
+	-- 		ORDER BY score DESC LIMIT 100
+	-- 	]], sp_table)
 end
-
--- function Subreddit_posts:new_posts()
--- local posts = db.query("SELECT *, COUNT(*) AS row_count FROM ?, ORDER BY created_at DESC LIMIT 100", sp_table)
--- end
-
--- function Subreddit_posts:controversial_posts()
--- smallest diff in abs(upvotes) vs abs(downvote) amongst top posts
--- end

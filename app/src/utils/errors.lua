@@ -3,7 +3,7 @@
 
 local ngx = _G.ngx
 local get_error = {}
-local status = {}
+local status = {} -- luacheck: ignore
 
 --[[ API Error Codes ]]
 --

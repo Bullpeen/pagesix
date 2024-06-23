@@ -1,7 +1,7 @@
 --- User action
 -- @module action.user
 
-local db = require("lapis.db")
+-- local db = require("lapis.db")
 local Users = require("models.users")
 
 return {
@@ -16,12 +16,9 @@ return {
 			return self:write({ redirect_to = self:url_for("homepage") })
 		end
 
-		-- local user_id = res[1].id
-		-- print("User is valid: " .. user_id)
 		local user = Users:find(uid)
 
 		-- TODO paginate
-		-- TODO use View, Index
 		self.comments = user:get_all_comments(uid)
 		print("Number of comments: " .. #self.comments)
 

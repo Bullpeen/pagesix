@@ -1,13 +1,8 @@
 --- Users model
 -- @module models.users
 
--- local bcrypt = require "bcrypt"
--- local config = require("lapis.config").get()
 local db = require("lapis.db")
 local Model = require("lapis.db.model").Model
--- local token  = config.secret
--- local util = require("lapis.util")
--- local json = require("cjson")
 
 local Subreddits = Model:extend("subreddits") -- TODO don't hardcode `1`
 
@@ -23,28 +18,30 @@ local Users, Users_mt = Model:extend("users", {
 		-- @tparam table value User data
 		-- @treturn string error
 		user_name = function(self, value)
+
 			-- TODO : check if value is in reserved names
-			-- if db.find("reserved_usernames", { user_name = value }) then
-			-- 	return "Username is reserved"
+			-- if db:find("reserved_usernames", { user_name = value }) then
+			-- 	return nil, "Username is reserved"
 			-- end
 
 			if value then
 				-- check for valid length (2-64]
 				if string.len(value) >= 64 then
-					return "Username must be less than 64 characters"
+					return nil, "Username must be less than 64 characters"
 				end
 
 				if string.len(value) <= 2 then
-					return "Username must be more than 2 characters"
+					return nil, "Username must be more than 2 characters"
 				end
 			else
-				print("ERROR, value is empty")
+				-- print("ERROR, value is empty")
+				return nil, "value is empty"
 			end
 		end,
 
 		user_pass = function(self, value)
 			-- enforce password length requirements
-			local password_minimum_length = 8
+			local password_minimum_length = 7
 			local password_maximum_length = 64 -- 4096
 			if value then
 				if string.len(value) < password_minimum_length then
@@ -60,11 +57,9 @@ local Users, Users_mt = Model:extend("users", {
 
 		user_email = function(self, value)
 			-- value must contain '@'
-			-- if value and not string.find(value, "@") then
-			-- 	return "Email must contain '@'"
-			-- else
-			-- 	print("ERROR, no email provided")
-			-- end
+			if value and not string.find(value, "@") then
+				return nil, "Email must contain '@'"
+			end
 		end,
 	},
 
@@ -122,55 +117,6 @@ print("RUNNING MODELS.Users")
 -- 	return user and user or nil, { "err_create_user", { params.name } }
 -- end
 
---- Modify a user
--- @tparam table params User data
--- @tparam string raw_username Raw username
--- @tparam string raw_password Raw password
--- @treturn boolean success
--- @treturn string error
-function Users:modify(params, raw_username, raw_password)
-	db.modify("users", params, { username = raw_username })
-
-	-- TODO: confirm auth
-end
-
---- Delete user
--- @tparam table username User data
--- @treturn boolean success
--- @treturn string error
-function Users:delete(username)
-	local user = self:get(username)
-	if not user then
-		return nil, "FIXME"
-	end
-
-	-- tomebstone user
-	local success = user:update("users", { deleted_tc = db.format_date() }, { username = username })
-
-	return success and user or nil, "FIXME"
-end
-
---- Verify user
--- @tparam table params User data
--- @treturn boolean success
--- @treturn string error
--- function Users:login(params)
--- local user = self:get(params.username)
--- if not user then return nil, { "err_invalid_user" } end
-
--- local password = user.username .. params.password .. token
--- local verified = bcrypt.verify(password, user.password)
-
--- return verified and user or nil, { "err_invalid_user" }
--- end
-
-function Users_mt:is_unique(name)
-	local res = Users:find(name)
-	if not res then
-		return true
-	end
-end
-
 -- Get the user's display name
 -- @treturn string user_name
 -- this method will be available on all User instances
@@ -200,7 +146,7 @@ function Users_mt:get_all_comments(uid)
 
 	-- loop over all subreddits
 	-- TODO index subreddit_id, post_id, comment_id, user_id
-	for i = 1, n do
+	for _ = 1, n do
 		-- local subreddit = db.select("* FROM 'subreddits' WHERE id=?", i)
 		-- local id = subreddit[1].id
 
@@ -222,7 +168,7 @@ function Users_mt:get_all_comments(uid)
 				GROUP BY a.user_id, b.id
 				ORDER BY COUNT(*) DESC;
 			]],
-			i .. "_comments",
+			"comments",
 			"users",
 			uid)
 		require 'pl.pretty'.dump(comments)
@@ -245,9 +191,5 @@ function Users:get_subscriptions(user)
 	local subscriptions = db.select("* from 'subscriptions' where user_id=?", user.id)
 	return subscriptions
 end
-
--- function Users:random()
--- 	return Users:find(Math.random(#Users))
--- end
 
 return Users

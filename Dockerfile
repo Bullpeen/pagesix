@@ -1,3 +1,5 @@
+# TODO move to leaner (alpine?) image
+# https://github.com/leafo/lapis-archlinux-docker/blob/master/lapis-archlinux-itchio/Dockerfile
 FROM ghcr.io/leafo/lapis-archlinux-itchio:latest
 
 # RUN pacman -Sy sqlite --noconfirm && \
@@ -21,7 +23,6 @@ RUN luarocks --lua-version=5.1 build --tree "$HOME/.luarocks" --only-deps /pages
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Standard web port (use a reverse proxy for SSL)
 EXPOSE 80
 
 WORKDIR /var/www

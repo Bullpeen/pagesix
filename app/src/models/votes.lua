@@ -3,14 +3,10 @@
 
 local Model = require("lapis.db.model").Model
 
--- TODO
-local id = 1
+print("RUNNING MODELS.Votes ")
 
-local votes_table = id .. "_votes"
-
-print("RUNNING MODELS.Votes " .. votes_table)
-
-local Votes, Votes_mt = Model:extend(votes_table, {
+-- local Votes, Votes_mt = Model:extend("votes", {
+local Votes = Model:extend("votes", {
 	-- primary_key = "id",
 	timestamp = true,
 	relations = {

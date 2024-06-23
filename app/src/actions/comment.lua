@@ -32,10 +32,13 @@ return {
 		self.comments = db.select("* FROM ? WHERE id = ?", comments_table, self.params.comment_id)
 		print("Found " .. #self.comments .. " comments (1)")
 
+		-- local context = nil
+
 		-- TODO check context=N from url param, return that many (grand)parents in self.comments
 		if self.params.q then
 			local context = string.match(self.params.q, "%d+$")
 		end
+
 		if context ~= nil and context > 1 then
 			-- loop context times and fetch each parent comments
 			for i = 1, context do
@@ -49,7 +52,7 @@ return {
 			end
 		end
 
-		local posts_table = id .. "_posts"
+		local posts_table = "posts"
 		local post_data = db.select("* FROM ? WHERE id = ?", posts_table, self.params.post_id)
 		print("Post data:")
 		require("pl.pretty").dump(post_data[1])

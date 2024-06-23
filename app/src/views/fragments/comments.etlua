@@ -53,7 +53,7 @@
                 <div class="clearleft"></div>
             <% end %>
         <% else %>
-            Nothing to see here.
+            Nothing (comments) to see here.
         <% end %>
     </div>
 </div>

@@ -17,10 +17,8 @@ return {
 		end
 
 		-- Get subreddit id from sub_name
-		local res = db.select("id FROM 'subreddits' WHERE name=?", sub_name)
-		local sub_id = res[1]["id"]
-		local comments_table = sub_id .. "_comments"
-		local posts_table = sub_id .. "_posts"
+		-- local res = db.select("id FROM 'subreddits' WHERE name=?", sub_name)
+		-- local sub_id = res[1]["id"]
 
 		-- TODO return table like, sorted by highest score (upvotes - downvotes)
 		-- {
@@ -31,21 +29,19 @@ return {
 		-- self.comments = db.select("* FROM ? WHERE post_id = ?", comments_table, self.params.post_id)
 		self.comments = db.select(
 			[[
-				COUNT(*) score, c.user_name, c.created_utc, b.user_id, b.body
-				FROM ? a
-				INNER JOIN ? b ON a.id=b.post_id
-				INNER JOIN ? c ON b.user_id = c.id
+				COUNT(*) score, c.user_name, c.created_utc, b.user_id, b.body, b.permalink
+				FROM 'posts' a
+				INNER JOIN 'comments' b ON a.id=b.post_id
+				INNER JOIN 'users' c ON b.user_id = c.id
 				WHERE b.parent_comment_id IS NULL
-				GROUP BY a.id, b.post_id
+					AND b.post_id = ?
+				GROUP BY b.id
 				ORDER BY COUNT(*) DESC;
 			]],
-			posts_table,
-			comments_table,
-			'users'
-			)
+			self.params.post_id)
 		print("Found " .. #self.comments .. " comments")
 
-		local post_data = db.select("* FROM ? WHERE id = ?", posts_table, self.params.post_id)
+		local post_data = db.select("* FROM 'posts' WHERE id = ?", self.params.post_id)
 		print("Post data:")
 		require 'pl.pretty'.dump(post_data[1])
 

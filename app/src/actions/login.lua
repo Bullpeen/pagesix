@@ -1,6 +1,6 @@
-local db = require("lapis.db")
+-- local db = require("lapis.db")
 
-local csrf = require("lapis.csrf")
+-- local csrf = require("lapis.csrf")
 
 local Users = require("models.users")
 

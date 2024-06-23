@@ -1,1 +1,3 @@
 List URLs submitted from the domain: <%= domain %>
+
+<% render('views.fragments.posts') %>

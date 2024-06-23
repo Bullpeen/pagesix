@@ -1,3 +1,72 @@
 [
-  {"name": "News"}
+  {"name": "Ask"},
+  {"name": "aww"},
+  {"name": "BestOf"},
+  {"name": "Blog"},
+  {"name": "Books"},
+  {"name": "DataIsBeautiful"},
+  {"name": "Documentaries"},
+  {"name": "Food"},
+  {"name": "Funny"},
+  {"name": "Futurology"},
+  {"name": "Gadgets"},
+  {"name": "Gaming"},
+  {"name": "Gifs"},
+  {"name": "History"},
+  {"name": "IAmA"},
+  {"name": "InternetIsBeautiful"},
+  {"name": "memes"},
+  {"name": "mildlyAmusing"},
+  {"name": "mildlyDisappointing"},
+  {"name": "mildlyInfuriating"},
+  {"name": "mildlyInteresting"},
+  {"name": "movies"},
+  {"name": "Music"},
+  {
+    "name": "News",
+    "feeds": [
+      "https://feeds.bbci.co.uk/news/rss.xml",
+      "https://wikinewsfeed.org/feed/atom?subscribe=535aa77d03",
+      "http://www.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+      "https://news.google.com/rss/search?q=when:24h%20allinurl:apnews.com",
+      "https://news.google.com/rss/search?q=when:24h%20allinurl:bloomberg.com"    
+    ]
+  },
+  {"name": "Pics"},
+  {
+    "name": "Politics",
+    "feeds": [
+      "https://www.reddit.com/r/politics.rss"
+    ]
+  },
+  {
+    "name": "Programming",
+    "feeds": [
+      "https://news.ycombinator.com/rss",
+      "http://www.lua.org/news.rss"    
+    ]
+  },
+  {"name": "Science"},
+  {"name": "Space"},
+  {"name": "Sports"},
+  {
+    "name": "Technology",
+    "feeds": [
+      "https://feeds.bbci.co.uk/news/technology/rss.xml",
+      "https://lobste.rs/rss",
+      "https://www.reddit.com/r/technology.rss"
+    ]
+  },
+  {"name": "Television"},
+  {"name": "TodayILearned"},
+  {"name": "TwoXChromosomes"},
+  {"name": "Videos"},
+  {
+    "name": "WorldNews",
+    "feeds": [
+      "http://www.guardian.co.uk/world/usa/rss",
+      "https://feeds.bbci.co.uk/news/world/rss.xml"    
+    ]
+  },
+  {"name": "WTF"}
 ]

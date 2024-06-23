@@ -5,15 +5,17 @@ local db = require("lapis.db")
 local io = require("io")
 local json = require("cjson")
 local Lorem = require("src.utils.lorem")
+-- local util = require("lapis.util")
+local misc = require("src.utils.misc")
 
-local Comments = require("src.models.comments")
+-- local Comments = require("src.models.comments")
+-- local Votes = require("src.models.votes")
 local Pagesix = require("src.models.pagesix")
+local Posts = require("src.models.posts")
 local Subreddits = require("src.models.subreddits")
 local Users = require("src.models.users")
-local Votes = require("src.models.votes")
-local Posts = require("src.models.posts")
 
-math.randomseed(os.clock() * 100000000000)
+-- math.randomseed(os.clock() * 100000000000)
 
 -- add each incremental migration whose key is the unix timestamp
 return {
@@ -27,7 +29,7 @@ return {
 		Users:create({
 			user_name = "anonymous_coward",
 			user_email = "anonymous@localhost",
-			user_pass = "hunter42!",
+			user_pass = "",
 		})
 	end,
 
@@ -57,105 +59,207 @@ return {
 				print("error creating " .. s.name)
 				print(e)
 			end
-			Subreddits:create_db_tables(s.id)
-			-- break -- TODO remove
+
+			-- print("NAME IS " .. sub.name)
+			-- local slug = util:slugify(sub.name)
+			-- print("SLUG IN " .. slug)
+
+			-- Hot sort subreddit
+			db.query(
+				[[
+					CREATE VIEW IF NOT EXISTS ?
+					AS
+					SELECT COUNT(*) score,
+						(SELECT COUNT(*) FROM 'comments' d WHERE d.post_id = a.id) num_comments,
+						a.created_at age, a.title, a.url, a.permalink, a.over_18, a.locked,
+						c.user_name author
+					FROM 'posts' a
+					INNER JOIN 'votes' b ON a.id = b.post_id
+					INNER JOIN 'users' c ON b.user_id = c.id
+					INNER JOIN 'comments' d ON a.id = d.post_id
+					WHERE a.locked = 0
+						AND b.comment_id IS NULL
+						AND a.id = b.post_id
+						AND b.upvote = 1
+						AND a.sub_id = ?
+						AND a.id = d.post_id
+					GROUP BY a.id, b.post_id
+					ORDER BY COUNT(*) DESC;
+				]],
+				"v_" .. s.id .. "_hot",
+				s.id
+			)
+
+			-- New sort subreddit
+			-- db.query(
+			-- 	[[
+			-- 		CREATE VIEW IF NOT EXISTS ?
+			-- 		AS
+			-- 		SELECT COUNT(*) score,
+			-- 			(SELECT COUNT(*) num_comments FROM 'comments' d WHERE d.post_id = a.id),
+			-- 			a.created_at age, a.title, a.url, a.permalink, a.over_18, a.locked,
+			-- 			c.user_name author
+			-- 		FROM 'posts' a
+			-- 		INNER JOIN 'votes' b ON a.id=b.post_id
+			-- 		INNER JOIN 'users' c ON b.user_id = c.id
+			-- 		INNER JOIN 'comments' d ON a.id = d.post_id
+			-- 		WHERE a.locked = 0
+			-- 			AND b.comment_id IS NULL
+			-- 			AND a.id = b.post_id
+			-- 			AND a.sub_id = ?
+			-- 		GROUP BY a.id, b.post_id
+			-- 		ORDER BY age, COUNT(*) DESC;
+			-- 	]],
+			-- 	"v_" .. s.id .. "_new",
+			-- 	s.id
+			-- )
+
+			-- Top sort subreddit
+			-- db.query(
+			-- 	[[
+			-- 		CREATE VIEW IF NOT EXISTS ?
+			-- 		AS
+			-- 		SELECT COUNT(*) score,
+			-- 			(SELECT COUNT(*) num_comments FROM 'comments' d WHERE d.post_id = a.id),
+			-- 			a.created_at age, a.title, a.url, a.permalink, a.over_18, a.locked,
+			-- 			c.user_name author
+			-- 		FROM 'posts' a
+			-- 		INNER JOIN 'votes' b ON a.id=b.post_id
+			-- 		INNER JOIN 'users' c ON b.user_id = c.id
+			-- 		INNER JOIN 'comments' d ON a.id = d.post_id
+			-- 		WHERE a.locked = 0
+			-- 			AND b.comment_id IS NULL
+			-- 			AND a.id = b.post_id
+			-- 			AND a.sub_id = ?
+			-- 		GROUP BY a.id, b.post_id
+			-- 		ORDER BY COUNT(*) DESC;
+			-- 	]],
+			-- 	"v_" .. s.id .. "_top",
+			-- 	s.id
+			-- )
 		end
+
+		-- Hot sort frontpage
+		db.query(
+			[[
+					CREATE VIEW IF NOT EXISTS ?
+					AS
+					SELECT COUNT(*) score,
+						(SELECT COUNT(*) num_comments FROM 'comments' d WHERE d.post_id = a.id) num_comments,
+						a.title, a.url, a.permalink, a.over_18, a.locked,
+						c.user_name author
+					FROM 'posts' a
+					INNER JOIN 'votes' b ON a.id=b.post_id
+					INNER JOIN 'users' c ON b.user_id = c.id
+					INNER JOIN 'comments' d ON a.id = d.post_id
+					WHERE a.locked = 0
+						AND b.comment_id IS NULL
+						AND b.upvote = 1
+						AND a.id = b.post_id
+					GROUP BY a.id, b.post_id
+					ORDER BY COUNT(*) DESC;
+			]],
+			"v_frontpage_hot"
+		)
+
+		-- New sort frontpage
+		-- db.query(
+		-- 	[[
+		-- 			CREATE VIEW IF NOT EXISTS ?
+		-- 			AS
+		-- 			SELECT COUNT(*) score,
+		-- 				(SELECT COUNT(*) num_comments FROM 'comments' d WHERE d.post_id = a.id) num_comments,
+		-- 				a.created_at age, a.title, a.url, a.permalink, a.over_18, a.locked,
+		-- 				c.user_name author
+		-- 			FROM 'posts' a
+		-- 			INNER JOIN 'votes' b ON a.id=b.post_id
+		-- 			INNER JOIN 'users' c ON b.user_id = c.id
+		-- 			WHERE a.locked = 0
+		-- 				AND b.comment_id IS NULL
+		-- 				AND a.id = b.post_id
+		-- 			GROUP BY a.id, b.post_id
+		-- 			ORDER BY age, COUNT(*) DESC;
+		-- 	]],
+		-- 	"v_frontpage_new"
+		-- )
+
+		-- Top sort frontpage
+		-- db.query(
+		-- 	[[
+		-- 			CREATE VIEW IF NOT EXISTS ?
+		-- 			AS
+		-- 			SELECT COUNT(*) score,
+		-- 				(SELECT COUNT(*) num_comments FROM 'comments' d WHERE d.post_id = a.id) num_comments,
+		-- 				a.created_at age, a.title, a.url, a.permalink, a.over_18, a.locked,
+		-- 				c.user_name author
+		-- 			FROM 'posts' a
+		-- 			INNER JOIN 'votes' b ON a.id=b.post_id
+		-- 			INNER JOIN 'users' c ON b.user_id = c.id
+		-- 			WHERE a.locked = 0
+		-- 				AND b.comment_id IS NULL
+		-- 				AND a.id = b.post_id
+		-- 			GROUP BY a.id, b.post_id
+		-- 			ORDER BY COUNT(*) DESC;
+		-- 	]],
+		-- 	"v_frontpage_top"
+		-- )
 	end,
 
-	-- create 100 users with random user_names
+	-- create Users with random user_names
 	[4] = function()
 		for i = 1, 100 do
+			local name = Lorem:word() .. "_" .. i
 			local s, e = Users:create({
-				user_name = "user" .. i,
-				user_email = "user" .. i .. "@localhost",
-				user_pass = "hunter42!",
+				user_name = name,
+				user_email = name .. "@localhost",
+				user_pass = "hunter2",
 			})
 			if not s then
-				print("error creating " .. s.user_name)
+				print("error creating " .. name)
 				print(e)
 				break
 			end
 		end
 	end,
 
-	-- loop through all subreddits and create some posts for each
+	-- loop through all Subreddits and create some Posts for each
 	[5] = function()
-		local subs = Subreddits:select()
-		local users = Users:select()
-		for _, sub in ipairs(subs) do
-			-- print("About to create 5-10 posts for " .. sub.name .. ".")
-			-- local table_name = sub.id .. "_posts"
-			for i = 1, math.random(20) do
-				local p_tbl = {
-					title = Lorem:sentence(),
-					permalink = "/r/" .. sub.name .. "/comments/" .. i,
-					url = "http://www.example.com/" .. i,
-					user_id = math.random(1, #users),
-				}
-				local s, e = Posts:create(p_tbl)
-				-- local s, e = db.insert(table_name, p_tbl)
-				if not s then
-					print("error creating " .. s.title)
-					print(e)
-					break
-				end
+		local subreddits = Subreddits:select()
 
-				for u = 1, math.random(1, #users/2) do
-					Votes:create({
-						user_id = u,
-						post_id = i,
-						upvote = math.random(0, 1),
-					})
-				end
-			end
+		for sub in pairs(subreddits) do
+			misc:generate_posts(sub, 5)
 		end
 	end,
 
-	-- create 50 comments for each post in each subreddit
-	[6] = function()
-		local subs = Subreddits:select()
-		local users = Users:select()
+	-- [66] = function()
+	-- 	local feed_url = "https://www.reddit.com/r/politics.rss"
+	-- 	misc:rss_feed(1, feed_url)
+	-- end,
 
-		for _, sub in ipairs(subs) do
-			-- print("About to create 10 comments for each post in " .. sub.name .. ".")
-			local table_name = sub.id .. "_posts"
-			local posts = db.select("* FROM ?", table_name)
+	-- cast Votes on posts in each subreddit
+	[10] = function()
+		local posts = Posts:select()
 
-			for _, post in ipairs(posts) do
-				for i = 1, math.random(50) do
-					local tbl = {
-						post_id = post.id,
-						user_id = math.random(1, #users), -- #users
-						body = Lorem:text(),
-					}
+		for post in pairs(posts) do
+			misc:generate_post_votes(post, 5)
+		end
+	end,
 
-					-- set a variable 25% chance of creating a top-level comment for this post.
-					local coin = math.random(1, 4)
-					if i > 1 and coin > 1 then
-						tbl.parent_comment_id = math.random(1, i)
-						-- tbl.body = tbl.body .. " In reply to comment " .. tbl.parent_comment_id .. "."
-					end
+	-- create Comments on each post
+	[20] = function()
+		local posts = Posts:select()
 
-					-- local tbl_name = sub.id .. "_comments"
-					-- local s, e = db.insert(tbl_name, tbl)
+		for post in pairs(posts) do
+			misc:generate_comments(post, 5)
+		end
+	end,
 
-					local s, e = Comments:create(tbl)
-					if not s then
-						print("error creating " .. s.body)
-						print(e)
-						break
-					end
+	-- create 10 votes on each comment
+	[30] = function()
+		local posts = Posts:select()
 
-					for u = 1, math.random(1, #users/2) do
-						Votes:create({
-							user_id = u,
-							post_id = post.id,
-							comment_id = i,
-							upvote = math.random(0, 1),
-						})
-					end
-				end
-			end
+		for post in pairs(posts) do
+			misc:generate_comment_votes(post, 1)
 		end
 	end,
 

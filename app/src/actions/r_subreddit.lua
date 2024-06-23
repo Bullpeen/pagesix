@@ -5,31 +5,23 @@ local db = require("lapis.db")
 
 return {
 	before = function(self)
-		local posts_table = ""
-		if self.params.id then
-			print("Subreddit id!!! " .. self.params.id)
-			id = self.params.id
-			posts_table = id .. "_posts"
-		else
-			print("Subreddit name!!!")
-
-			-- Check if subreddit is nil or empty
-			local name = self.params.subreddit
-			if name == nil or name == "" then
-				print("Subreddit is unknown: " .. name)
-				return self:write({ redirect_to = self:url_for("homepage") })
-			end
-
-			-- local res = Subreddits:find(id)
-			local res = db.select("id FROM 'subreddits' WHERE name=? LIMIT 1", name)
-			if not res then
-				print("Subreddit is invalid: " .. name)
-				return self:write({ redirect_to = self:url_for("homepage") })
-			end
-
-			-- posts_table = res[1].id .. "_posts"
-			posts_table = "v_" .. res[1].id .. "_hot"
+		-- Check if subreddit is nil or empty
+		local name = self.params.subreddit
+		if name == nil or name == "" then
+			print("Subreddit is unknown: " .. name)
+			return self:write({ redirect_to = self:url_for("homepage") })
 		end
+
+		-- local res = Subreddits:find(id)
+		local res = db.select("id FROM 'subreddits' WHERE name=? LIMIT 1", name)
+		if not res then
+			print("Subreddit is invalid: " .. name)
+			return self:write({ redirect_to = self:url_for("homepage") })
+		end
+
+		-- posts_table = res[1].id .. "_posts"
+		local posts_table = "v_" .. res[1].id .. "_hot"
+		-- print("looking up subreddit's posts using " .. posts_table)
 
 		-- TODO subquery to return a table like
 		-- {

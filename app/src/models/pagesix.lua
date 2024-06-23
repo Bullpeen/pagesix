@@ -1,7 +1,7 @@
 --- Pagesix model
 -- @module models.pagesix
 
-local db      = require "lapis.db"
+-- local db      = require "lapis.db"
 local schema = require("lapis.db.schema")
 local create_index = schema.create_index
 local types = schema.types
@@ -18,20 +18,13 @@ local Pagesix = Model:extend("pagesix", {
 print("RUNNING MODELS.PAGE6")
 
 function Pagesix:bootstrap()
-	Pagesix:create_users_table()
-	Pagesix:create_subscriptions_table()
-	Pagesix:create_reserved_usernames_table()
-	Pagesix:create_subreddits_table()
-end
-
-function Pagesix:create_users_table()
 	schema.create_table("users", {
 		{ "id", types.integer({ unique = true, primary_key = true }) },
 		{ "user_name", types.text({ unique = true }) },
 		{ "user_pass", types.text },
 		{ "user_email", types.text },
 
-		{ "created_utc", types.integer({ default = "1970-01-01 00:00:00" }) },
+		{ "created_utc", types.integer({ null = true }) },
 		{ "updated_at", types.integer({ null = true }) },
 		{ "deleted_utc", types.integer({ null = true }) },
 		{ "over_18", types.integer({ default = false }) },
@@ -39,9 +32,7 @@ function Pagesix:create_users_table()
 	})
 
 	create_index("users", "user_name", { unique = true })
-end
 
-function Pagesix:create_subscriptions_table()
 	schema.create_table("subscriptions", {
 		{ "id", types.integer({ unique = true, primary_key = true }) },
 		{ "user_id", types.integer },
@@ -50,19 +41,17 @@ function Pagesix:create_subscriptions_table()
 
 		"FOREIGN KEY(user_id) REFERENCES users(id)",
 		"FOREIGN KEY(subreddit_id) REFERENCES subreddits(id)",
-	})
-end
 
-function Pagesix:create_reserved_usernames_table()
+		"UNIQUE(user_id, subreddit_id)"
+	})
+
 	schema.create_table("reserved_usernames", {
 		{ "id", types.integer({ unique = true, primary_key = true }) },
 		{ "user_name", types.text({ unique = true }) },
 		{ "created_at", types.integer({ default = "1970-01-01 00:00:00" }) },
 		{ "updated_at", types.integer({ null = true }) },
 	})
-end
 
-function Pagesix:create_subreddits_table()
 	schema.create_table("subreddits", {
 		{ "id", types.integer({ unique = true, primary_key = true }) },
 		{ "name", types.text({ unique = true }) },
@@ -80,41 +69,84 @@ function Pagesix:create_subreddits_table()
 
 	-- create_index("subreddits", "name", { unique = true })
 
-	-- local sorts = { "hot" }
-	-- for _, sort in pairs(sorts) do
-	-- 	db.query(
-	-- 		[[
-	-- 			CREATE VIEW IF NOT EXISTS ?
-	-- 			AS
-	-- 			SELECT COUNT(*) score, a.title, a.url, a.permalink, over_18, locked
-	-- 			FROM ? a
-	-- 			INNER JOIN ? b ON a.id=b.post_id
-	-- 			WHERE a.locked = 0 AND b.comment_id IS NULL
-	-- 			GROUP BY a.id, b.post_id
-	-- 			ORDER BY COUNT(*) DESC;
-	-- 		]],
-	-- 		"v_pagesix_" .. sort,
-	-- 		id .. "_posts",
-	-- 		id .. "_votes"
-	-- 	)
-	-- end
-end
+	-- create subreddit table containing Posts by Users
+	schema.create_table("posts", {
+		{ "id", types.integer({ unique = true, primary_key = true }) },
+		{ "user_id", types.text },
+		{ "sub_id", types.integer },
+		{ "permalink", types.text({ unique = true }) },
+		{ "title", types.text },
+		{ "url", types.text },
 
---- Get all subreddits
--- @treturn table subreddits
-function Pagesix:get_all()
-	-- use Paginator
+		{ "locked", types.integer({ default = false }) },
+		{ "created_at", types.integer({ null = true }) },
+		{ "updated_at", types.integer({ null = true }) },
+		{ "edited", types.integer({ default = false }) },
+		{ "is_self", types.integer({ default = false }) },
+		{ "over_18", types.integer({ default = false }) },
+		{ "body", types.text({ null = true }) },
 
-	-- TODO filter out archived, optionally nsfw
-	local subreddits = self:select("* FROM 'subreddits'")
-	return subreddits and subreddits or false, "FIXME: listing subreddits failed"
-end
+		"FOREIGN KEY(sub_id) REFERENCES subreddits(id)",
+		"FOREIGN KEY(user_id) REFERENCES users(id)",
+	})
 
---- Get all NSFW subreddits
--- @treturn table subreddits
-function Pagesix:get_nsfw()
-	local subreddits = self:select("* FROM 'subreddits' WHERE nsfw=?", 1)
-	return subreddits and subreddits or false, "FIXME: listing NSFW subreddits failed"
+	-- create subreddit table containing Comments by Users
+	schema.create_table("comments", {
+		{ "id", types.integer({ unique = true, primary_key = true }) },
+		{ "post_id", types.integer },
+		{ "user_id", types.integer },
+		{ "permalink", types.text({ unique = true }) },
+		{ "parent_comment_id", types.integer({ null = true }) },
+		{ "body", types.text },
+
+		{ "created_at", types.integer({ null = true }) },
+		{ "updated_at", types.integer({ null = true }) },
+		{ "edited", types.integer({ default = false }) },
+		{ "deleted", types.integer({ default = false }) },
+		{ "is_submitter", types.integer({ default = false }) },
+		{ "stickied", types.integer({ default = false }) },
+
+		"FOREIGN KEY(user_id) REFERENCES users(id)",
+		"FOREIGN KEY(post_id) REFERENCES posts(id)",
+
+		"UNIQUE(user_id, post_id, parent_comment_id)"
+	})
+
+	-- create each subreddit table containing Votes on Posts or Comments by Users
+	schema.create_table("votes", {
+		{ "id", types.integer({ unique = true, primary_key = true }) },
+		{ "user_id", types.integer },
+		{ "post_id", types.integer },
+		{ "comment_id", types.integer({ null = true }) },
+		{ "upvote", types.integer({ default = true }) },
+		{ "created_at", types.integer({ null = true }) },
+		{ "updated_at", types.integer({ null = true }) },
+
+		"FOREIGN KEY(user_id) REFERENCES users(id)",
+		"FOREIGN KEY(post_id) REFERENCES 'posts(id)'",
+		"FOREIGN KEY(comment_id) REFERENCES 'comments(id)'",
+
+		"UNIQUE(user_id, post_id, comment_id)"
+	})
+
+	schema.create_table("modlog", {
+		{ "id", types.integer({ unique = true, primary_key = true }) },
+		{ "mod_id", types.text },
+		{ "user_id", types.text({ null = true }) },
+		{ "sub_id", types.text({ null = true }) }, -- TODO remove?
+		{ "post_id", types.text({ null = true }) },
+		{ "comment_id", types.text({ null = true }) },
+		{ "action", types.integer({ null = true }) },
+		{ "reason", types.text },
+		{ "created_at", types.integer({ null = true }) },
+		{ "updated_at", types.integer({ null = true }) },
+
+		"FOREIGN KEY(mod_id) REFERENCES users(id)", -- TODO
+		"FOREIGN KEY(user_id) REFERENCES users(id)",
+		"FOREIGN KEY(sub_id) REFERENCES 'subreddits(id)'",
+		"FOREIGN KEY(post_id) REFERENCES 'posts(id)'",
+		"FOREIGN KEY(comment_id) REFERENCES 'comments(id)'"
+	})
 end
 
 return Pagesix

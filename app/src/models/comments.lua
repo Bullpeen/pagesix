@@ -1,13 +1,13 @@
 --- Comments model
 -- @module models.comments
 
-local db = require("lapis.db")
+-- local db = require("lapis.db")
 
 
 local Model = require("lapis.db.model").Model
 
-local id = 1
-local Comments = Model:extend(id .. "_comments", {
+-- local id = 1
+local Comments = Model:extend("comments", {
 	constraints = {
 		--- Apply constraints when updating/adding a Comment, returns truthy to indicate error
 		-- @tparam table self
@@ -34,50 +34,6 @@ local Comments = Model:extend(id .. "_comments", {
 		{ "subreddit", belongs_to = "Subreddits" },
 	},
 })
-
---- Add a new comment
--- @tparam string params
--- @treturn boolean success
--- function Comments:new(params)
---     -- lookup
--- 	local comments_table = params.subreddit .. "_comments"
-
--- 	db.insert(comments_table, {
--- 		post_id = params.post_id,
---         parent_comment_id = params.parent_comment_id,
---         body = params.body,
---         created_utc = params.created_utc,
---         is_submitter = params.is_submitter,
---         stickied = params.stickied,
--- 	})
--- end
-
---- Edit a comment
--- @tparam table params
--- @treturn table result
--- function Comments:modify(params)
--- 	local comments_table = params.board .. "_comments"
-
--- 	local res = db.update(comments_table, {
--- 		edited = true,
--- 		body = params.body,
--- 		stickied = params.stickied,
--- 	})
-
--- 	return res
--- end
-
---- Delete a comment
--- @tparam string subreddit_id
--- @tparam string comment_id
--- @treturn boolean success
--- function Comments:delete(subreddit_id, comment_id)
-	-- TODO:
-
-	-- check if authorized?
-	-- local comment = Comments:find(comment_id)
-	-- return comment:delete()
--- end
 
 --- Get comments karma score
 -- @tparam string post_id

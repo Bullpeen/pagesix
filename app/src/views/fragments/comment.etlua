@@ -15,7 +15,7 @@
 			<span class="score unvoted" title="VOTES">VOTES</span>
 			<span class="score likes" title="VOTES+!">VOTES+!</span>
 			<time title="DATETIME" datetime="DATETIME" class="">### TIME ago</time>
-			<span class="awardings-bar" data-subredditpath="/r/technology/"></span>&nbsp;
+			<span class="awardings-bar" data-subredditpath=""></span>&nbsp;
 			<a href="javascript:void(0)" class="numchildren" onclick="return togglecomment(this)">(# children)</a>
 		</p>
 		<form action="#" class="usertext warn-on-unload" onsubmit="return post_form(this, 'editusertext')" id="form-t1_c6oh0e7lhq">
@@ -47,7 +47,7 @@
 		</div>
 		<div class="child">
 			<div id="siteTable_t1_c6oh0e7" class="sitetable listing">
-				<div class=" thing id-t1_c6oiiif noncollapsed   comment " id="thing_t1_c6oiiif" onclick="click_thing(this)" data-fullname="t1_c6oiiif" data-type="comment" data-gildings="0" data-subreddit="technology" data-subreddit-prefixed="r/technology" data-subreddit-fullname="t5_2qh16" data-subreddit-type="public" data-author="ForeverAlone2SexGod" data-author-fullname="t2_5tekf" data-replies="0" data-permalink="/r/technology/comments/11p5cy/google_chrome_blog_the_new_chromebook_for_everyone/c6oiiif/">
+				<div class=" thing id-t1_c6oiiif noncollapsed   comment " id="thing_t1_c6oiiif" onclick="click_thing(this)" data-fullname="t1_c6oiiif" data-type="comment" data-gildings="0" data-subreddit="SUB" data-subreddit-prefixed="r/SUB" data-subreddit-fullname="" data-subreddit-type="public" data-author="" data-author-fullname="" data-replies="0" data-permalink="">
 					<p class="parent">
 						<a name="c6oiiif"></a>
 					</p>
@@ -58,13 +58,13 @@
 					<div class="entry unvoted">
 						<p class="tagline">
 							<a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a>
-							<a href="https://old.reddit.com/user/ForeverAlone2SexGod" class="author may-blank id-t2_5tekf">ForeverAlone2SexGod</a>
+							<a href="/user/USER" class="author may-blank id-t2_5tekf">USER</a>
 							<span class="userattrs"></span>
-							<span class="score dislikes" title="16">16 points</span>
-							<span class="score unvoted" title="17">17 points</span>
-							<span class="score likes" title="18">18 points</span>
-							<time title="Thu Oct 18 22:02:47 2012 UTC" datetime="2012-10-18T22:02:47+00:00" class="">TIME ago</time>
-							<span class="awardings-bar" data-subredditpath="/r/technology/"></span>&nbsp;
+							<span class="score dislikes" title="##">## points</span>
+							<span class="score unvoted" title="##">## points</span>
+							<span class="score likes" title="##">## points</span>
+							<time title="" datetime="" class="">### ago</time>
+							<span class="awardings-bar" data-subredditpath=""></span>&nbsp;
 							<a href="javascript:void(0)" class="numchildren" onclick="return togglecomment(this)">(# child)</a>
 						</p>
 						<form action="#" class="usertext warn-on-unload" onsubmit="return post_form(this, 'editusertext')" id="form-t1_c6oiiifmqj">
@@ -99,7 +99,7 @@
 						</div>
 						<div class="child">
 							<div id="siteTable_t1_c6oiiif" class="sitetable listing">
-								<div class=" thing id-t1_c6omm7q noncollapsed   comment " id="thing_t1_c6omm7q" onclick="click_thing(this)" data-fullname="t1_c6omm7q" data-type="comment" data-gildings="0" data-subreddit="technology" data-subreddit-prefixed="r/technology" data-subreddit-fullname="t5_2qh16" data-subreddit-type="public" data-author="mburns" data-author-fullname="t2_chb1" data-replies="0" data-permalink="/r/technology/comments/11p5cy/google_chrome_blog_the_new_chromebook_for_everyone/c6omm7q/">
+								<div class=" thing id-t1_c6omm7q noncollapsed   comment " id="thing_t1_c6omm7q" onclick="click_thing(this)" data-fullname="t1_c6omm7q" data-type="comment" data-gildings="0" data-subreddit="" data-subreddit-prefixed="" data-subreddit-fullname="" data-subreddit-type="public" data-author="" data-author-fullname="" data-replies="0" data-permalink="">
 									<p class="parent">
 										<a name="c6omm7q"></a>
 									</p>
@@ -116,7 +116,7 @@
 											<span class="score unvoted" title="VOTES">VOTES</span>
 											<span class="score likes" title="VOTES+!">VOTES+1</span>
 											<time title="Fri Oct 19 02:29:13 2012 UTC" datetime="2012-10-19T02:29:13+00:00" class="">### TIME ago</time>
-											<span class="awardings-bar" data-subredditpath="/r/technology/"></span>&nbsp;
+											<span class="awardings-bar" data-subredditpath=""></span>&nbsp;
 											<a href="javascript:void(0)" class="numchildren" onclick="return togglecomment(this)">(# children)</a>
 										</p>
 										<form action="#" class="usertext border warn-on-unload" onsubmit="return post_form(this, 'editusertext')" id="form-t1_c6omm7qzzt">

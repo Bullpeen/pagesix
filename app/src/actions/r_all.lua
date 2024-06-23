@@ -13,7 +13,8 @@ return {
 		-- Pagesix:get_all()
 
 		-- view for /r/all subreddit posts
-		local posts_table = "v_r_all_subreddit_posts"
+		-- local posts_table = "v_r_all_subreddit_posts"
+		local posts_table = "v_frontpage_hot"
 
 		-- TODO subquery to return a table like
 		-- {
@@ -21,8 +22,8 @@ return {
 		-- 		post_id: { ... },
 		-- }
 
-		self.posts = self:get_posts(posts_table)
-		-- self.posts = db.select("* FROM ?", posts_table)
+		-- self.posts = self:get_posts(posts_table)
+		self.posts = db.select("* FROM ?", posts_table)
 	end,
 
 	GET = function(self)

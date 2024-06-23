@@ -16,20 +16,20 @@
             <div class="entry unvoted">
                 <div class="top-matter">
                     <p class="title">
-                        <span class="linkflairlabel " title="TAG">TAG</span>
+                        <% -- TODO <span class="linkflairlabel " title="TAG">TAG</span> %>
                         <a class="title may-blank loggedin " data-event-action="title" href="<%= post.url %>" tabindex="<%= n %>"><%= post.title %></a>
-                        <span class="domain">(<a href="/domain/DOMAIN/">DOMAIN</a>)</span>
+                        <span class="domain">(<a href="/domain/<%= post.domain %>/"><%= post.domain %></a>)</span>
                     </p>
                     <p class="tagline ">
-                        submitted <time title="<% %>" datetime="" class="live-timestamp">### TIME ago</time> by <a href="<% %>" class="author may-blank"><% %></a>
+                        submitted <time title="<%= post.created_at %>" datetime="" class="live-timestamp">### TIME ago</time> by <a href="/user/<%= post.author %>" class="author may-blank"><%= post.author %></a>
                         <span class="userattrs"></span>
-                        <span class="awardings-bar" data-subredditpath="/r/technology/"></span>
+                        <span class="awardings-bar" data-subredditpath=""></span>
                     </p>
                     <ul class="flat-list buttons">
                         <li class="first">
                             <a href="<%= post.permalink %>"
                                 data-event-action="comments"
-                                class="bylink comments may-blank" rel="nofollow"><% %> comments</a>
+                                class="bylink comments may-blank" rel="nofollow"><%= post.num_comments %> comments</a>
                         </li>
                         <li class="share">
                             <a class="post-sharing-button" href="javascript: void 0;">share</a>
@@ -74,6 +74,6 @@
         </div>
     <% end %>
 <% else %>
-    Nothing to see here.
+    Nothing (posts) to see here.
 <% end %>
 

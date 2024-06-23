@@ -6,10 +6,8 @@ local db = require("lapis.db")
 return {
 	before = function(self)
 		-- Get list of all subs
-		-- TODO use Pagesix:get_all()
 		self.subs = db.select("* FROM ?", "subreddits")
 
-		-- require 'pl.pretty'.dump(self.subs)
 	end,
 
 	GET = function(self)

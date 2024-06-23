@@ -2,17 +2,20 @@
 -- @module action.subreddit
 
 local db = require("lapis.db")
-local Subreddits = require("models.subreddits")
+-- local Subreddits = require("models.subreddits")
+
+math.randomseed(os.clock() * 100000000000)
 
 return {
 	before = function(self)
 		-- query subreddits table for random subreddit
-		-- TODO use db.find(), avoid the [1] step?
-		local sub = Subreddits:find(math.random(#Subreddits))
-		-- local sub = db.query("SELECT name FROM subreddits ORDER BY RANDOM() LIMIT 1")
 
-		print("Random subreddit: " .. sub.name)
-		return self:write({ redirect_to = self:url_for("subreddit", { subreddit = sub.name }) })
+		-- TODO use db.find(), avoid the [1] step?
+		-- local sub = Subreddits:find()
+		local sub = db.query("SELECT name FROM subreddits ORDER BY RANDOM() LIMIT 1")
+
+		print("Random subreddit: " .. sub[1].name)
+		return self:write({ redirect_to = self:url_for("subreddit", { subreddit = sub[1].name }) })
 	end,
 
 	-- https://github.com/karai17/lapis-chan/blob/master/app/src/utils/generate.lua
