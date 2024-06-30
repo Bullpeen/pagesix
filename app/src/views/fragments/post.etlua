@@ -2,4 +2,4 @@
     self post
 <% end %>
 
-<p>Submitted by <%= params.user_name %> at <%= params.created_utc %>. <a href="/r/<%= params.subreddit %>/comments/<%= params.post_id %>" alt="permalink">Permalink</a></p>
+<p>Submitted by <%= params.user_name %> at <%= params.created_at %>. <a href="/r/<%= params.subreddit %>/comments/<%= params.post_id %>" alt="permalink">Permalink</a></p>

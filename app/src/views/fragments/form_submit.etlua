@@ -1,0 +1,24 @@
+<form class="form primary_form" method="POST" action="/submit">
+	<input type="hidden" name="csrf_token" value="">
+    <div class="input_row">
+        <label>
+            <div class="label">URL</div>
+            <input autofocus="" autocomplete="url" name="url" required="required" type="text" autocapitalize="none" autocorrect="off">
+        </label>
+    </div>
+    <div class="input_row">
+        <label>
+            <div class="label">Title</div>
+            <input autofocus="" autocomplete="" name="title" required="required" type="text" autocapitalize="words" autocorrect="off">
+        </label>
+    </div>
+    <div class="input_row">
+        <label>
+            <div class="label">Subreddit</div>
+            <input autofocus="" autocomplete="" name="subreddit" required="required" type="text" autocapitalize="none" autocorrect="off">
+        </label>
+    </div>
+    <div class="button_row">
+        <input class="button" value="Submit" type="submit">
+    </div>
+</form>

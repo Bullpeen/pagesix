@@ -2,13 +2,11 @@
 -- @module models.subreddit
 
 local Model = require("lapis.db.model").Model
--- local Silva = require 'silva'
 
-local sp_table = "posts"
+local Subreddit_posts = Model:extend("posts", {
+	timestamp = true,
 
-print("RUNNING MODELS.SUBREDDIT_POSTS " .. sp_table)
-
-local Subreddit_posts = Model:extend(sp_table, {
+	-- TODO
 	url_params = function(self, req, ...)
 		return "subreddit", { id = self.id }, ...
 	end,
@@ -53,7 +51,7 @@ local Subreddit_posts = Model:extend(sp_table, {
 	relations = {
 		{ "user", belongs_to = "Users" },
 		{ "subreddit", has_one = "Subreddits" },
-		-- { "post",           has_one="Subreddit"},
+		-- { "post", has_one="Subreddit"},
 
 		-- { "votes",
 		--     has_many="Votes",
@@ -90,5 +88,5 @@ function Subreddit_posts:top_posts(subreddit_id)
 	-- 		FROM ?
 	-- 		WHERE post_id = post_id,
 	-- 		ORDER BY score DESC LIMIT 100
-	-- 	]], sp_table)
+	-- 	]], "posts")
 end

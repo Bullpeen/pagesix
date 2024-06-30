@@ -11,10 +11,10 @@
                     <div class="entry">
                         <p class="tagline">
                             <a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a>
-                            <a class="author" href="<%= "/user/" .. comment.user_name %>"><%= comment.user_name %></a>
+                            <a class="author" href="<%= "/user/" .. comment.user_id %>"><%= comment.user_id %></a>
                             <span class="userattrs"></span>
                             <span class="score likes" title="<% %>"><%= comment.score %># points</span>
-                            <time title="<%= comment.permalink %>" datetime="<%= comment.created_at %>" class=""><% %> ago</time>
+                            <time title="<%= comment.permalink %>" datetime="<%= comment.created_at %>" class=""><%= comment.created_at %> ago</time>
                             <span class="awardings-bar"></span>&nbsp;
                             <a href="javascript:void(0)">(# children)</a>
                         </p>

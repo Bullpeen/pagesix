@@ -6,25 +6,18 @@ local Users = require("models.users")
 
 return {
 	before = function(self)
-		local user_name = self.params.user_name
+		print("Looking up " .. self.params.user_name)
+		local user = Users:find({user_name = self.params.user_name})
 
-		local uid = Users:get_id_from_name(user_name)
-		-- TODO lookup id from params.user_name
-		-- local res = db.select("id FROM 'users' WHERE user_name=?", user_name)
-		if not uid then
-			print("User is invalid: " .. user_name)
-			return self:write({ redirect_to = self:url_for("homepage") })
-		end
-
-		local user = Users:find(uid)
+		self.user_name = user.user_name
 
 		-- TODO paginate
-		self.comments = user:get_all_comments(uid)
+		self.comments = user:get_comments()
 		print("Number of comments: " .. #self.comments)
 
-		-- TODO implement
-		-- self.comments = user:get_all_posts(uid)
-		-- print("Number of posts: " .. #self.comments)
+		-- TODO paginate
+		self.posts = user:get_posts()
+		print("Number of posts: " .. #self.posts)
 	end,
 
 	GET = function(self)

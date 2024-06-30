@@ -29,7 +29,7 @@ return {
 		-- self.comments = db.select("* FROM ? WHERE post_id = ?", comments_table, self.params.post_id)
 		self.comments = db.select(
 			[[
-				COUNT(*) score, c.user_name, c.created_utc, b.user_id, b.body, b.permalink
+				COUNT(*) score, c.user_name, c.created_at, b.user_id, b.body, b.permalink
 				FROM 'posts' a
 				INNER JOIN 'comments' b ON a.id=b.post_id
 				INNER JOIN 'users' c ON b.user_id = c.id
@@ -54,7 +54,7 @@ return {
 		self.title = post_data[1]["title"]
 		self.url = post_data[1]["url"]
 		self.permalink = post_data[1]["permalink"]
-		self.created_utc = post_data[1]["created_utc"]
+		self.created_at = post_data[1]["created_at"]
 		if post_data[1]["is_self"] == 1 then
 			self.is_self = true
 			self.body = post_data[1]["body"]

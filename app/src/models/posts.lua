@@ -1,40 +1,49 @@
 --- Posts model
 -- @module models.posts
 
--- local db = require("lapis.db")
--- local types  = schema.types
--- local util   = require("lapis.util")
-
 local Model = require("lapis.db.model").Model
 local Posts = Model:extend("posts", {
+	timestamp = true,
+
+	-- https://leafo.net/lapis/reference/actions.html#request-object-methods/request:url_for/passing-an-object-to-url-for
+	url_params = function(self, req, ...)
+		-- local res = db.find(self.id)
+
+		local subreddit_id = ''
+		local post_id = ''
+		local post_stub = ''
+
+		local url = "/r/" .. subreddit_id .. "/comments/" .. post_id .. "/" .. post_stub
+		return url, ...
+	end,
+
 	relations = {
-		{ "subreddit", belongs_to = "Subreddits" },
-		-- { "post",    belongs_to="Posts" },
 		{ "comments", has_many = "Comments" },
-		{ "votes", has_many = "Votes" },
+		{ "subreddit", belongs_to = "Subreddits" },
 		{ "user", belongs_to = "Users" },
+		{ "votes", has_many = "Votes" },
 	},
 })
 
-print("RUNNING MODELS.POSTS")
+-- print("RUNNING MODELS.POSTS")
 
 --- Count comments in a post
 -- @tparam integer post_id Post ID
 -- @treturn integer posts
-function Posts:count_comments(post_id)
-	local post = self:find(post_id)
-	return post:count("comments")
-end
+-- function Posts:count_comments(post_id)
+-- 	local post = self:find(post_id)
+-- 	return post:count("comments")
+-- end
 
 --- Get posts in a thread
 -- @tparam number post_id Post ID
 -- @tparam number offset Offset
 -- @tparam number limit Limit
 -- @treturn table posts
-function Posts:get_top_level_comments(post_id, offset, limit)
-	local post = self:find(post_id)
-	return post:get_comments(offset, limit)
-end
+-- function Posts:get_top_level_comments(post_id, offset, limit)
+-- 	local post = self:find(post_id)
+-- 	return post:get_comments(offset, limit)
+-- end
 
 --- Get Post's karma score
 -- function Posts:get_score(post_id, subreddit)
@@ -65,28 +74,28 @@ end
 -- end
 
 --- Check if Post is locked
-function Posts:is_locked(post_id)
-	local post = self:find(post_id)
-	return post.locked
-end
+-- function Posts:is_locked(post_id)
+-- 	local post = self:find(post_id)
+-- 	return post.locked
+-- end
 
 --- Check if Post is stickied
-function Posts:is_stickied(post_id)
-	local post = self:find(post_id)
-	return post.stickied
-end
+-- function Posts:is_stickied(post_id)
+-- 	local post = self:find(post_id)
+-- 	return post.stickied
+-- end
 
 --- Check if Post is NSFW
-function Posts:is_nsfw(post_id)
-	local post = self:find(post_id)
-	return post.over_18
-end
+-- function Posts:is_nsfw(post_id)
+-- 	local post = self:find(post_id)
+-- 	return post.over_18
+-- end
 
 --- Check if Post is a self post (no url, contains body text)
-function Posts:is_self(post_id)
-	local post = self:find(post_id)
-	return post.is_self
-end
+-- function Posts:is_self(post_id)
+-- 	local post = self:find(post_id)
+-- 	return post.is_self
+-- end
 
 --- Given a table of post parameters, generate a permalink
 -- @tparam table params Post parameters {post_id, user_id, title, url}
@@ -96,7 +105,7 @@ end
 
 -- 	local subreddit_name = Subreddit:subreddit_name(params.post_id)
 -- 	local title_slug = utils.slugify(params.title)
--- 	local post_id = md5(title_slug .. params.post_id .. params.created_utc)
+-- 	local post_id = md5(title_slug .. params.post_id .. params.created_at)
 
 -- 	return "/r/" .. subreddit_name .. "/comments/" .. post_id .. "/" .. title_slug
 -- end

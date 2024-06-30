@@ -6,7 +6,7 @@ local db = require("lapis.db")
 return {
 	before = function(self)
 		-- Get list of all subs
-		self.subs = db.select("* FROM ?", "subreddits")
+		self.subs = db.select("* FROM ?", "v_subreddits")
 
 	end,
 

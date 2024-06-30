@@ -7,7 +7,7 @@
         </span>
     </div>
     <div class="entry likes">
-        <p class="titlerow"><a href="URL" class="title">/r/<%= self.name %></a></p>
+        <p class="titlerow"><a href="/r/<%= self.name %>" class="title">/r/<%= self.name %></a></p>
         <div class="description">
             <form action="#" class="usertext warn-on-unload" onsubmit="return post_form(this, 'editusertext')" id="form">
             <input type="hidden" name="thing_id" value="">
@@ -19,7 +19,7 @@
             </form>
         </div>
         <p class="tagline">
-            <span class="score likes"><span class="number">###<% %></span> <span class="word">subscribers</span></span> 
+            <span class="score likes"><span class="number"><%= self.subscribers %></span> <span class="word">subscribers</span></span> 
         </p>
         <ul class="flat-list buttons">
             <li class="report-button"><a href="javascript:void(0)" class="reportbtn access-required">report</a></li>

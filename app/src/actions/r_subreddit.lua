@@ -2,6 +2,7 @@
 -- @module action.subreddit
 
 local db = require("lapis.db")
+-- local util = require("lapis.util")
 
 return {
 	before = function(self)
@@ -38,7 +39,15 @@ return {
 		self.data = data
 
 		-- self.posts = self:get_posts(posts_table)
-		self.posts = db.select("* FROM ?", posts_table)
+		local posts = db.select("* FROM ?", posts_table)
+
+		-- print("posts[1] is " .. posts[1].age)
+		for p in pairs(posts) do
+			-- print("ANS")
+			require 'pl.pretty'.dump(os.date("*t"))
+			-- posts[p].age = util:time_ago_in_words(os.date("*t"))
+		end
+		self.posts = posts
 	end,
 
 	-- https://github.com/karai17/lapis-chan/blob/master/app/src/utils/generate.lua

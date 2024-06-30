@@ -1,13 +1,7 @@
 --- Subreddits model
 -- @module models.subreddit
 
--- local db = require("lapis.db")
--- local schema = require("lapis.db.schema")
--- local types = schema.types
-
 local Model = require("lapis.db.model").Model
-
-print("RUNNING MODELS.SUBREDDITS")
 
 -- local Subreddits, Subreddits_mt = Model:extend("subreddits", {
 local Subreddits = Model:extend("subreddits", {

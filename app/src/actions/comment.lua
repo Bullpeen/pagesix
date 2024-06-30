@@ -65,7 +65,7 @@ return {
 		self.title = post_data[1]["title"]
 		self.url = post_data[1]["url"]
 		self.permalink = post_data[1]["permalink"]
-		self.created_utc = post_data[1]["created_utc"]
+		self.created_at = post_data[1]["created_at"]
 	end,
 
 	GET = function(self)

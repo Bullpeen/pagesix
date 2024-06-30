@@ -1,0 +1,14 @@
+
+<% if subreddits ~= nil then
+    for _, sub in ipairs(subreddits) do 
+        require 'pl.pretty'.dump(sub)
+        render('views.fragments.subreddit_listing',
+            {
+                name = sub.subreddit_id,
+                description = sub.description,
+                subscribers = sub.subscribers
+            })
+    end %>
+<% else %>
+    Nothing
+<% end %>

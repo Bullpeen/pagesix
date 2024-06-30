@@ -13,6 +13,7 @@ local misc = require("src.utils.misc")
 local Pagesix = require("src.models.pagesix")
 local Posts = require("src.models.posts")
 local Subreddits = require("src.models.subreddits")
+local Subscriptions = require("src.models.subscriptions")
 local Users = require("src.models.users")
 
 -- math.randomseed(os.clock() * 100000000000)
@@ -22,6 +23,21 @@ return {
 	-- create initial tables: Users, Subreddits
 	[1] = function()
 		Pagesix:bootstrap()
+
+		db.query(
+			[[
+				CREATE VIEW IF NOT EXISTS ?
+				AS
+				SELECT COUNT(*) subscribers,
+					a.name, a.description, a.nsfw
+				FROM 'subreddits' a
+				INNER JOIN 'subscriptions' b ON a.id = b.subreddit_id
+				WHERE a.id = b.subreddit_id
+				GROUP BY a.id, b.subreddit_id
+				ORDER BY COUNT(*) DESC;
+			]],
+			"v_subreddits"
+		)
 	end,
 
 	-- create first User
@@ -52,7 +68,7 @@ return {
 			print("About to create new sub: " .. sub.name .. ".")
 			local s, e = Subreddits:create({
 				name = sub.name,
-				description = sub.description or "",
+				description = sub.description or Lorem:sentence(),
 				creator_id = sub.creator_id or 1,
 			})
 			if not s then
@@ -76,13 +92,11 @@ return {
 					FROM 'posts' a
 					INNER JOIN 'votes' b ON a.id = b.post_id
 					INNER JOIN 'users' c ON b.user_id = c.id
-					INNER JOIN 'comments' d ON a.id = d.post_id
 					WHERE a.locked = 0
 						AND b.comment_id IS NULL
 						AND a.id = b.post_id
 						AND b.upvote = 1
 						AND a.sub_id = ?
-						AND a.id = d.post_id
 					GROUP BY a.id, b.post_id
 					ORDER BY COUNT(*) DESC;
 				]],
@@ -151,7 +165,6 @@ return {
 					FROM 'posts' a
 					INNER JOIN 'votes' b ON a.id=b.post_id
 					INNER JOIN 'users' c ON b.user_id = c.id
-					INNER JOIN 'comments' d ON a.id = d.post_id
 					WHERE a.locked = 0
 						AND b.comment_id IS NULL
 						AND b.upvote = 1
@@ -207,7 +220,9 @@ return {
 
 	-- create Users with random user_names
 	[4] = function()
-		for i = 1, 100 do
+		local subreddits = Subreddits:select()
+
+		for i = 1, math.random(10,100) do
 			local name = Lorem:word() .. "_" .. i
 			local s, e = Users:create({
 				user_name = name,
@@ -219,6 +234,15 @@ return {
 				print(e)
 				break
 			end
+
+			for j = 1, #subreddits do
+				if math.random(2) > 1 then
+					Subscriptions:create({
+						user_id = i,
+						subreddit_id = j,
+					})
+				end
+			end
 		end
 	end,
 
@@ -227,7 +251,7 @@ return {
 		local subreddits = Subreddits:select()
 
 		for sub in pairs(subreddits) do
-			misc:generate_posts(sub, 5)
+			misc:generate_posts(sub, math.random(5))
 		end
 	end,
 
@@ -241,7 +265,7 @@ return {
 		local posts = Posts:select()
 
 		for post in pairs(posts) do
-			misc:generate_post_votes(post, 5)
+			misc:generate_post_votes(post, math.random(10))
 		end
 	end,
 
@@ -250,7 +274,7 @@ return {
 		local posts = Posts:select()
 
 		for post in pairs(posts) do
-			misc:generate_comments(post, 5)
+			misc:generate_comments(post, math.random(10))
 		end
 	end,
 
@@ -259,7 +283,7 @@ return {
 		local posts = Posts:select()
 
 		for post in pairs(posts) do
-			misc:generate_comment_votes(post, 1)
+			misc:generate_comment_votes(post, math.random(10))
 		end
 	end,
 

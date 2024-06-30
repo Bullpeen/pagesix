@@ -1,5 +1,5 @@
-Welcome, <%= session.current_user %>.
-
-<% render('views.fragments.login') %>
+<% if not session then render('views.fragments.login') else %>
+Welcome, <%= session.current_user %>!
+<% end %>
 
 <% render('views.fragments.nav') %>

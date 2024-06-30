@@ -1,21 +1,21 @@
 --- Pagesix model
 -- @module models.pagesix
 
--- local db      = require "lapis.db"
+-- local create_index = schema.create_index
 local schema = require("lapis.db.schema")
-local create_index = schema.create_index
 local types = schema.types
 
 local Model = require("lapis.db.model").Model
+
 local Pagesix = Model:extend("pagesix", {
 	relations = {
-		-- { "subreddit",     has_many="Pagesix" },
+		-- { "subreddits", has_many="Subreddits" },
 		{ "moderator_ids", has_many = "Users" },
 		{ "creator_id", has_one = "Users" },
 	},
 })
 
-print("RUNNING MODELS.PAGE6")
+-- print("RUNNING MODELS.PAGE6")
 
 function Pagesix:bootstrap()
 	schema.create_table("users", {
@@ -24,20 +24,23 @@ function Pagesix:bootstrap()
 		{ "user_pass", types.text },
 		{ "user_email", types.text },
 
-		{ "created_utc", types.integer({ null = true }) },
+		{ "created_at", types.integer({ null = true }) },
 		{ "updated_at", types.integer({ null = true }) },
-		{ "deleted_utc", types.integer({ null = true }) },
+
+		{ "deleted_at", types.integer({ null = true }) },
 		{ "over_18", types.integer({ default = false }) },
 		{ "verified_email", types.integer({ default = false }) },
 	})
 
-	create_index("users", "user_name", { unique = true })
+	schema.create_index("users", "user_name", { unique = true })
 
 	schema.create_table("subscriptions", {
 		{ "id", types.integer({ unique = true, primary_key = true }) },
 		{ "user_id", types.integer },
-		{ "updated_at", types.integer({ null = true }) },
 		{ "subreddit_id", types.integer },
+
+		{ "created_at", types.integer({ null = true }) },
+		{ "updated_at", types.integer({ null = true }) },
 
 		"FOREIGN KEY(user_id) REFERENCES users(id)",
 		"FOREIGN KEY(subreddit_id) REFERENCES subreddits(id)",
@@ -48,17 +51,19 @@ function Pagesix:bootstrap()
 	schema.create_table("reserved_usernames", {
 		{ "id", types.integer({ unique = true, primary_key = true }) },
 		{ "user_name", types.text({ unique = true }) },
-		{ "created_at", types.integer({ default = "1970-01-01 00:00:00" }) },
-		{ "updated_at", types.integer({ null = true }) },
+
+		{ "created_at", types.integer({ null = true }) },
+		{ "updated_at", types.integer({ null = true }) }
 	})
 
 	schema.create_table("subreddits", {
 		{ "id", types.integer({ unique = true, primary_key = true }) },
 		{ "name", types.text({ unique = true }) },
 
-		{ "created_at", types.integer({ default = "1970-01-01 00:00:00" }) },
+		{ "created_at", types.integer({ null = true }) },
 		{ "deleted_at", types.integer({ null = true }) },
 		{ "updated_at", types.integer({ null = true }) },
+
 		{ "creator_id", types.integer({ deafault = 1 }) }, -- TODO rename
 		{ "description", types.text({ null = true }) },
 		{ "moderator_ids", types.text({ null = true }) },
@@ -78,9 +83,10 @@ function Pagesix:bootstrap()
 		{ "title", types.text },
 		{ "url", types.text },
 
-		{ "locked", types.integer({ default = false }) },
 		{ "created_at", types.integer({ null = true }) },
 		{ "updated_at", types.integer({ null = true }) },
+
+		{ "locked", types.integer({ default = false }) },
 		{ "edited", types.integer({ default = false }) },
 		{ "is_self", types.integer({ default = false }) },
 		{ "over_18", types.integer({ default = false }) },
@@ -101,6 +107,7 @@ function Pagesix:bootstrap()
 
 		{ "created_at", types.integer({ null = true }) },
 		{ "updated_at", types.integer({ null = true }) },
+
 		{ "edited", types.integer({ default = false }) },
 		{ "deleted", types.integer({ default = false }) },
 		{ "is_submitter", types.integer({ default = false }) },
@@ -119,6 +126,7 @@ function Pagesix:bootstrap()
 		{ "post_id", types.integer },
 		{ "comment_id", types.integer({ null = true }) },
 		{ "upvote", types.integer({ default = true }) },
+
 		{ "created_at", types.integer({ null = true }) },
 		{ "updated_at", types.integer({ null = true }) },
 
@@ -138,6 +146,7 @@ function Pagesix:bootstrap()
 		{ "comment_id", types.text({ null = true }) },
 		{ "action", types.integer({ null = true }) },
 		{ "reason", types.text },
+
 		{ "created_at", types.integer({ null = true }) },
 		{ "updated_at", types.integer({ null = true }) },
 

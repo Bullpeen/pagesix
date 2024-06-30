@@ -1,7 +1,3 @@
-<%  render('views.fragments.form_submit') %>
-
 <%  render('views.fragments.posts') %>
-
-<p><img src="/static/icons/quarantine-header.png" alt="Under Construction"></p>
 
 <% render('views.fragments.nav') %>

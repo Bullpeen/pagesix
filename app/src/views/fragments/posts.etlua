@@ -21,7 +21,7 @@
                         <span class="domain">(<a href="/domain/<%= post.domain %>/"><%= post.domain %></a>)</span>
                     </p>
                     <p class="tagline ">
-                        submitted <time title="<%= post.created_at %>" datetime="" class="live-timestamp">### TIME ago</time> by <a href="/user/<%= post.author %>" class="author may-blank"><%= post.author %></a>
+                        submitted <time title="<%= post.age %>" datetime="" class="live-timestamp"><%= post.age %></time> by <a href="/user/<%= post.author %>" class="author may-blank"><%= post.author %></a>
                         <span class="userattrs"></span>
                         <span class="awardings-bar" data-subredditpath=""></span>
                     </p>

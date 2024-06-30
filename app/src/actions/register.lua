@@ -22,13 +22,18 @@ return {
 				.. ", "
 				.. self.params.email
 		)
-		if self.params.passwd == self.params.passwd2 then
-			local user, err = Users:new(self.params, self.params.passwd)
 
+		if self.params.passwd == self.params.passwd2 then
+			local s, err = Users:create({
+				user_name = self.params.name,
+				user_email = self.params.email,
+				user_pass = self.params.passwd,
+			})
 			if not err then
-				self.session.current_user = user.user_name
+				self.session.current_user = s.user_name
 			else
-				print("THERE WAS AN ERROR")
+				print("error creating " .. self.params.name)
+				print(err)
 			end
 		end
 	end,

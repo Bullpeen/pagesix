@@ -1,13 +1,10 @@
 --- Comments model
 -- @module models.comments
 
--- local db = require("lapis.db")
-
-
 local Model = require("lapis.db.model").Model
 
--- local id = 1
 local Comments = Model:extend("comments", {
+	timestamp = true,
 	constraints = {
 		--- Apply constraints when updating/adding a Comment, returns truthy to indicate error
 		-- @tparam table self
@@ -21,8 +18,8 @@ local Comments = Model:extend("comments", {
 				if value.body == nil or value.body == "" then
 					return "Comment cannot be empty"
 				end
-			else
-				print("NOPE")
+			-- else
+			-- 	print("NOPE")
 			end
 		end,
 	},

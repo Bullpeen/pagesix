@@ -45,13 +45,13 @@ function Misc:Generate_password()
 	return output
 end
 
-function Misc:Validate_email(input)
-	if input:match(".+@.+%..+") then
-		return true
-	else
-		return false, "%s is not a valid email"
-	end
-end
+-- function Misc:Validate_email(input)
+-- 	if input:match(".+@.+%..+") then
+-- 		return true
+-- 	else
+-- 		return false, "%s is not a valid email"
+-- 	end
+-- end
 
 function Misc:rss_feed(subreddit_id, url)
 	local subreddit = subreddit_id or 1
@@ -64,7 +64,7 @@ function Misc:rss_feed(subreddit_id, url)
 	local feed_url = url
 
 	local response, status, _ = http.request(feed_url)
-	if status == 200 then
+	if status >= 200 and status < 400 then
 		local parsed = feedparser.parse(response)
 
 		-- Print out feed details.
@@ -80,7 +80,7 @@ function Misc:rss_feed(subreddit_id, url)
 			local p_tbl = {
 				title = item.title,
 				url = item.link,
-				permalink = string.match(tostring(math.random()), "%.(%d+)"), -- TODO generate useful permalink?
+				permalink = "/r/" .. subreddit .. "/comments/" .. string.match(tostring(math.random()), "%.(%d+)"), -- TODO make sane
 				sub_id = subreddit,
 				user_id = math.random(#users),
 			}
@@ -104,14 +104,13 @@ function Misc:generate_posts(subreddit_id, n)
 	local Users = require("src.models.users")
 	local users = Users:select()
 
-	print("!!! generating " .. n .. " posts")
+	-- print("!!! generating " .. n .. " posts")
 	for i = 1, n do
-		local permalink = string.match(tostring(math.random()), "%.(%d+)") -- TODO make permalink meaningful
 
 		local p_tbl = {
 			title = Lorem:sentence(),
 			url = "http://" .. Lorem:word() .. ".com/" .. i,
-			permalink = permalink,
+			permalink = "/r/" .. subreddit_id .. "/comments/" .. string.match(tostring(math.random()), "%.(%d+)"), -- TODO make sane
 			sub_id = subreddit_id,
 			user_id = math.random(#users),
 		}
@@ -127,16 +126,19 @@ end
 
 function Misc:generate_comments(post_id, n)
 	local Comments = require("src.models.comments")
+	local Posts = require("src.models.posts")
 	local Users = require("src.models.users")
 	local Lorem = require("src.utils.lorem")
 
 	local users = Users:select()
 
-	for i = 1, n do
+	local p = Posts:find(post_id)
+
+	for _ = 1, n do
 		local tbl = {
 			post_id = post_id,
 			user_id = math.random(#users),
-			permalink = post_id .. "_" .. i, -- TODO fix md5?
+			permalink = "/r/" .. p.sub_id .. "/comments/" .. post_id .. "_" .. string.match(tostring(math.random()), "%.(%d+)"), -- TODO make permalink meaningful
 			body = Lorem:paragraph(),
 		}
 
@@ -187,14 +189,24 @@ function Misc:generate_comment_votes(post_id, n)
 	-- require 'pl.pretty'.dump(comments)
 
 	for _, c in pairs(comments) do
-		-- require 'pl.pretty'.dump(c)
+		print("working on now " .. post_id)
+		require 'pl.pretty'.dump(c)
+
+		local u = math.random(#users)
 		for i=1, n do
-			Votes:create({
-				user_id = math.random(#users - n) + i,
+			local exists, err = Votes:find({
+				user_id = u,
 				post_id = post_id,
-				comment_id = c.id,
-				upvote = math.random(0, 1),
+				comment_id = c.id
 			})
+			if not exists then
+				Votes:create({
+					user_id = u,
+					post_id = post_id,
+					comment_id = c.id,
+					upvote = math.random(0, 1),
+				})
+			end
 		end
 	end
 end
