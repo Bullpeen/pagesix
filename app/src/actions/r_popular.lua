@@ -1,11 +1,16 @@
 --- /r/popular subreddits action
 -- @module action.index
 
+local Forum = require("models.forum") "wtf"
+
 return {
 	before = function(self)
 		-- TODO what does it mean to be 'popular'?
-		local posts_table = "v_r_popular_subreddit_posts"
-		self.posts = self:get_posts(posts_table)
+
+		-- local sub = Forum:find()
+		-- require 'pl.pretty'.dump(sub)
+
+		-- self.posts = sub:get_frontpage()
 	end,
 
 	GET = function(self)

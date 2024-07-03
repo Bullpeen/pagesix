@@ -2,6 +2,7 @@
 -- @module action.subscribed
 
 -- local db = require("lapis.db")
+local Forum = require("models.forum")
 local Users = require("models.users")
 
 return {
@@ -11,8 +12,16 @@ return {
 			-- require 'pl.pretty'.dump(self.session)
 			local user = Users:find({user_name = self.session.current_user})
 
-			self.user_name = user.user_name
-			self.subreddits = user:get_subscriptions()
+			if user then
+				self.user_name = user.user_name
+				self.subreddits = user:get_subscriptions()
+				for _, s in pairs(self.subreddits) do
+					-- TODO sql-ize
+					s.name = Forum.object_types:to_name(s.subreddit_id)
+					-- s.description = ...
+					-- s.subscribers = ...
+				end
+			end
 		else
 			print("No session found")
 		end

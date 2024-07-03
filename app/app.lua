@@ -91,7 +91,7 @@ app:get("/admin", function(self)
 end)
 app:match("/console", console.make()) -- only available in Development builds
 
-require("src.api")(app) -- API endpoints
+-- require("src.api")(app) -- API endpoints
 require("src.auth")(app) -- User-authenticated endpoints
 
 return app

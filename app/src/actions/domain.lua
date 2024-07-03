@@ -27,7 +27,7 @@ return {
 		-- }
 
 		-- TODO improve query
-		local p, _ = db.select("score, url, title, permalink FROM 'v_frontpage_hot'")
+		local p, _ = db.select("score, url, title, permalink FROM 'v_hot_frontpage'")
 
 		local posts = {}
 		for _, post in pairs(p) do

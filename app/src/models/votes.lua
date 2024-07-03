@@ -12,7 +12,7 @@ local Votes = Model:extend("votes", {
 		{ "user", belongs_to = "Users" },
 	},
 	constraints = {
-		-- TODO: {user_id, post_id, comment_id} tuple should be unique to subreddit's table
+		-- TODO: {user_id, post_id, comment_id} tuple should be unique to vote's table
 	},
 })
 

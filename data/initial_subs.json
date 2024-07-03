@@ -1,29 +1,29 @@
 [
-  {"name": "Ask"},
+  {"name": "ask"},
   {"name": "aww"},
-  {"name": "BestOf"},
-  {"name": "Blog"},
-  {"name": "Books"},
-  {"name": "DataIsBeautiful"},
-  {"name": "Documentaries"},
-  {"name": "Food"},
-  {"name": "Funny"},
-  {"name": "Futurology"},
-  {"name": "Gadgets"},
-  {"name": "Gaming"},
-  {"name": "Gifs"},
-  {"name": "History"},
-  {"name": "IAmA"},
-  {"name": "InternetIsBeautiful"},
+  {"name": "bestof"},
+  {"name": "blog"},
+  {"name": "books"},
+  {"name": "data_is_beautiful"},
+  {"name": "documentaries"},
+  {"name": "food"},
+  {"name": "funny"},
+  {"name": "futurology"},
+  {"name": "gadgets"},
+  {"name": "gaming"},
+  {"name": "gifs"},
+  {"name": "history"},
+  {"name": "i_am_a"},
+  {"name": "internet_is_beautiful"},
   {"name": "memes"},
-  {"name": "mildlyAmusing"},
-  {"name": "mildlyDisappointing"},
-  {"name": "mildlyInfuriating"},
-  {"name": "mildlyInteresting"},
+  {"name": "mildly_amusing"},
+  {"name": "mildly_disappointing"},
+  {"name": "mildly_infuriating"},
+  {"name": "mildly_interesting"},
   {"name": "movies"},
-  {"name": "Music"},
+  {"name": "music"},
   {
-    "name": "News",
+    "name": "news",
     "feeds": [
       "https://feeds.bbci.co.uk/news/rss.xml",
       "https://wikinewsfeed.org/feed/atom?subscribe=535aa77d03",
@@ -32,41 +32,40 @@
       "https://news.google.com/rss/search?q=when:24h%20allinurl:bloomberg.com"    
     ]
   },
-  {"name": "Pics"},
+  {"name": "pics"},
   {
-    "name": "Politics",
+    "name": "politics",
     "feeds": [
       "https://www.reddit.com/r/politics.rss"
     ]
   },
   {
-    "name": "Programming",
+    "name": "programming",
     "feeds": [
       "https://news.ycombinator.com/rss",
       "http://www.lua.org/news.rss"    
     ]
   },
-  {"name": "Science"},
-  {"name": "Space"},
-  {"name": "Sports"},
+  {"name": "science"},
+  {"name": "space"},
+  {"name": "sports"},
   {
-    "name": "Technology",
+    "name": "technology",
     "feeds": [
       "https://feeds.bbci.co.uk/news/technology/rss.xml",
       "https://lobste.rs/rss",
       "https://www.reddit.com/r/technology.rss"
     ]
   },
-  {"name": "Television"},
-  {"name": "TodayILearned"},
-  {"name": "TwoXChromosomes"},
-  {"name": "Videos"},
+  {"name": "television"},
+  {"name": "today_i_learned"},
+  {"name": "videos"},
   {
-    "name": "WorldNews",
+    "name": "world_news",
     "feeds": [
       "http://www.guardian.co.uk/world/usa/rss",
       "https://feeds.bbci.co.uk/news/world/rss.xml"    
     ]
   },
-  {"name": "WTF"}
+  {"name": "wtf"}
 ]

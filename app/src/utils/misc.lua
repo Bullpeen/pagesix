@@ -80,7 +80,7 @@ function Misc:rss_feed(subreddit_id, url)
 			local p_tbl = {
 				title = item.title,
 				url = item.link,
-				permalink = "/r/" .. subreddit .. "/comments/" .. string.match(tostring(math.random()), "%.(%d+)"), -- TODO make sane
+				-- permalink = "/r/" .. subreddit .. "/comments/" .. string.match(tostring(math.random()), "%.(%d+)"), -- TODO make sane
 				sub_id = subreddit,
 				user_id = math.random(#users),
 			}
@@ -110,7 +110,7 @@ function Misc:generate_posts(subreddit_id, n)
 		local p_tbl = {
 			title = Lorem:sentence(),
 			url = "http://" .. Lorem:word() .. ".com/" .. i,
-			permalink = "/r/" .. subreddit_id .. "/comments/" .. string.match(tostring(math.random()), "%.(%d+)"), -- TODO make sane
+			-- permalink = "/r/" .. subreddit_id .. "/comments/" .. string.match(tostring(math.random()), "%.(%d+)"), -- TODO make sane
 			sub_id = subreddit_id,
 			user_id = math.random(#users),
 		}
@@ -138,7 +138,7 @@ function Misc:generate_comments(post_id, n)
 		local tbl = {
 			post_id = post_id,
 			user_id = math.random(#users),
-			permalink = "/r/" .. p.sub_id .. "/comments/" .. post_id .. "_" .. string.match(tostring(math.random()), "%.(%d+)"), -- TODO make permalink meaningful
+			-- permalink = "/r/" .. p.sub_id .. "/comments/" .. post_id .. "_" .. string.match(tostring(math.random()), "%.(%d+)"), -- TODO make permalink meaningful
 			body = Lorem:paragraph(),
 		}
 

@@ -28,7 +28,7 @@ local Comments = Model:extend("comments", {
 		{ "votes", has_many = "Votes" },
 		{ "post", belongs_to = "Posts" },
 		-- { "parent_comment", belongs_to="Comments" },
-		{ "subreddit", belongs_to = "Subreddits" },
+		{ "subreddit", belongs_to = "Forum" },
 	},
 })
 
@@ -48,9 +48,9 @@ end
 --- Check if comment is stickied to the Post
 -- @tparam string comment_id
 -- @treturn boolean stickied
-function Comments:is_stickied(comment_id)
-	local comment = self:find(comment_id)
-	return comment.stickied
-end
+-- function Comments:is_stickied(comment_id)
+-- 	local comment = self:find(comment_id)
+-- 	return comment.stickied
+-- end
 
 return Comments

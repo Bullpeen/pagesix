@@ -4,7 +4,7 @@
         require 'pl.pretty'.dump(sub)
         render('views.fragments.subreddit_listing',
             {
-                name = sub.subreddit_id,
+                name = sub.name,
                 description = sub.description,
                 subscribers = sub.subscribers
             })

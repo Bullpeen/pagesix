@@ -2,12 +2,13 @@
 -- @module action.subreddits
 
 local db = require("lapis.db")
+-- local Forum = require("models.forum")
 
 return {
 	before = function(self)
-		-- Get list of all subs
-		self.subs = db.select("* FROM ?", "v_subreddits")
-
+		self.subs = db.select("* FROM ?", "v_forum")
+		-- model doesn't track subscriber count
+		-- self.subs = Forum:select()
 	end,
 
 	GET = function(self)

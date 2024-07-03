@@ -4,8 +4,6 @@
 local db = require("lapis.db")
 local Model = require("lapis.db.model").Model
 
-local Subreddits = Model:extend("subreddits") -- TODO don't hardcode `1`
-
 local Users, Users_mt = Model:extend("users", {
 	timestamp = true,
 
@@ -72,35 +70,33 @@ local Users, Users_mt = Model:extend("users", {
 	},
 
 	relations = {
+		{ "user_profile", has_one = "UserProfiles" },
 		{ "subscriptions", has_many = "Subscriptions" },
 		{ "posts", has_many = "Posts" },
 		{ "votes", has_many = "Votes" },
 		{ "comments", has_many = "Comments" },
-		{ "moderates", has_many = "Subreddits", order = "id desc", key = "moderator_id" },
+		{
+			"moderates",
+			has_many = "Subreddits",
+			order = "id desc",
+			key = "moderator_id"
+		},
 		{
 			"authored_posts",
 			has_many = "Posts",
-			-- where = {deleted_at = null},
+			where = { deleted_at = nil },
 			order = "id desc",
 			key = "user_id",
 		},
 		{
 			"authored_comments",
 			has_many = "Comments",
-			-- where = {deleted_at = nil},
+			where = { deleted_at = nil },
 			order = "id desc",
 			key = "user_id",
 		},
 	},
 })
-
-
--- Get the user's display name
--- @treturn string user_name
--- this method will be available on all User instances
--- function Users_mt:get_display_name()
--- 	return self.display_name or self.user_name
--- end
 
 function Users_mt:get_name_from_id(id)
 	local res = db.select("user_name from users WHERE id=?", id)

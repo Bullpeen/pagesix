@@ -8,40 +8,191 @@ local Lorem = require("src.utils.lorem")
 -- local util = require("lapis.util")
 local misc = require("src.utils.misc")
 
--- local Comments = require("src.models.comments")
--- local Votes = require("src.models.votes")
-local Pagesix = require("src.models.pagesix")
+local schema = require("lapis.db.schema")
+local types = schema.types
+
+local Forum = require("src.models.forum")
 local Posts = require("src.models.posts")
-local Subreddits = require("src.models.subreddits")
 local Subscriptions = require("src.models.subscriptions")
 local Users = require("src.models.users")
 
--- math.randomseed(os.clock() * 100000000000)
+math.randomseed(os.clock() * 100000000000)
 
 -- add each incremental migration whose key is the unix timestamp
 return {
 	-- create initial tables: Users, Subreddits
 	[1] = function()
-		Pagesix:bootstrap()
+		schema.create_table("users", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_name", types.text({ unique = true }) },
+			{ "user_pass", types.text },
+			{ "user_email", types.text },
 
-		db.query(
-			[[
+			{ "created_at", types.integer({ null = true }) },
+			{ "updated_at", types.integer({ null = true }) },
+
+			{ "deleted_at", types.integer({ null = true }) },
+			{ "over_18", types.integer({ default = false }) },
+			{ "verified_email", types.integer({ default = false }) },
+		})
+
+		schema.create_table("user_profiles", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_email", types.text },
+			{ "description", types.text },
+
+			{ "created_at", types.integer({ null = true }) },
+			{ "updated_at", types.integer({ null = true }) },
+			{ "deleted_at", types.integer({ null = true }) },
+
+			"FOREIGN KEY(id) REFERENCES users(id)",
+		})
+
+		schema.create_index("users", "user_name", { unique = true })
+
+		schema.create_table("subscriptions", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer },
+			{ "subreddit_id", types.integer },
+
+			{ "created_at", types.integer({ null = true }) },
+			{ "updated_at", types.integer({ null = true }) },
+
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+			"FOREIGN KEY(subreddit_id) REFERENCES subreddits(id)",
+
+			"UNIQUE(user_id, subreddit_id)"
+		})
+
+		schema.create_table("reserved_usernames", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_name", types.text({ unique = true }) },
+
+			{ "created_at", types.integer({ null = true }) },
+			{ "updated_at", types.integer({ null = true }) }
+		})
+
+	end,
+
+	[2] = function()
+		schema.create_table("forum", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "name", types.text({ unique = true }) },
+
+			{ "created_at", types.integer({ null = true }) },
+			{ "deleted_at", types.integer({ null = true }) },
+			{ "updated_at", types.integer({ null = true }) },
+
+			{ "creator_id", types.integer({ deafault = 1 }) }, -- TODO rename
+			{ "description", types.text({ null = true }) },
+			{ "moderator_ids", types.text({ null = true }) },
+			{ "nsfw", types.integer({ default = false }) },
+
+			"FOREIGN KEY(creator_id) REFERENCES users(id)",
+		})
+
+		-- create_index("subreddits", "name", { unique = true })
+	end,
+
+	[3] = function()
+		-- create subreddit table containing Posts by Users
+		schema.create_table("posts", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.text },
+			{ "sub_id", types.integer },
+			-- { "permalink", types.text({ unique = true }) },
+			{ "title", types.text },
+			{ "url", types.text },
+
+			{ "created_at", types.integer({ null = true }) },
+			{ "updated_at", types.integer({ null = true }) },
+
+			{ "locked", types.integer({ default = false }) },
+			{ "edited", types.integer({ default = false }) },
+			{ "is_self", types.integer({ default = false }) },
+			{ "over_18", types.integer({ default = false }) },
+			{ "body", types.text({ null = true }) },
+
+			"FOREIGN KEY(sub_id) REFERENCES forum(id)",
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+		})
+
+		-- create subreddit table containing Comments by Users
+		schema.create_table("comments", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "post_id", types.integer },
+			{ "user_id", types.integer },
+			-- { "permalink", types.text({ unique = true }) },
+			{ "parent_comment_id", types.integer({ null = true }) },
+			{ "body", types.text },
+
+			{ "created_at", types.integer({ null = true }) },
+			{ "updated_at", types.integer({ null = true }) },
+
+			{ "edited", types.integer({ default = false }) },
+			{ "deleted", types.integer({ default = false }) },
+			{ "is_submitter", types.integer({ default = false }) },
+			{ "stickied", types.integer({ default = false }) },
+
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+			"FOREIGN KEY(post_id) REFERENCES posts(id)",
+
+			"UNIQUE(user_id, post_id, parent_comment_id)"
+		})
+
+		-- create each subreddit table containing Votes on Posts or Comments by Users
+		schema.create_table("votes", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer },
+			{ "post_id", types.integer },
+			{ "comment_id", types.integer({ null = true }) },
+			{ "upvote", types.integer({ default = true }) },
+
+			{ "created_at", types.integer({ null = true }) },
+			{ "updated_at", types.integer({ null = true }) },
+
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+			"FOREIGN KEY(post_id) REFERENCES 'posts(id)'",
+			"FOREIGN KEY(comment_id) REFERENCES 'comments(id)'",
+
+			"UNIQUE(user_id, post_id, comment_id)"
+		})
+
+		schema.create_table("modlog", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "mod_id", types.text },
+			{ "user_id", types.text({ null = true }) },
+			{ "sub_id", types.text({ null = true }) }, -- TODO remove?
+			{ "post_id", types.text({ null = true }) },
+			{ "comment_id", types.text({ null = true }) },
+			{ "action", types.integer({ null = true }) },
+			{ "reason", types.text },
+
+			{ "created_at", types.integer({ null = true }) },
+			{ "updated_at", types.integer({ null = true }) },
+
+			"FOREIGN KEY(mod_id) REFERENCES users(id)", -- TODO
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+			"FOREIGN KEY(sub_id) REFERENCES 'forum(id)'",
+			"FOREIGN KEY(post_id) REFERENCES 'posts(id)'",
+			"FOREIGN KEY(comment_id) REFERENCES 'comments(id)'"
+		})
+		db.query([[
 				CREATE VIEW IF NOT EXISTS ?
 				AS
 				SELECT COUNT(*) subscribers,
 					a.name, a.description, a.nsfw
-				FROM 'subreddits' a
+				FROM 'forum' a
 				INNER JOIN 'subscriptions' b ON a.id = b.subreddit_id
 				WHERE a.id = b.subreddit_id
 				GROUP BY a.id, b.subreddit_id
 				ORDER BY COUNT(*) DESC;
 			]],
-			"v_subreddits"
-		)
+			"v_forum")
 	end,
 
 	-- create first User
-	[2] = function()
+	[10] = function()
 		Users:create({
 			user_name = "anonymous_coward",
 			user_email = "anonymous@localhost",
@@ -50,7 +201,7 @@ return {
 	end,
 
 	-- create initial subreddits
-	[3] = function()
+	[13] = function()
 		-- TODO figure out utils module
 		local data = {}
 		local path = "/var/data/initial_subs.json"
@@ -66,7 +217,7 @@ return {
 
 		for _, sub in ipairs(data) do
 			print("About to create new sub: " .. sub.name .. ".")
-			local s, e = Subreddits:create({
+			local s, e = Forum:create({
 				name = sub.name,
 				description = sub.description or Lorem:sentence(),
 				creator_id = sub.creator_id or 1,
@@ -87,7 +238,7 @@ return {
 					AS
 					SELECT COUNT(*) score,
 						(SELECT COUNT(*) FROM 'comments' d WHERE d.post_id = a.id) num_comments,
-						a.created_at age, a.title, a.url, a.permalink, a.over_18, a.locked,
+						a.created_at age, a.title, a.url, a.over_18, a.locked,
 						c.user_name author
 					FROM 'posts' a
 					INNER JOIN 'votes' b ON a.id = b.post_id
@@ -100,7 +251,7 @@ return {
 					GROUP BY a.id, b.post_id
 					ORDER BY COUNT(*) DESC;
 				]],
-				"v_" .. s.id .. "_hot",
+				"v_hot_" .. s.name,
 				s.id
 			)
 
@@ -160,7 +311,7 @@ return {
 					AS
 					SELECT COUNT(*) score,
 						(SELECT COUNT(*) num_comments FROM 'comments' d WHERE d.post_id = a.id) num_comments,
-						a.title, a.url, a.permalink, a.over_18, a.locked,
+						a.title, a.url, a.over_18, a.locked,
 						c.user_name author
 					FROM 'posts' a
 					INNER JOIN 'votes' b ON a.id=b.post_id
@@ -172,7 +323,7 @@ return {
 					GROUP BY a.id, b.post_id
 					ORDER BY COUNT(*) DESC;
 			]],
-			"v_frontpage_hot"
+			"v_hot_frontpage"
 		)
 
 		-- New sort frontpage
@@ -219,8 +370,8 @@ return {
 	end,
 
 	-- create Users with random user_names
-	[4] = function()
-		local subreddits = Subreddits:select()
+	[14] = function()
+		local subreddits = Forum:select()
 
 		for i = 1, math.random(10,100) do
 			local name = Lorem:word() .. "_" .. i
@@ -247,8 +398,8 @@ return {
 	end,
 
 	-- loop through all Subreddits and create some Posts for each
-	[5] = function()
-		local subreddits = Subreddits:select()
+	[15] = function()
+		local subreddits = Forum:select()
 
 		for sub in pairs(subreddits) do
 			misc:generate_posts(sub, math.random(5))
@@ -261,7 +412,7 @@ return {
 	-- end,
 
 	-- cast Votes on posts in each subreddit
-	[10] = function()
+	[20] = function()
 		local posts = Posts:select()
 
 		for post in pairs(posts) do
@@ -270,7 +421,7 @@ return {
 	end,
 
 	-- create Comments on each post
-	[20] = function()
+	[30] = function()
 		local posts = Posts:select()
 
 		for post in pairs(posts) do
@@ -279,7 +430,7 @@ return {
 	end,
 
 	-- create 10 votes on each comment
-	[30] = function()
+	[40] = function()
 		local posts = Posts:select()
 
 		for post in pairs(posts) do

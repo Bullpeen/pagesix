@@ -1,7 +1,9 @@
 --- Posts model
 -- @module models.posts
 
-local Model = require("lapis.db.model").Model
+local model = require("lapis.db.model")
+local Model, enum = model.Model, model.enum
+
 local Posts = Model:extend("posts", {
 	timestamp = true,
 
@@ -19,21 +21,33 @@ local Posts = Model:extend("posts", {
 
 	relations = {
 		{ "comments", has_many = "Comments" },
-		{ "subreddit", belongs_to = "Subreddits" },
+		{ "subreddit", belongs_to = "Forum" }, -- has_one()?
 		{ "user", belongs_to = "Users" },
 		{ "votes", has_many = "Votes" },
+
+		-- { "votes",
+		--     has_many="Votes",
+		--     where = {sub_id = id},
+		--     order = "id desc",
+		--     key = "post_id"
+		-- },
+
+		-- { "top_posts",
+		--     has_many = "Posts",
+		--     where = {sub_id = id},
+		--     order = "id desc",
+		--     key = "author"
+		-- },
 	},
 })
 
--- print("RUNNING MODELS.POSTS")
-
---- Count comments in a post
--- @tparam integer post_id Post ID
--- @treturn integer posts
--- function Posts:count_comments(post_id)
--- 	local post = self:find(post_id)
--- 	return post:count("comments")
--- end
+Posts.statuses = enum({
+	pending = 1,
+	public = 2,
+	private = 3,
+	locked = 4,
+	deleted = 5,
+})
 
 --- Get posts in a thread
 -- @tparam number post_id Post ID
@@ -71,43 +85,6 @@ local Posts = Model:extend("posts", {
 -- 	print(string.format("Post %s in %s has %s upvotes, %s downs.", post_id, subreddit, #ups, #downs))
 
 -- 	return ups - downs
--- end
-
---- Check if Post is locked
--- function Posts:is_locked(post_id)
--- 	local post = self:find(post_id)
--- 	return post.locked
--- end
-
---- Check if Post is stickied
--- function Posts:is_stickied(post_id)
--- 	local post = self:find(post_id)
--- 	return post.stickied
--- end
-
---- Check if Post is NSFW
--- function Posts:is_nsfw(post_id)
--- 	local post = self:find(post_id)
--- 	return post.over_18
--- end
-
---- Check if Post is a self post (no url, contains body text)
--- function Posts:is_self(post_id)
--- 	local post = self:find(post_id)
--- 	return post.is_self
--- end
-
---- Given a table of post parameters, generate a permalink
--- @tparam table params Post parameters {post_id, user_id, title, url}
--- @treturn string permalink
--- function Posts:generate_permalink(params)
--- 	-- TODO:
-
--- 	local subreddit_name = Subreddit:subreddit_name(params.post_id)
--- 	local title_slug = utils.slugify(params.title)
--- 	local post_id = md5(title_slug .. params.post_id .. params.created_at)
-
--- 	return "/r/" .. subreddit_name .. "/comments/" .. post_id .. "/" .. title_slug
 -- end
 
 return Posts

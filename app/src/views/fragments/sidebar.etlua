@@ -15,7 +15,9 @@
         </div>
     </div>
 
-    <% if session then print("you're already logged in, silly") else render('views.fragments.login') end %>
+    <% if session.current_user then %>
+        YOU ARE LOGGED IN
+    <% else render('views.fragments.login') end %>
 
     <% render('views.fragments.subreddit_moderators') %>
 </div>
