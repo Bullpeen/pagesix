@@ -1,10 +1,9 @@
 --- Post action
 -- @module action.post
 
-local db = require("lapis.db")
 local Comments = require("models.comments")
-local Posts = require("models.posts")
 local Forum = require("models.forum")
+local Posts = require("models.posts")
 local Users = require("models.users")
 
 return {
@@ -30,22 +29,8 @@ return {
 
 		-- TODO paginate
 		self.comments = Comments:select("where post_id = ?", self.params.post_id)
-
-		-- self.comments = db.select(
-		-- 	[[
-		-- 		COUNT(*) score, c.user_name, c.created_at, b.user_id, b.body, b.permalink
-		-- 		FROM 'posts' a
-		-- 		INNER JOIN 'comments' b ON a.id=b.post_id
-		-- 		INNER JOIN 'users' c ON b.user_id = c.id
-		-- 		WHERE b.parent_comment_id IS NULL
-		-- 			AND b.post_id = ?
-		-- 		GROUP BY b.id
-		-- 		ORDER BY COUNT(*) DESC;
-		-- 	]],
-		-- 	self.params.post_id)
 		print("Found " .. #self.comments .. " comments")
 
-		-- local post_data = db.select("* FROM 'posts' WHERE id = ?", self.params.post_id)
 		local post_data = Posts:find(self.params.post_id)
 		print("Post data:")
 
@@ -62,8 +47,7 @@ return {
 			self.body = post_data["body"]
 		end
 
-		-- lookup user_name from user_id
-		-- local user_name = db.select("user_name FROM 'users' WHERE id=?")
+		-- local u = Posts:get_user()
 		local u = Users:find(post_data["user_id"])
 		print("User_name is " .. u['user_name'])
 		self.user_name = u['user_name']

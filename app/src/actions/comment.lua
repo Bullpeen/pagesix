@@ -3,6 +3,14 @@
 
 local db = require("lapis.db")
 
+local Comments = require("models.comments")
+local Forum = require("models.forum")
+local Posts = require("models.posts")
+local Subreddit = require("models.subreddit")
+local Users = require("models.users")
+local Votes = require("models.votes")
+
+
 return {
 	before = function(self)
 		-- self.params.subreddit
@@ -18,10 +26,8 @@ return {
 			return self:write({ redirect_to = self:url_for("homepage") })
 		end
 
-		-- Get subreddit id from sub_name
-		local res = db.select("id FROM 'subreddits' WHERE name=?", sub_name)
-		local id = res[1]["id"]
-		local comments_table = id .. "_comments"
+		-- Get subreddit from sub_name
+		local sub = Subreddit:find({name = sub_name})
 
 		-- TODO return table like, sorted by highest score (upvotes - downvotes)
 		-- {
@@ -29,43 +35,44 @@ return {
 		--		comment_id: { ... },
 		-- }
 
-		self.comments = db.select("* FROM ? WHERE id = ?", comments_table, self.params.comment_id)
-		print("Found " .. #self.comments .. " comments (1)")
+		self.comments = Comments:find({parent_comment_id = self.params.comment_id})
+		print("Found " .. #self.comments .. " comments")
 
-		-- local context = nil
+		local context
 
 		-- TODO check context=N from url param, return that many (grand)parents in self.comments
 		if self.params.q then
-			local context = string.match(self.params.q, "%d+$")
+			context = string.match(self.params.q, "%d+$")
 		end
+
+		-- TODO recursively include # of comments from the self.params.q argument
 
 		if context ~= nil and context > 1 then
 			-- loop context times and fetch each parent comments
 			for i = 1, context do
 				-- if comment has a parent, fetch it
-				if self.comments[i].parent_comment_id ~= nil then
+				if self.comments[i] and self.comments[i].parent_comment_id then -- ~= nil
 					print("Looking up parent comment: " .. self.comments[i].parent_comment_id)
-					local p =
-						db.select("* FROM ? WHERE comment_id = ?", comments_table, self.comment[i].parent_comment_id)
+					local p = Posts:get_comment({parent_comment_id = self.comment[i].parent_comment_id})
 					table.insert(self.comments, p[1])
+				else
+					break
 				end
 			end
 		end
 
-		local posts_table = "posts"
-		local post_data = db.select("* FROM ? WHERE id = ?", posts_table, self.params.post_id)
-		print("Post data:")
-		require("pl.pretty").dump(post_data[1])
 
-		-- lookup user_name from user_id
-		local user_name = db.query("SELECT user_name FROM 'users' WHERE id=?", post_data[1]["user_id"])
+		local post_data = Posts:find(post_id)
+		-- print("Post data:")
+		-- require("pl.pretty").dump(post_data)
 
 		-- pass data to template
-		self.user_name = user_name
-		self.title = post_data[1]["title"]
-		self.url = post_data[1]["url"]
-		self.permalink = post_data[1]["permalink"]
-		self.created_at = post_data[1]["created_at"]
+		self.user_name = post_data["user_name"]
+		self.title = post_data["title"]
+		self.url = post_data["url"]
+		-- https://leafo.net/lapis/reference/actions.html#request-object-methods/request:url_for
+		self.permalink = self:url_for(self.params.comment_id)
+		self.created_at = post_data["created_at"]
 	end,
 
 	GET = function(self)

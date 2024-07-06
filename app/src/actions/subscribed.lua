@@ -1,7 +1,6 @@
 --- Subscribed action
 -- @module action.subscribed
 
--- local db = require("lapis.db")
 local Forum = require("models.forum")
 local Users = require("models.users")
 

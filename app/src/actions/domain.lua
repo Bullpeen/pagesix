@@ -5,6 +5,8 @@ local db = require("lapis.db")
 
 return {
 	before = function(self)
+		-- self.params.domain
+
 		self.domain = self.params.domain
 
 		-- Check if domain is nil or empty
@@ -19,27 +21,8 @@ return {
 			-- return self:write({ redirect_to = self:url_for("homepage") })
 		end
 
-		-- search all _posts tables for url like %domain%
-		-- TODO subquery to return a table like
-		-- {
-		-- 		post_id: { title, url, domain, user_id, created_at, is_self, body, upvotes, downvotes, num_comments },
-		-- 		post_id: { ... },
-		-- }
-
-		-- TODO improve query
-		local p, _ = db.select("score, url, title, permalink FROM 'v_hot_frontpage'")
-
-		local posts = {}
-		for _, post in pairs(p) do
-			local d = post.url:match("[%w%.]*%.(%w+%.%w+)")
-			-- print("URL IS " .. post.url)
-			-- print("D IS " .. d)
-			post.domain=d
-			if self.domain == d then
-				table.insert(posts, post)
-			end
-		end
-		self.posts = posts
+		-- SELECT id FROM sometable WHERE url like '%domain%'
+		self.posts = db.select("* FROM ? WHERE url LIKE ?", "v_hot_frontpage", "%" .. self.domain .. "%")
 	end,
 
 	GET = function(self)

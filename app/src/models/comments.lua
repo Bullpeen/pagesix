@@ -26,31 +26,10 @@ local Comments = Model:extend("comments", {
 	relations = {
 		{ "user", has_one = "Users" },
 		{ "votes", has_many = "Votes" },
-		{ "post", belongs_to = "Posts" },
 		-- { "parent_comment", belongs_to="Comments" },
+		{ "post", belongs_to = "Posts" },
 		{ "subreddit", belongs_to = "Forum" },
 	},
 })
-
---- Get comments karma score
--- @tparam string post_id
--- @treturn number score
-function Comments:get_score(post_id)
-	-- TODO:
-
-	-- get board_id
-	-- check board_id_votes table
-	-- count upvotes and total rows
-	-- downvotes = total - upvotes
-	-- return upvotes - downvotes
-end
-
---- Check if comment is stickied to the Post
--- @tparam string comment_id
--- @treturn boolean stickied
--- function Comments:is_stickied(comment_id)
--- 	local comment = self:find(comment_id)
--- 	return comment.stickied
--- end
 
 return Comments

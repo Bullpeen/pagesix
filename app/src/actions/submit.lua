@@ -11,19 +11,19 @@ return {
 	end,
 
 	POST = function(self)
-		print(
-			"self is "
-				.. self.params.url
-				.. ", "
-				.. self.params.title
-		)
+		-- self.params.url
+		-- self.params.title
+
+		-- self.params.passwd
+		-- self.params.passwd2
+
+		-- print("URL: " .. self.params.url .. ", Title: " .. self.params.title)
 
 		if self.params.passwd == self.params.passwd2 then
 			local s, err = Posts:create({
 				user_id = 1,
                 sub_id = 1,
                 title = self.params.title,
-                permalink = math.random(1000000),
                 url = self.params.url,
 			})
 			if not err then

@@ -2,7 +2,6 @@
 -- @module action.subreddit
 
 local Forum = require("models.forum")
--- local Posts = require("models.posts")
 
 return {
 	before = function(self)
@@ -11,13 +10,10 @@ return {
 		-- convert subreddit_id to name
 		local subreddit_id = Forum.object_types:for_db(subreddit_name)
 
-		-- print("subreddit_name " .. subreddit_name)
-		-- print("subreddit_id " .. subreddit_id)
-
 		local sub = Forum:find(subreddit_id)
-		require 'pl.pretty'.dump(sub)
+		-- require 'pl.pretty'.dump(sub)
 
-		self.posts = sub:get_frontpage()
+		self.posts = sub:get_frontpage(sub.name)
 	end,
 
 	-- https://github.com/karai17/lapis-chan/blob/master/app/src/utils/generate.lua

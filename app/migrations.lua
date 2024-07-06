@@ -305,6 +305,7 @@ return {
 		end
 
 		-- Hot sort frontpage
+		-- TODO add Age field
 		db.query(
 			[[
 					CREATE VIEW IF NOT EXISTS ?

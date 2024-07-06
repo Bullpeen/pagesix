@@ -23,6 +23,8 @@ return {
 				.. self.params.email
 		)
 
+		-- TODO make secure
+		-- https://github.com/snap-cloud/snapCloud/blob/master/passwords.lua
 		if self.params.passwd == self.params.passwd2 then
 			local s, err = Users:create({
 				user_name = self.params.name,

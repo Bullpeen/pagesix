@@ -10,6 +10,24 @@ local body_size = "1m"
 local lua_path = "./src/?.lua;./src/?/init.lua;./libs/?.lua;./libs/?/init.lua"
 local lua_cpath = ""
 
+-- https://github.com/snap-cloud/snapCloud/blob/master/config.lua
+-- config({'development', 'test'}, {
+--     use_daemon = 'off',
+--     -- site_name = 'dev | Snap Cloud',
+--     port = os.getenv('PORT') or 8080,
+--     mail_smtp_port = os.getenv('MAIL_SMTP_PORT') or 1025,
+--     dns_resolver = '8.8.8.8',
+--     code_cache = 'off',
+--     num_workers = 1,
+--     log_directive = 'stderr debug',
+--     secret = os.getenv('SESSION_SECRET_BASE') or 'this is a secret',
+
+--     -- development needs no special SSL or cert config.
+--     -- primary_nginx_config = 'locations.conf',
+--     -- empty string when no additional configs are included.
+--     -- secondary_nginx_config = ''
+-- })
+
 config("development", {
 	port = 80,
 	body_size = body_size,
