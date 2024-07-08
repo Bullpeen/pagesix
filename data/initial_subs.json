@@ -1,27 +1,158 @@
 [
-  {"name": "ask"},
-  {"name": "aww"},
-  {"name": "bestof"},
-  {"name": "blog"},
-  {"name": "books"},
-  {"name": "data_is_beautiful"},
-  {"name": "documentaries"},
-  {"name": "food"},
-  {"name": "funny"},
-  {"name": "futurology"},
-  {"name": "gadgets"},
-  {"name": "gaming"},
-  {"name": "gifs"},
-  {"name": "history"},
-  {"name": "i_am_a"},
-  {"name": "internet_is_beautiful"},
-  {"name": "memes"},
-  {"name": "mildly_amusing"},
-  {"name": "mildly_disappointing"},
-  {"name": "mildly_infuriating"},
-  {"name": "mildly_interesting"},
-  {"name": "movies"},
-  {"name": "music"},
+  {
+    "name": "ask",
+    "feeds": [
+      "https://www.reddit.com/r/ask.rss"
+    ]
+  },
+
+  {
+    "name": "aww",
+    "feeds": [
+      "https://www.reddit.com/r/aww.rss"
+    ]
+  },
+
+  {
+    "name": "best_of",
+    "feeds": [
+      "https://www.reddit.com/r/bestof.rss"
+    ]
+  },
+
+  {
+    "name": "blog",
+    "feeds": [
+      "https://www.reddit.com/r/blog.rss"
+    ]
+  },
+
+  {
+    "name": "books",
+    "feeds": [
+      "https://www.reddit.com/r/books.rss"
+    ]
+  },
+
+  {
+    "name": "data_is_beautiful",
+    "feeds": [
+      "https://www.reddit.com/r/data_is_beautiful.rss"
+    ]
+  },
+
+  {
+    "name": "documentaries",
+    "feeds": [
+      "https://www.reddit.com/r/documentaries.rss"
+    ]
+  },
+
+  {
+    "name": "food",
+    "feeds": [
+      "https://www.reddit.com/r/food.rss"
+    ]
+  },
+
+  {
+    "name": "funny",
+    "feeds": [
+      "https://www.reddit.com/r/funny.rss"
+    ]
+  },
+
+  {
+    "name": "futurology",
+    "feeds": [
+      "https://www.reddit.com/r/futurology.rss"
+    ]
+  },
+
+  {
+    "name": "gadgets",
+    "feeds": [
+      "https://www.reddit.com/r/gadgets.rss"
+    ]
+  },
+
+  {
+    "name": "gaming",
+    "feeds": [
+      "https://www.reddit.com/r/gaming.rss"
+    ]
+  },
+
+  {
+    "name": "gifs",
+    "feeds": [
+      "https://www.reddit.com/r/gifs.rss"
+    ]
+  },
+
+  {
+    "name": "history",
+    "feeds": [
+      "https://www.reddit.com/r/history.rss"
+    ]
+  },
+
+  {
+    "name": "ask_me_anything",
+    "feeds": [
+      "https://www.reddit.com/r/IAmA.rss"
+    ]
+  },
+
+  {
+    "name": "internet_is_beautiful",
+    "feeds": [
+      "https://www.reddit.com/r/internetisbeautiful.rss"
+    ]
+  },
+
+  {
+    "name": "memes",
+    "feeds": [
+      "https://www.reddit.com/r/memes.rss"
+    ]
+  },
+
+  {
+    "name": "mildly_amusing",
+    "feeds": [
+      "https://www.reddit.com/r/mildlyamusing.rss"
+    ]
+  },
+
+  {
+    "name": "mildly_infuriating",
+    "feeds": [
+      "https://www.reddit.com/r/mildlyinfuriating.rss"
+    ]
+  },
+
+  {
+    "name": "mildly_interesting",
+    "feeds": [
+      "https://www.reddit.com/r/mildlyinteresting.rss"
+    ]
+  },
+
+  {
+    "name": "movies",
+    "feeds": [
+      "https://www.reddit.com/r/movies.rss"
+    ]
+  },
+
+  {
+    "name": "music",
+    "feeds": [
+      "https://www.reddit.com/r/music.rss"
+    ]
+  },
+
   {
     "name": "news",
     "feeds": [
@@ -32,7 +163,13 @@
       "https://news.google.com/rss/search?q=when:24h%20allinurl:bloomberg.com"    
     ]
   },
-  {"name": "pics"},
+  {
+    "name": "pics",
+    "feeds": [
+      "https://www.reddit.com/r/pics.rss"
+    ]
+  },
+
   {
     "name": "politics",
     "feeds": [
@@ -43,12 +180,31 @@
     "name": "programming",
     "feeds": [
       "https://news.ycombinator.com/rss",
-      "http://www.lua.org/news.rss"    
+      "http://www.lua.org/news.rss",
+      "https://www.reddit.com/r/programming.rss"
     ]
   },
-  {"name": "science"},
-  {"name": "space"},
-  {"name": "sports"},
+  {
+    "name": "science",
+    "feeds": [
+      "https://www.reddit.com/r/science.rss"
+    ]
+  },
+
+  {
+    "name": "space",
+    "feeds": [
+      "https://www.reddit.com/r/space.rss"
+    ]
+  },
+
+  {
+    "name": "sports",
+    "feeds": [
+      "https://www.reddit.com/r/sports.rss"
+    ]
+  },
+
   {
     "name": "technology",
     "feeds": [
@@ -57,15 +213,39 @@
       "https://www.reddit.com/r/technology.rss"
     ]
   },
-  {"name": "television"},
-  {"name": "today_i_learned"},
-  {"name": "videos"},
+  {
+    "name": "television",
+    "feeds": [
+      "https://www.reddit.com/r/television.rss"
+    ]
+  },
+
+  {
+    "name": "today_i_learned",
+    "feeds": [
+      "https://www.reddit.com/r/todayilearned.rss"
+    ]
+  },
+
+  {
+    "name": "videos",
+    "feeds": [
+      "https://www.reddit.com/r/videos.rss"
+    ]
+  },
+
   {
     "name": "world_news",
     "feeds": [
+      "https://www.reddit.com/r/worldnews.rss",
       "http://www.guardian.co.uk/world/usa/rss",
       "https://feeds.bbci.co.uk/news/world/rss.xml"    
     ]
   },
-  {"name": "wtf"}
+  {
+    "name": "wtf",
+    "feeds": [
+      "https://www.reddit.com/r/wtf.rss"
+    ]
+  }
 ]

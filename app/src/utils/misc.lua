@@ -53,14 +53,15 @@ end
 -- 	end
 -- end
 
-function Misc:rss_feed(subreddit_id, url)
-	local subreddit = subreddit_id or 1
+function Misc:rss_feed(subreddit, url)
 	local http = require("socket.http")
 	local feedparser = require("feedparser")
+	local Forum = require("src.models.forum")
 	local Posts = require("src.models.posts")
 	local Users = require("src.models.users")
 	local users = Users:select()
 
+	local subreddit_id = Forum.object_types:for_db(subreddit)
 	local feed_url = url
 
 	local response, status, _ = http.request(feed_url)
@@ -68,26 +69,30 @@ function Misc:rss_feed(subreddit_id, url)
 		local parsed = feedparser.parse(response)
 
 		-- Print out feed details.
-		print("> Title   ", parsed.feed.title)
-		print("> Author  ", parsed.feed.author)
-		print("> ID      ", parsed.feed.id)
-		print("> Entries ", #parsed.entries)
+		-- print("> Title   ", parsed.feed.title)
+		-- print("> Author  ", parsed.feed.author)
+		-- print("> ID      ", parsed.feed.id)
+		-- print("> Entries ", #parsed.entries)
+
+		if parsed == nil then return nil, "parse error" end
 
 		for _, item in ipairs(parsed.entries) do
+			if item.link == nil then item.link = "#" end
+
 			print("Title   ", item.title)
 			print("Link    ", item.link)
 
 			local p_tbl = {
 				title = item.title,
 				url = item.link,
-				sub_id = subreddit,
+				sub_id = subreddit_id,
 				user_id = math.random(#users),
 			}
 			local s, e = Posts:create(p_tbl)
 			if not s then
 				print("error creating " .. item.title)
 				print(e)
-				break
+				-- break
 			end
 		end
 	else

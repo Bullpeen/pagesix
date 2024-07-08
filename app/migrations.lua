@@ -87,6 +87,7 @@ return {
 			{ "description", types.text({ null = true }) },
 			{ "moderator_ids", types.text({ null = true }) },
 			{ "nsfw", types.integer({ default = false }) },
+			{ "feeds", types.text({ null = true }) },
 
 			"FOREIGN KEY(creator_id) REFERENCES users(id)",
 		})
@@ -217,11 +218,26 @@ return {
 
 		for _, sub in ipairs(data) do
 			print("About to create new sub: " .. sub.name .. ".")
+
+			local feeds_str = ""
+			if sub.feeds ~= nil then
+				for _, feed_url in pairs(sub.feeds) do
+					feeds_str = feed_url .. "," .. feeds_str
+					print("sub " .. sub.name .. " has feed_url " .. feed_url)
+				end
+
+				-- sub.feeds = 
+				print(feeds_str)
+			end
+
 			local s, e = Forum:create({
 				name = sub.name,
 				description = sub.description or Lorem:sentence(),
 				creator_id = sub.creator_id or 1,
+				feeds = feeds_str
 			})
+
+
 			if not s then
 				print("error creating " .. s.name)
 				print(e)
@@ -236,17 +252,19 @@ return {
 				[[
 					CREATE VIEW IF NOT EXISTS ?
 					AS
-					SELECT COUNT(*) score,
-						(SELECT COUNT(*) FROM 'comments' d WHERE d.post_id = a.id) num_comments,
-						a.created_at age, a.title, a.url, a.over_18, a.locked,
+					SELECT
+						(SELECT COUNT(*) upvotes FROM 'votes' b WHERE b.post_id = a.id AND b.comment_id IS NULL AND b.upvote = 1) upvotes,
+						(SELECT COUNT(*) upvotes FROM 'votes' b WHERE b.post_id = a.id AND b.comment_id IS NULL AND b.upvote = 0) downvotes,
+						(SELECT COUNT(*) num_comments FROM 'comments' d WHERE d.post_id = a.id) num_comments,
+						a.title, a.url, a.over_18, a.locked, a.created_at age,
 						c.user_name author
 					FROM 'posts' a
 					INNER JOIN 'votes' b ON a.id = b.post_id
 					INNER JOIN 'users' c ON b.user_id = c.id
 					WHERE a.locked = 0
 						AND b.comment_id IS NULL
-						AND a.id = b.post_id
 						AND b.upvote = 1
+						AND a.id = b.post_id
 						AND a.sub_id = ?
 					GROUP BY a.id, b.post_id
 					ORDER BY COUNT(*) DESC;
@@ -254,54 +272,6 @@ return {
 				"v_hot_" .. s.name,
 				s.id
 			)
-
-			-- New sort subreddit
-			-- db.query(
-			-- 	[[
-			-- 		CREATE VIEW IF NOT EXISTS ?
-			-- 		AS
-			-- 		SELECT COUNT(*) score,
-			-- 			(SELECT COUNT(*) num_comments FROM 'comments' d WHERE d.post_id = a.id),
-			-- 			a.created_at age, a.title, a.url, a.permalink, a.over_18, a.locked,
-			-- 			c.user_name author
-			-- 		FROM 'posts' a
-			-- 		INNER JOIN 'votes' b ON a.id=b.post_id
-			-- 		INNER JOIN 'users' c ON b.user_id = c.id
-			-- 		INNER JOIN 'comments' d ON a.id = d.post_id
-			-- 		WHERE a.locked = 0
-			-- 			AND b.comment_id IS NULL
-			-- 			AND a.id = b.post_id
-			-- 			AND a.sub_id = ?
-			-- 		GROUP BY a.id, b.post_id
-			-- 		ORDER BY age, COUNT(*) DESC;
-			-- 	]],
-			-- 	"v_" .. s.id .. "_new",
-			-- 	s.id
-			-- )
-
-			-- Top sort subreddit
-			-- db.query(
-			-- 	[[
-			-- 		CREATE VIEW IF NOT EXISTS ?
-			-- 		AS
-			-- 		SELECT COUNT(*) score,
-			-- 			(SELECT COUNT(*) num_comments FROM 'comments' d WHERE d.post_id = a.id),
-			-- 			a.created_at age, a.title, a.url, a.permalink, a.over_18, a.locked,
-			-- 			c.user_name author
-			-- 		FROM 'posts' a
-			-- 		INNER JOIN 'votes' b ON a.id=b.post_id
-			-- 		INNER JOIN 'users' c ON b.user_id = c.id
-			-- 		INNER JOIN 'comments' d ON a.id = d.post_id
-			-- 		WHERE a.locked = 0
-			-- 			AND b.comment_id IS NULL
-			-- 			AND a.id = b.post_id
-			-- 			AND a.sub_id = ?
-			-- 		GROUP BY a.id, b.post_id
-			-- 		ORDER BY COUNT(*) DESC;
-			-- 	]],
-			-- 	"v_" .. s.id .. "_top",
-			-- 	s.id
-			-- )
 		end
 
 		-- Hot sort frontpage
@@ -310,12 +280,14 @@ return {
 			[[
 					CREATE VIEW IF NOT EXISTS ?
 					AS
-					SELECT COUNT(*) score,
+					SELECT
+						(SELECT COUNT(*) upvotes FROM 'votes' b WHERE b.post_id = a.id AND b.comment_id IS NULL AND b.upvote = 1) upvotes,
+						(SELECT COUNT(*) upvotes FROM 'votes' b WHERE b.post_id = a.id AND b.comment_id IS NULL AND b.upvote = 0) downvotes,
 						(SELECT COUNT(*) num_comments FROM 'comments' d WHERE d.post_id = a.id) num_comments,
-						a.title, a.url, a.over_18, a.locked,
+						a.title, a.url, a.over_18, a.locked, a.created_at age,
 						c.user_name author
 					FROM 'posts' a
-					INNER JOIN 'votes' b ON a.id=b.post_id
+					INNER JOIN 'votes' b ON a.id = b.post_id
 					INNER JOIN 'users' c ON b.user_id = c.id
 					WHERE a.locked = 0
 						AND b.comment_id IS NULL
@@ -326,48 +298,6 @@ return {
 			]],
 			"v_hot_frontpage"
 		)
-
-		-- New sort frontpage
-		-- db.query(
-		-- 	[[
-		-- 			CREATE VIEW IF NOT EXISTS ?
-		-- 			AS
-		-- 			SELECT COUNT(*) score,
-		-- 				(SELECT COUNT(*) num_comments FROM 'comments' d WHERE d.post_id = a.id) num_comments,
-		-- 				a.created_at age, a.title, a.url, a.permalink, a.over_18, a.locked,
-		-- 				c.user_name author
-		-- 			FROM 'posts' a
-		-- 			INNER JOIN 'votes' b ON a.id=b.post_id
-		-- 			INNER JOIN 'users' c ON b.user_id = c.id
-		-- 			WHERE a.locked = 0
-		-- 				AND b.comment_id IS NULL
-		-- 				AND a.id = b.post_id
-		-- 			GROUP BY a.id, b.post_id
-		-- 			ORDER BY age, COUNT(*) DESC;
-		-- 	]],
-		-- 	"v_frontpage_new"
-		-- )
-
-		-- Top sort frontpage
-		-- db.query(
-		-- 	[[
-		-- 			CREATE VIEW IF NOT EXISTS ?
-		-- 			AS
-		-- 			SELECT COUNT(*) score,
-		-- 				(SELECT COUNT(*) num_comments FROM 'comments' d WHERE d.post_id = a.id) num_comments,
-		-- 				a.created_at age, a.title, a.url, a.permalink, a.over_18, a.locked,
-		-- 				c.user_name author
-		-- 			FROM 'posts' a
-		-- 			INNER JOIN 'votes' b ON a.id=b.post_id
-		-- 			INNER JOIN 'users' c ON b.user_id = c.id
-		-- 			WHERE a.locked = 0
-		-- 				AND b.comment_id IS NULL
-		-- 				AND a.id = b.post_id
-		-- 			GROUP BY a.id, b.post_id
-		-- 			ORDER BY COUNT(*) DESC;
-		-- 	]],
-		-- 	"v_frontpage_top"
-		-- )
 	end,
 
 	-- create Users with random user_names
@@ -400,17 +330,27 @@ return {
 
 	-- loop through all Subreddits and create some Posts for each
 	[15] = function()
-		local subreddits = Forum:select()
+		-- local subreddits = Forum:select()
 
-		for sub in pairs(subreddits) do
-			misc:generate_posts(sub, math.random(5))
-		end
+		-- for sub in pairs(subreddits) do
+		-- 	misc:generate_posts(sub, math.random(5))
+		-- end
 	end,
 
-	-- [66] = function()
-	-- 	local feed_url = "https://www.reddit.com/r/politics.rss"
-	-- 	misc:rss_feed(1, feed_url)
-	-- end,
+	[16] = function()
+		local subreddits = Forum:select()
+
+		for _, sub in pairs(subreddits) do
+			-- print("sub.name = " .. sub.name)
+			-- print("length " .. #sub.feeds)
+			if #sub.feeds ~= 0 then
+				for feed_url in string.gmatch(sub.feeds, '([^,]+)') do
+					-- print("feed_url = " .. feed_url)
+					misc:rss_feed(sub.name, feed_url)
+				end
+			end
+		end
+	end,
 
 	-- cast Votes on posts in each subreddit
 	[20] = function()

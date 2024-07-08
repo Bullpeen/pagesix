@@ -5,6 +5,12 @@ local cached = require("lapis.cache").cached
 local r2 = require("lapis.application").respond_to
 
 local function auth(app)
+	-- only for logged in users
+	app:match("subscribed",   "/subscribed",    r2(require "actions.subscribed"))
+	app:match("submit", "/submit", r2(require("actions.submit")))
+
+	-- app:match("prefs", "/prefs", function(self) end) -- stub
+
 	app:match("login", "/login", cached(r2(require("actions.login"))))
 	app:match("password", "/password", cached(r2(require("actions.register"))))
 	app:match("register", "/register", cached(r2(require("actions.register"))))

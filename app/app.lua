@@ -34,39 +34,22 @@ app:enable("etlua")
 
 app.layout = require("views.layout")
 
-app:match("homepage", "/", r2(require("actions.index"))) -- hot sort
-
--- best
--- hot
--- app:match("new", "/new", r2(require("actions.index")))
--- app:match("rising", "/rising", r2(require("actions.index")))
--- app:match("controversial", "/controversial", r2(require("actions.index")))
--- app:match("top", "/top", r2(require("actions.index")))
+app:match("homepage", "/(:sort)", r2(require("actions.index"))) -- hot sort
 
 
--- app:match("new_subreddit", "/r/:subreddit/new", r2(require("actions.r_subreddit")))
--- app:match("rising_subreddit", "/r/:subreddit/rising", r2(require("actions.index")))
--- app:match(
--- 	"controversial_subreddit",
--- 	"/r/:subreddit/controversial",
--- 	r2(require("actions.index"))
--- )
--- app:match("top_subreddit", "/r/:subreddit/top", r2(require("actions.index")))
-
+-- app:match("comments", "/comments", r2(require("actions.index")))
+app:match("domains", "/domain/:domain", r2(require("actions.domain")))
 app:match("user_profile", "/user/:user_name(/:type)", r2(require("actions.user")))
 
-app:match("comments", "/comments", r2(require("actions.index")))
-app:match("domains", "/domain/:domain", r2(require("actions.domain")))
 app:match("subreddits", "/subreddits(/:type)", r2(require("actions.subreddits")))
+app:match("subreddits",   "/subreddits/search",  r2(require "actions.subreddits"))
 
--- app:match("subreddits",   "/subreddits/search",  r2(require "actions.subreddits"))
-app:match("subscribed",   "/subscribed",    r2(require "actions.subscribed")) -- only for logged in users
 
 -- meta subreddits
-app:match("popular", "/r/popular", r2(require("actions.r_popular")))
-app:match("all", "/r/all", r2(require("actions.r_all")))
-app:match("random", "/r/random", r2(require("actions.r_random")))
-app:match("subreddit", "/r/:subreddit", r2(require("actions.r_subreddit")))
+-- app:match("popular", "/r/popular(/:sort)", r2(require("actions.r_popular")))
+app:match("all", "/r/all(/:sort)", r2(require("actions.r_all")))
+app:match("random", "/r/random(/:sort)", r2(require("actions.r_random")))
+app:match("subreddit", "/r/:subreddit(/:sort)", r2(require("actions.r_subreddit")))
 
 app:match(
 	"post",
@@ -79,19 +62,14 @@ app:match(
 	r2(require("actions.comment"))
 )
 
--- app:match("prefs", "/prefs", function(self) end) -- stub
-
 -- app:match("about", "/about", function(self) end) -- stub
 -- app:match("contact", "/contact", function(self) end) -- stub
 -- app:match("help", "/help", function(self) end) -- stub
-app:match("submit", "/submit", r2(require("actions.submit")))
 
-app:get("/admin", function(self)
-	return "Go away"
-end)
+app:get("/admin", function(self) return "Go away" end)
 app:match("/console", console.make()) -- only available in Development builds
 
--- require("src.api")(app) -- API endpoints
+require("src.api")(app) -- API endpoints
 require("src.auth")(app) -- User-authenticated endpoints
 
 return app

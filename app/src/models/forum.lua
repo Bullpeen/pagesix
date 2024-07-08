@@ -116,7 +116,7 @@ function Forum_mt:get_frontpage(subreddit_name, sort)
 	sort = sort or "hot"
 
 	local v = "v_" .. sort .. "_" .. subreddit_name
-	return db.select("* FROM ? LIMIT ?", v, 20)
+	return db.select("* FROM ? LIMIT ?", v, 100)
 end
 
 return Forum

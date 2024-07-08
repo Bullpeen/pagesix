@@ -2,6 +2,7 @@
 -- @module action.index
 
 -- local Forum = require("models.forum")
+-- local Sort = require("src.utils.sort")
 
 return {
 	before = function(self)

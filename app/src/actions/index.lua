@@ -2,11 +2,17 @@
 -- @module action.index
 
 local db = require("lapis.db")
+local Sort = require("src.utils.sort")
 
 return {
 	before = function(self)
+		-- self.params.sort
+		local sort = self.params.sort or "hot" -- best, controversial, hot, new, rising, top
+
 		-- local paginated = Posts:paginated([[where group_id = ? order by name asc]], 123)
-		self.posts = db.select("* FROM ? LIMIT ?", "v_hot_frontpage", 20)
+		local posts = db.select("* FROM ? LIMIT ?", "v_hot_frontpage", 100)
+		self.posts = Sort:sort(posts, sort)
+
 	end,
 
 	GET = function(self)
