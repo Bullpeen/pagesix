@@ -1,3 +1,1 @@
 <%  render('views.fragments.posts') %>
-
-<% render('views.fragments.nav') %>

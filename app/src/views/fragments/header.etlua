@@ -7,9 +7,11 @@
 				<span class="selected title">my subs</span>
 			</div>
 			<div class="drop-choices srdrop">
-                <% if subs ~= nil then for _, sub in ipairs(subs) do %>
+                <% if subs ~= nil then %>
+				<% for sub in pairs(subs) do %>
 				    <a href="/r/<%= sub.name %>" class="choice"><%= sub.name %></a>
-                <% end %><% end %>
+                <% end %>
+                <% end %>
 
 
 				<a href="/subreddits/mine/" class="bottom-option choice">edit subscriptions</a>
@@ -30,6 +32,18 @@
 						<span class="separator">-</span>
 						<a href="/r/random/" class="random choice">random</a>
 					</li>
+
+					<% if subs ~= nil then %>
+					<% for sub in pairs(subs) do %>
+					<li>
+						<span class="separator">-</span>
+						<a href="/r/<%= sub.name %>/" class="choice"><%= sub.name %></a>
+					</li>
+					<% end %>
+					<% else %> 
+					<% print("NOPE") %>
+					<% end %>
+
 				</ul>
 				<a href="/subs/mine/" id="sr-more-link">- edit subs »</a>
 			</div>

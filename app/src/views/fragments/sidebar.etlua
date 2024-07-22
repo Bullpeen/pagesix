@@ -15,6 +15,8 @@
         </div>
     </div>
 
+    <div class="spacer"></div>
+
     <% if session.current_user then %>
         YOU ARE LOGGED IN
     <% else render('views.fragments.login') end %>

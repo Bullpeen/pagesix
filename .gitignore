@@ -55,4 +55,7 @@ image_cache/
 /.luarocks
 
 *.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
 doc/

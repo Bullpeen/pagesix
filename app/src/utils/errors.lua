@@ -87,7 +87,7 @@ return {
 	get_error = get_error,
 	handle = function(self)
 		-- Inject localized error messages
-		for _, err in ipairs(self.errors) do
+		for err in pairs(self.errors) do
 			--err.message = self.i18n(err.code)
 			if type(err) == "table" then
 				for k, v in pairs(err) do

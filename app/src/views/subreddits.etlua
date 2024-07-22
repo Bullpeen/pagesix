@@ -3,7 +3,7 @@
 
 <div id="siteTable" class="sitetable linklisting">
     <% if subs ~= nil then %>
-        <% for _, sub in ipairs(subs) do 
+        <% for sub in pairs(subs) do 
             name = sub.name
             render('views.fragments.subreddit_listing',
                 {

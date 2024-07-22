@@ -1,7 +1,7 @@
 --- /r/all action
 -- @module action.index
 
-local Posts = require("models.posts")
+local Posts = require("src.models.posts")
 local Sort = require("src.utils.sort")
 
 return {

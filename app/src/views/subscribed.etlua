@@ -1,6 +1,6 @@
 
 <% if subreddits ~= nil then
-    for _, sub in ipairs(subreddits) do 
+    for sub in pairs(subreddits) do 
         require 'pl.pretty'.dump(sub)
         render('views.fragments.subreddit_listing',
             {

@@ -1,7 +1,7 @@
 <div class="commentarea">
     <div class="sitetable nestedlisting">
         <% if comments ~= nil then
-            for _, comment in ipairs(comments) do %>
+            for comment in pairs(comments) do %>
                 <div class="thing comment">
                     <p class="parent"></p>
                     <div class="midcol">

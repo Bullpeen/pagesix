@@ -8,7 +8,7 @@ Sort.__index = Sort
 
 local function best(a, b)
     -- sort descending by Upvotes
-    print("BEST A=" .. a.upvotes .. ", B=" .. b.upvotes)
+    -- print("BEST A=" .. a.upvotes .. ", B=" .. b.upvotes)
 
     return a.upvotes > b.upvotes
 end
@@ -16,7 +16,7 @@ end
 -- return the difference from val to goal
 local function nearest(val, goal)
     goal = goal or 1.0
-    print("NEAREST " .. math.abs(val - goal))
+    -- print("NEAREST " .. math.abs(val - goal))
     return math.abs(val - goal)
 end
 
@@ -27,7 +27,7 @@ local function controversial(a, b)
     -- ratio of Upvote:Downvote closest to 1.0
     local a_dist = nearest(a.upvotes - a.downvotes)
     local b_dist = nearest(b.upvotes - b.downvotes)
-    print("CONTROVERSIAL A=" .. a_dist .. ", B=" .. b_dist)
+    -- print("CONTROVERSIAL A=" .. a_dist .. ", B=" .. b_dist)
 
     return a_dist < b_dist
 end
@@ -77,7 +77,7 @@ local function top(a, b)
     -- sort descending by Upvotes - Downvotes
     local a_total = a.upvotes - a.downvotes
     local b_total = b.upvotes - b.downvotes
-    print("TOP A=" .. a_total .. ", B=" .. b_total)
+    -- print("TOP A=" .. a_total .. ", B=" .. b_total)
     return a_total > b_total
 end
 

@@ -3,7 +3,7 @@
         <% if moderators ~= nil and moderators ~= '' then %>
         Moderators:
         <ul>
-        <% for _, mod in ipairs(moderators) do %>
+        <% for mod in pairs(moderators) do %>
             <li><%= mod %></li>
         <% end %>
         </ul>

@@ -2,7 +2,6 @@
 
 <div class="commentarea">
     <% render('views.fragments.menubar') %>
-    <% render('views.fragments.info_bar') %>
 
     <div id="" class="sitetable nestedlisting">
         <% render('views.fragments.comment') %>

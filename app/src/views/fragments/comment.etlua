@@ -9,7 +9,7 @@
 	<div class="entry unvoted">
 		<p class="tagline">
 			<a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a>
-			<a href="https://old.reddit.com/user/digitalsurgeon" class="author may-blank id-t2_32l4j">digitalsurgeon</a>
+			<a href="https://old.reddit.com/user/digitalsurgeon" class="author may-blank">digitalsurgeon</a>
 			<span class="userattrs"></span>
 			<span class="score dislikes" title="VOTES-1">VOTES-1</span>
 			<span class="score unvoted" title="VOTES">VOTES</span>
@@ -22,7 +22,7 @@
 			<input type="hidden" name="thing_id" value="t1_c6oh0e7">
 				<div class="usertext-body may-blank-within md-container ">
 					<div class="md">
-						<p>COMMENT</p>
+						<p>COMMENT1</p>
 					</div>
 				</div>
 			</form>
@@ -46,8 +46,8 @@
 			<div class="reportform report-t1_c6oh0e7"></div>
 		</div>
 		<div class="child">
-			<div id="siteTable_t1_c6oh0e7" class="sitetable listing">
-				<div class=" thing id-t1_c6oiiif noncollapsed   comment " id="thing_t1_c6oiiif" onclick="click_thing(this)" data-fullname="t1_c6oiiif" data-type="comment" data-gildings="0" data-subreddit="SUB" data-subreddit-prefixed="r/SUB" data-subreddit-fullname="" data-subreddit-type="public" data-author="" data-author-fullname="" data-replies="0" data-permalink="">
+			<div id="" class="sitetable listing">
+				<div class=" thing  noncollapsed   comment " id="" onclick="click_thing(this)" data-fullname="" data-type="comment" data-gildings="0" data-subreddit="SUB" data-subreddit-prefixed="r/SUB" data-subreddit-fullname="" data-subreddit-type="public" data-author="" data-author-fullname="" data-replies="0" data-permalink="">
 					<p class="parent">
 						<a name="c6oiiif"></a>
 					</p>
@@ -67,11 +67,12 @@
 							<span class="awardings-bar" data-subredditpath=""></span>&nbsp;
 							<a href="javascript:void(0)" class="numchildren" onclick="return togglecomment(this)">(# child)</a>
 						</p>
+
 						<form action="#" class="usertext warn-on-unload" onsubmit="return post_form(this, 'editusertext')" id="form-t1_c6oiiifmqj">
 							<input type="hidden" name="thing_id" value="t1_c6oiiif">
 								<div class="usertext-body may-blank-within md-container ">
 									<div class="md">
-										COMMENT
+										COMMENT2
 									</div>
 								</div>
 							</form>
@@ -97,6 +98,7 @@
 							</ul>
 							<div class="reportform report-t1_c6oiiif"></div>
 						</div>
+
 						<div class="child">
 							<div id="siteTable_t1_c6oiiif" class="sitetable listing">
 								<div class=" thing id-t1_c6omm7q noncollapsed   comment " id="thing_t1_c6omm7q" onclick="click_thing(this)" data-fullname="t1_c6omm7q" data-type="comment" data-gildings="0" data-subreddit="" data-subreddit-prefixed="" data-subreddit-fullname="" data-subreddit-type="public" data-author="" data-author-fullname="" data-replies="0" data-permalink="">
@@ -123,7 +125,7 @@
 											<input type="hidden" name="thing_id" value="t1_c6omm7q">
 												<div class="usertext-body may-blank-within md-container ">
 													<div class="md">
-														<p>COMMENT</p>
+														<p>COMMENT3</p>
 													</div>
 												</div>
 											</form>

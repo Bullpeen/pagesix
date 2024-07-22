@@ -25,36 +25,36 @@ local Users = require("models.users")
 -- @module action.domain
 
 return {
-	before = function(self)
-		-- if self.session.current_user then
-		-- self.user = self.session.current_user or "Anon"
-		-- self:write({ redirect_to = self:url_for("homepage") })
-		-- end
-	end,
+    before = function(self)
+        -- if self.session.current_user then
+        -- self.user = self.session.current_user or "Anon"
+        -- self:write({ redirect_to = self:url_for("homepage") })
+        -- end
+    end,
 
-	GET = function(self)
-		return { render = "login" }
-	end,
+    GET = function(self)
+        return { render = "login" }
+    end,
 
-	POST = function(self)
-		-- TODO lookup user_name in Users table, compare password to user_pass
+    POST = function(self)
+        -- TODO lookup user_name in Users table, compare password to user_pass
 
-		if self.params.username then
-			self.user = Users:find({user_name = self.params.username, user_pass = self.params.password})
+        if self.params.username then
+            self.user = Users:find({ user_name = self.params.username, user_pass = self.params.password })
 
-			if self.user then
-				print("Found user: " .. self.user.user_name)
-			else
-				print("USER NOT FOUND")
-				return
-			end
-		else
-			print("NO USERNAME SUPPLIED")
-			return
-		end
+            if self.user then
+                print("Found user: " .. self.user.user_name)
+            else
+                print("USER NOT FOUND")
+                return
+            end
+        else
+            print("NO USERNAME SUPPLIED")
+            return
+        end
 
-		self.session.current_user = self.user.user_name
+        self.session.current_user = self.user.user_name
 
-		return { redirect_to = "/" }
-	end,
+        return { redirect_to = "/" }
+    end,
 }

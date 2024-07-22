@@ -2,7 +2,7 @@
 -- @module models.subreddit
 
 local Model = require("lapis.db.model").Model
-local Forum = require("models.forum")
+local Forum = require("src.models.forum")
 
 -- TODO for enum of subreddits?
 -- for name in Forum.object_types do

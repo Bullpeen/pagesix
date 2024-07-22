@@ -34,33 +34,37 @@ app:enable("etlua")
 
 app.layout = require("views.layout")
 
-app:match("homepage", "/(:sort)", r2(require("actions.index"))) -- hot sort
-
+app:match("homepage", "/(:sort)", r2(require("actions.index")))
 
 -- app:match("comments", "/comments", r2(require("actions.index")))
 app:match("domains", "/domain/:domain", r2(require("actions.domain")))
+app:match("subreddits",   "/subreddits/search",  r2(require "actions.subreddits"))
+app:match("subreddits", "/subreddits(/:type)", r2(require("actions.subreddits")))
 app:match("user_profile", "/user/:user_name(/:type)", r2(require("actions.user")))
 
-app:match("subreddits", "/subreddits(/:type)", r2(require("actions.subreddits")))
-app:match("subreddits",   "/subreddits/search",  r2(require "actions.subreddits"))
-
-
 -- meta subreddits
--- app:match("popular", "/r/popular(/:sort)", r2(require("actions.r_popular")))
-app:match("all", "/r/all(/:sort)", r2(require("actions.r_all")))
-app:match("random", "/r/random(/:sort)", r2(require("actions.r_random")))
+-- app:match("r_all", "/r/all(/:sort)", r2(require("actions.r_all")))
+-- app:match("r_popular", "/r/popular(/:sort)", r2(require("actions.r_popular")))
+
+app:match("r_random", "/r/random", r2(require("actions.r_random")))
 app:match("subreddit", "/r/:subreddit(/:sort)", r2(require("actions.r_subreddit")))
 
 app:match(
 	"post",
-	"/r/:subreddit/comments/:post_id[%w](/:title_stub)",
+	"/r/:subreddit/comments/:post_id[%d](/:title_stub)",
 	r2(require("actions.post"))
 )
 app:match(
 	"comment",
-	"/r/:subreddit/comments/:post_id[%w]/:title_stub/:comment_id[%w](/:q)",
+	"/r/:subreddit/comments/:post_id[%d]/:title_stub/:comment_id[%d]",
 	r2(require("actions.comment"))
 )
+
+app:match(
+	"/test/:comment_id[%d]",
+	r2(require("actions.comment"))
+)
+
 
 -- app:match("about", "/about", function(self) end) -- stub
 -- app:match("contact", "/contact", function(self) end) -- stub
@@ -69,7 +73,7 @@ app:match(
 app:get("/admin", function(self) return "Go away" end)
 app:match("/console", console.make()) -- only available in Development builds
 
-require("src.api")(app) -- API endpoints
+-- require("src.api")(app) -- API endpoints
 require("src.auth")(app) -- User-authenticated endpoints
 
 return app
