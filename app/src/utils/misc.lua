@@ -42,43 +42,36 @@ function Misc:rss_feed(subreddit, url)
     local Posts = require("src.models.posts")
     local Users = require("src.models.users")
     local users = Users:select()
+    if #users == 0 then return end
 
-    local subreddit_id = Forum.object_types:for_db(subreddit)
-    local feed_url = url
+    -- Resolve the real subreddit id by name; object_types is a fixed enum that
+    -- need not correspond to forum.id.
+    local sub = Forum:find({ name = subreddit })
+    if not sub then
+        print("rss_feed: unknown subreddit " .. tostring(subreddit))
+        return
+    end
 
-    local response, status, _ = http.request(feed_url)
-    if status >= 200 and status < 400 then
+    local response, status = http.request(url)
+    if type(status) == "number" and status >= 200 and status < 400 and response then
         local parsed = feedparser.parse(response)
-
-        -- Print out feed details.
-        -- print("> Title   ", parsed.feed.title)
-        -- print("> Author  ", parsed.feed.author)
-        -- print("> ID      ", parsed.feed.id)
-        -- print("> Entries ", #parsed.entries)
-
         if parsed == nil then return nil, "parse error" end
 
         for _, item in ipairs(parsed.entries) do
             if item.link == nil then item.link = "#" end
 
-            print("Title   ", item.title)
-            print("Link    ", item.link)
-
-            local p_tbl = {
+            local s, e = Posts:create({
                 title = item.title,
                 url = item.link,
-                sub_id = subreddit_id,
-                user_id = math.random(#users),
-            }
-            local s, e = Posts:create(p_tbl)
+                sub_id = sub.id,
+                user_id = users[math.random(#users)].id,
+            })
             if not s then
-                print("error creating " .. item.title)
-                print(e)
-                -- break
+                print("error creating post from feed: " .. tostring(e))
             end
         end
     else
-        print("! Request failed. Status:", status)
+        print("! RSS request failed for " .. tostring(url) .. ". Status: " .. tostring(status))
     end
 end
 
@@ -90,19 +83,20 @@ function Misc:generate_posts(subreddit_id, n)
     local Users = require("src.models.users")
     local users = Users:select() -- TODO use :count()
 
+    if #users == 0 then return end
+
     -- print("!!! generating " .. n .. " posts")
     for i = 1, n do
         local p_tbl = {
             title = Lorem:sentence(),
             url = "http://" .. Lorem:word() .. ".com/" .. i,
             sub_id = subreddit_id,
-            user_id = math.random(#users),
+            user_id = users[math.random(#users)].id,
         }
 
         local s, e = Posts:create(p_tbl)
         if not s then
-            print("error creating " .. s.title)
-            print(e)
+            print("error creating post: " .. tostring(e))
             break
         end
     end
@@ -115,13 +109,12 @@ function Misc:generate_comments(post_id, n)
     local Lorem = require("src.utils.lorem")
 
     local users = Users:select()
-
-    local p = Posts:find(post_id)
+    if #users == 0 then return end
 
     for _ = 1, n do
         local tbl = {
             post_id = post_id,
-            user_id = math.random(#users),
+            user_id = users[math.random(#users)].id,
             body = Lorem:paragraph(),
         }
 
@@ -131,31 +124,37 @@ function Misc:generate_comments(post_id, n)
         -- 	tbl.parent_comment_id = math.random(1, i)
         -- end
 
-        -- require 'pl.pretty'.dump(tbl)
-
         local s, e = Comments:create(tbl)
         if not s then
-            print("error creating " .. s.body)
-            print(e)
+            print("error creating comment: " .. tostring(e))
             break
         end
     end
 end
 
 function Misc:generate_post_votes(post_id, n)
-    -- local db = require("lapis.db")
     local Users = require("src.models.users")
     local Votes = require("src.models.votes")
 
     local users = Users:select()
-    -- local posts = db.select("* FROM ?", "posts")
+    if #users == 0 then return end
 
-    for _ = 1, n do
-        Votes:create({
-            user_id = math.random(#users),
-            post_id = post_id,
-            upvote = math.random(0, 1),
-        })
+    -- One vote per (user, post): cap at the number of users and pick distinct
+    -- voters so we never violate UNIQUE(user_id, post_id, comment_id).
+    n = math.min(n, #users)
+    local voted = {}
+    local created = 0
+    while created < n do
+        local uid = users[math.random(#users)].id
+        if not voted[uid] then
+            voted[uid] = true
+            Votes:create({
+                user_id = uid,
+                post_id = post_id,
+                upvote = math.random(0, 1),
+            })
+            created = created + 1
+        end
     end
 end
 
@@ -165,26 +164,22 @@ function Misc:generate_comment_votes(post_id, n)
 
     local Users = require("src.models.users")
     local users = Users:select()
+    if #users == 0 then return end
 
     -- get comments from post_id
     local comments = Comments:select("where post_id = ?", post_id)
 
-    -- require 'pl.pretty'.dump(comments)
-
-    for _, c in pairs(comments) do
-        print("working on now " .. post_id)
-        require 'pl.pretty'.dump(c)
-
-        local u = math.random(#users)
-        for i = 1, n do
-            local exists, err = Votes:find({
-                user_id = u,
+    for _, c in ipairs(comments) do
+        for _ = 1, n do
+            local uid = users[math.random(#users)].id
+            local exists = Votes:find({
+                user_id = uid,
                 post_id = post_id,
-                comment_id = c.id
+                comment_id = c.id,
             })
             if not exists then
                 Votes:create({
-                    user_id = u,
+                    user_id = uid,
                     post_id = post_id,
                     comment_id = c.id,
                     upvote = math.random(0, 1),

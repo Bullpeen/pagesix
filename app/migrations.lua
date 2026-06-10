@@ -269,7 +269,7 @@ return {
 
 
             if not s then
-                print("error creating " .. s.name)
+                print("error creating " .. sub.name)
                 print(e)
             end
 
@@ -348,9 +348,11 @@ return {
 
             for j = 1, #subreddits do
                 if math.random(2) > 1 then
+                    -- Use the real row ids, not the loop counters (which only
+                    -- coincide with ids on a pristine, in-order database).
                     Subscriptions:create({
-                        user_id = i,
-                        subreddit_id = j,
+                        user_id = s.id,
+                        subreddit_id = subreddits[j].id,
                     })
                 end
             end
@@ -361,8 +363,9 @@ return {
     [15] = function()
         local subreddits = Forum:select()
 
-        for sub in pairs(subreddits) do
-            misc:generate_posts(sub, math.random(1, 3))
+        -- ipairs: `sub` is the row. `for x in pairs(t)` would bind the index.
+        for _, sub in ipairs(subreddits) do
+            misc:generate_posts(sub.id, math.random(1, 3))
         end
     end,
 
@@ -370,13 +373,17 @@ return {
     [16] = function()
         local subreddits = Forum:select()
 
-        for _, sub in pairs(subreddits) do
-            -- print("sub.name = " .. sub.name)
-            -- print("length " .. #sub.feeds)
-            if #sub.feeds ~= 0 then
+        for _, sub in ipairs(subreddits) do
+            if sub.feeds and #sub.feeds ~= 0 then
                 for feed_url in string.gmatch(sub.feeds, '([^,]+)') do
-                    -- print("feed_url = " .. feed_url)
-                    misc:rss_feed(sub.name, feed_url)
+                    -- RSS fetches hit the network; never let one failed feed
+                    -- abort the whole migration.
+                    local ok, err = pcall(function()
+                        misc:rss_feed(sub.name, feed_url)
+                    end)
+                    if not ok then
+                        print("rss_feed failed for " .. sub.name .. " (" .. feed_url .. "): " .. tostring(err))
+                    end
                 end
             end
         end
@@ -386,8 +393,8 @@ return {
     [20] = function()
         local posts = Posts:select()
 
-        for post in pairs(posts) do
-            misc:generate_post_votes(post, math.random(5, 20))
+        for _, post in ipairs(posts) do
+            misc:generate_post_votes(post.id, math.random(5, 20))
         end
     end,
 
@@ -395,8 +402,8 @@ return {
     [30] = function()
         local posts = Posts:select()
 
-        for post in pairs(posts) do
-            misc:generate_comments(post, math.random(5))
+        for _, post in ipairs(posts) do
+            misc:generate_comments(post.id, math.random(5))
         end
     end,
 
@@ -404,8 +411,8 @@ return {
     [40] = function()
         local posts = Posts:select()
 
-        for post in pairs(posts) do
-            misc:generate_comment_votes(post, math.random(10))
+        for _, post in ipairs(posts) do
+            misc:generate_comment_votes(post.id, math.random(10))
         end
     end,
 
