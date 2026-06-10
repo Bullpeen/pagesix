@@ -6,11 +6,15 @@ local os = require("os")
 local Sort = {}
 Sort.__index = Sort
 
+-- Vote aggregates may be missing on some rows; treat absent as 0 so the
+-- comparators never error on nil arithmetic/comparison.
+local function num(x)
+    return tonumber(x) or 0
+end
+
 local function best(a, b)
     -- sort descending by Upvotes
-    -- print("BEST A=" .. a.upvotes .. ", B=" .. b.upvotes)
-
-    return a.upvotes > b.upvotes
+    return num(a.upvotes) > num(b.upvotes)
 end
 
 -- return the difference from val to goal
@@ -25,8 +29,8 @@ local function controversial(a, b)
 
 
     -- ratio of Upvote:Downvote closest to 1.0
-    local a_dist = nearest(a.upvotes - a.downvotes)
-    local b_dist = nearest(b.upvotes - b.downvotes)
+    local a_dist = nearest(num(a.upvotes) - num(a.downvotes))
+    local b_dist = nearest(num(b.upvotes) - num(b.downvotes))
     -- print("CONTROVERSIAL A=" .. a_dist .. ", B=" .. b_dist)
 
     return a_dist < b_dist
@@ -36,7 +40,10 @@ local function date_to_timestamp(date_str, pattern)
     -- date_str="2004-07-06 20:4:20"
     pattern = pattern or "(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)"
 
+    if not date_str then return 0 end
+
     local year,month,day,hour,min,sec = date_str:match(pattern)
+    if not year then return 0 end
     local offset = os.time()-os.time(os.date("!*t"))
 
     local seconds = os.time({
@@ -57,8 +64,8 @@ local function hot(a, b)
 
     -- log( abs( Upvotes - Downvotes ) + ( age_in_seconds / 45000 ))
 
-    local a_hot = math.log( math.abs( a.upvotes - a.downvotes ) + ( date_to_timestamp(a.age) / 45000 )) -- 43,200 == 12 hours
-    local b_hot = math.log( math.abs( b.upvotes - b.downvotes ) + ( date_to_timestamp(b.age) / 45000 ))
+    local a_hot = math.log( math.abs( num(a.upvotes) - num(a.downvotes) ) + ( date_to_timestamp(a.age) / 45000 )) -- 43,200 == 12 hours
+    local b_hot = math.log( math.abs( num(b.upvotes) - num(b.downvotes) ) + ( date_to_timestamp(b.age) / 45000 ))
 
     -- print("HOT A=" .. a_hot .. ", B=" .. b_hot)
     return a_hot > b_hot
@@ -75,8 +82,8 @@ end
 
 local function top(a, b)
     -- sort descending by Upvotes - Downvotes
-    local a_total = a.upvotes - a.downvotes
-    local b_total = b.upvotes - b.downvotes
+    local a_total = num(a.upvotes) - num(a.downvotes)
+    local b_total = num(b.upvotes) - num(b.downvotes)
     -- print("TOP A=" .. a_total .. ", B=" .. b_total)
     return a_total > b_total
 end

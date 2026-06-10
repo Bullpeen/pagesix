@@ -2,23 +2,24 @@
 -- @module action.subreddit
 
 local Forum = require("src.models.forum")
+local Posts = require("src.models.posts")
 local Sort = require("src.utils.sort")
-local db = require("lapis.db")
 
 return {
     before = function(self)
-        -- self.params.sort
-
         local subreddit_name = self.params.subreddit
         local sort = self.params.sort or "hot"
 
-        -- convert subreddit_id to name
-        local subreddit_id = Forum.object_types:for_db(subreddit_name)
+        -- Look the subreddit up by name. (The old code mapped name -> the
+        -- hardcoded object_types enum id, which only happens to match forum.id
+        -- for the seeded subs and breaks for any user-created one.)
+        local sub = Forum:find({ name = subreddit_name })
+        if not sub then
+            return self:write({ redirect_to = self:url_for("homepage") })
+        end
 
-        local sub = Forum:find(subreddit_id)
-        self.posts = Sort:sort(sub:get_frontpage(sub.name), sort)
-
-        -- self.bob = db:select("* FROM ?", "v_forum")
+        self.subreddit = sub.name
+        self.posts = Sort:sort(Posts:get_listing(sub.id), sort)
     end,
 
     -- https://github.com/karai17/lapis-chan/blob/master/app/src/utils/generate.lua

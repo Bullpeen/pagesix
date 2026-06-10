@@ -1,16 +1,19 @@
---- Subreddit action
--- @module action.subreddit
+--- Random subreddit action
+-- @module action.r_random
 
 local Forum = require("src.models.forum")
 
-math.randomseed(os.clock() * 100000000000)
-
 return {
     before = function(self)
-        local subreddit_id = math.random(#Forum.object_types)
-        local subreddit_name = Forum.object_types:to_name(subreddit_id)
+        -- Pick a real subreddit from the database. (The old code indexed the
+        -- hardcoded object_types enum, which need not correspond to existing
+        -- forum rows.)
+        local sub = Forum:select("ORDER BY RANDOM() LIMIT 1")[1]
+        if not sub then
+            return self:write({ redirect_to = self:url_for("homepage") })
+        end
 
-        return self:write({ redirect_to = self:url_for("subreddit", { subreddit = subreddit_name }) })
+        return self:write({ redirect_to = self:url_for("subreddit", { subreddit = sub.name }) })
     end,
 
     -- https://github.com/karai17/lapis-chan/blob/master/app/src/utils/generate.lua

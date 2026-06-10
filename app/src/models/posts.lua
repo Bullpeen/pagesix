@@ -2,6 +2,7 @@
 -- @module models.posts
 
 local model = require("lapis.db.model")
+local db = require("lapis.db")
 local Model, enum = model.Model, model.enum
 
 local Posts = Model:extend("posts", {
@@ -60,5 +61,42 @@ Posts.statuses = enum({
 -- 	local post = self:find(post_id)
 -- 	return post:get_comments(offset, limit)
 -- end
+
+--- Listing rows for a frontpage / subreddit, with the vote and comment
+-- aggregates the templates and the Sort util expect.
+--
+-- This replaces the dependency on the pre-seeded v_hot_* SQL views: it works
+-- on a freshly-migrated database, includes posts with zero votes, and is not
+-- tied to any single sort order (callers pass the rows through Sort:sort).
+-- @tparam[opt] number sub_id restrict to a single subreddit (forum.id)
+-- @treturn table array of plain post rows
+function Posts:get_listing(sub_id)
+	local query = [[
+		a.id, a.title, a.url, a.body, a.is_self, a.over_18, a.locked, a.sub_id,
+			a.created_at AS age, a.created_at,
+			c.user_name AS author,
+			s.name AS subreddit,
+			(SELECT COUNT(*) FROM votes v WHERE v.post_id = a.id AND v.comment_id IS NULL AND v.upvote = 1) AS upvotes,
+			(SELECT COUNT(*) FROM votes v WHERE v.post_id = a.id AND v.comment_id IS NULL AND v.upvote = 0) AS downvotes,
+			(SELECT COUNT(*) FROM comments d WHERE d.post_id = a.id) AS num_comments
+		FROM posts a
+		INNER JOIN users c ON a.user_id = c.id
+		INNER JOIN forum s ON a.sub_id = s.id
+		WHERE a.locked = 0]]
+
+	if sub_id then
+		query = query .. " AND a.sub_id = " .. tonumber(sub_id)
+	end
+	query = query .. " ORDER BY a.created_at DESC"
+
+	local rows = db.select(query)
+
+	for _, post in ipairs(rows) do
+		post.permalink = "/r/" .. post.subreddit .. "/comments/" .. post.id
+		post.domain = post.url and post.url:match("^%w+://([^/]+)") or ""
+	end
+
+	return rows
+end
 
 return Posts
