@@ -45,6 +45,19 @@ config("development", {
 	},
 })
 
+config("test", {
+	port = 8080,
+	server = "nginx",
+	code_cache = "off",
+	num_workers = "1",
+	session_name = "test_app_session",
+	secret = "test-secret",
+	-- In-memory database so the test suite never touches dev/prod data.
+	sqlite = {
+		database = ":memory:",
+	},
+})
+
 config("production", {
 	port = 80,
 	body_size = body_size,

@@ -75,12 +75,15 @@ local Users, Users_mt = Model:extend("users", {
 		{ "posts", has_many = "Posts" },
 		{ "votes", has_many = "Votes" },
 		{ "comments", has_many = "Comments" },
-		{
-			"moderates",
-			has_many = "Subreddits",
-			order = "id desc",
-			key = "moderator_id"
-		},
+		-- TODO: moderation is currently stored as a CSV in forum.moderator_ids,
+		-- so there is no `moderator_id` FK column to key a relation off, and there
+		-- is no `Subreddits` model. Re-enable once a `moderators` join table exists.
+		-- {
+		-- 	"moderates",
+		-- 	has_many = "Forum",
+		-- 	order = "id desc",
+		-- 	key = "moderator_id"
+		-- },
 		{
 			"authored_posts",
 			has_many = "Posts",

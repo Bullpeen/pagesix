@@ -24,11 +24,17 @@ local Comments = Model:extend("comments", {
 		end,
 	},
 	relations = {
-		{ "user", has_one = "Users" },
+		-- A comment belongs to the user who wrote it (comments.user_id -> users.id).
+		-- This was previously `has_one`, which looked for a non-existent
+		-- comments.id reference on users and returned nil.
+		{ "user", belongs_to = "Users" },
 		{ "votes", has_many = "Votes" },
 		-- { "parent_comment", belongs_to="Comments" },
 		{ "post", belongs_to = "Posts" },
-		{ "subreddit", belongs_to = "Forum" },
+		-- NOTE: comments has no `subreddit_id` column, so `get_subreddit()`
+		-- can't resolve. Reach the subreddit via the post instead
+		-- (comment:get_post():get_subreddit()).
+		-- { "subreddit", belongs_to = "Forum" },
 	},
 })
 

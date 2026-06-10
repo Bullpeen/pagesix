@@ -1,14 +1,11 @@
 return {
   _all = {
-    coverage = true
+    -- The app code is run in place from app/; make src/, libs/, and the
+    -- top-level app modules requireable from the repo root where busted runs.
+    lpath = "app/?.lua;app/src/?.lua;app/src/?/init.lua;app/libs/?.lua",
   },
   default = {
-    verbose = true
+    verbose = true,
+    ROOT = { "app/spec" },
   },
-  apiUnit = {
-    tags = "api",
-    ROOT = {"spec/unit"},
-    verbose = true
-  }
 }
-

@@ -10,6 +10,11 @@ return {
         -- print("Looking up " .. self.params.user_name)
         local user = Users:find({ user_name = self.params.user_name })
 
+        -- Unknown user: redirect home instead of crashing on a nil index.
+        if not user then
+            return self:write({ redirect_to = self:url_for("homepage") })
+        end
+
         self.user_name = user.user_name
 
         -- TODO paginate

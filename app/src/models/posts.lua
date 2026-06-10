@@ -8,20 +8,29 @@ local Posts = Model:extend("posts", {
 	timestamp = true,
 
 	-- https://leafo.net/lapis/reference/actions.html#request-object-methods/request:url_for/passing-an-object-to-url-for
+	-- Build the args for url_for("post", ...) so `url_for(post)` resolves to
+	-- /r/<subreddit>/comments/<id>/<title-stub>.
 	url_params = function(self, req, ...)
-		-- local res = db.find(self.id)
+		local Forum = require("src.models.forum")
+		local sub = self.sub_id and Forum:find(self.sub_id)
 
-		local subreddit_id = ''
-		local post_id = ''
-		local post_stub = ''
+		local stub = (self.title or ""):lower()
+		stub = stub:gsub("[^%w]+", "_")
+		stub = stub:gsub("^_+", "")
+		stub = stub:gsub("_+$", "")
 
-		local url = "/r/" .. subreddit_id .. "/comments/" .. post_id .. "/" .. post_stub
-		return url, ...
+		return "post", {
+			subreddit = sub and sub.name or "all",
+			post_id = self.id,
+			title_stub = stub ~= "" and stub or nil,
+		}, ...
 	end,
 
 	relations = {
 		{ "comments", has_many = "Comments" },
-		{ "subreddit", belongs_to = "Forum" }, -- has_one()?
+		-- The FK column is `sub_id`, not the default `subreddit_id`, so
+		-- get_subreddit() needs an explicit key or it always resolves to nil.
+		{ "subreddit", belongs_to = "Forum", key = "sub_id" },
 		{ "user", belongs_to = "Users" },
 		{ "votes", has_many = "Votes" },
 

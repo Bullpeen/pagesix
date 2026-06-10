@@ -35,46 +35,31 @@ return {
         --		comment_id: { ... },
         -- }
 
-        self.comments = Comments:find(self.params.comment_id)
-
-        -- self.comments = Comments:find({parent_comment_id = self.params.comment_id})
-        print("Found " .. #self.comments .. " comments")
-
-        local context
-
-        -- TODO check context=N from url param, return that many (grand)parents in self.comments
-        if self.params.q then
-            context = string.match(self.params.q, "%d+$")
+        local comment = Comments:find(self.params.comment_id)
+        if not comment then
+            return self:write({ redirect_to = self:url_for("homepage") })
         end
+        -- The view iterates self.comments, so wrap the single comment in a list.
+        self.comments = { comment }
 
-        -- TODO recursively include # of comments from the self.params.q argument
-
-        if context ~= nil and context > 1 then
-            -- loop context times and fetch each parent comments
-            for i = 1, context do
-                -- if comment has a parent, fetch it
-                if self.comments[i] and self.comments[i].parent_comment_id then -- ~= nil
-                    print("Looking up parent comment: " .. self.comments[i].parent_comment_id)
-                    local p = Posts:get_comment({ parent_comment_id = self.comment[i].parent_comment_id })
-                    table.insert(self.comments, p[1])
-                else
-                    break
-                end
-            end
-        end
-
+        -- TODO: walk up `context` (grand)parent comments from the ?q=...N param.
+        -- The previous implementation called Posts:get_comment() (which does not
+        -- exist), indexed self.comment (a typo for self.comments), and compared a
+        -- string to a number -- so it always errored. Disabled until parent
+        -- threading is implemented properly.
+        -- local context = self.params.q and tonumber(string.match(self.params.q, "%d+$"))
 
         local post_data = Posts:find(self.params.post_id or 1)
-        -- print("Post data:")
-        -- require("pl.pretty").dump(post_data)
-
-        -- pass data to template
-        self.user_name = post_data["user_name"]
-        self.title = post_data["title"]
-        self.url = post_data["url"]
-        -- https://leafo.net/lapis/reference/actions.html#request-object-methods/request:url_for
-        -- self.permalink = self:url_for(self.params.comment_id)
-        self.created_at = post_data["created_at"]
+        if post_data then
+            -- posts has no user_name column; resolve the author via the relation.
+            local author = post_data:get_user()
+            self.user_name = author and author.user_name
+            self.title = post_data["title"]
+            self.url = post_data["url"]
+            -- https://leafo.net/lapis/reference/actions.html#request-object-methods/request:url_for
+            -- self.permalink = self:url_for(self.params.comment_id)
+            self.created_at = post_data["created_at"]
+        end
     end,
 
     GET = function(self)

@@ -86,7 +86,7 @@ return {
             { "updated_at", types.text },
 
             "FOREIGN KEY(user_id) REFERENCES users(id)",
-            "FOREIGN KEY(subreddit_id) REFERENCES subreddits(id)",
+            "FOREIGN KEY(subreddit_id) REFERENCES forum(id)",
 
             "UNIQUE(user_id, subreddit_id)",
         }, opts)
@@ -111,7 +111,7 @@ return {
             { "deleted_at",    types.text({ null = true }) },
             { "updated_at",    types.text },
 
-            { "creator_id",    types.integer({ deafault = 1 }) }, -- TODO rename
+            { "creator_id",    types.integer({ default = 1 }) }, -- TODO rename
             { "description",   types.text({ null = true }) },
             { "moderator_ids", types.text({ null = true }) },
             { "nsfw",          types.integer({ default = false }) },
@@ -128,7 +128,7 @@ return {
         -- create subreddit's table containing Posts by Users
         schema.create_table("posts", {
             { "id",         types.integer({ unique = true, primary_key = true }) },
-            { "user_id",    types.text },
+            { "user_id",    types.integer },
             { "sub_id",     types.integer },
 
             { "title",      types.text },
@@ -182,8 +182,8 @@ return {
             { "updated_at", types.text },
 
             "FOREIGN KEY(user_id) REFERENCES users(id)",
-            "FOREIGN KEY(post_id) REFERENCES 'posts(id)'",
-            "FOREIGN KEY(comment_id) REFERENCES 'comments(id)'",
+            "FOREIGN KEY(post_id) REFERENCES posts(id)",
+            "FOREIGN KEY(comment_id) REFERENCES comments(id)",
 
             "UNIQUE(user_id, post_id, comment_id)",
         }, opts)
@@ -203,9 +203,9 @@ return {
 
             "FOREIGN KEY(mod_id) REFERENCES users(id)", -- TODO
             "FOREIGN KEY(user_id) REFERENCES users(id)",
-            "FOREIGN KEY(sub_id) REFERENCES 'forum(id)'",
-            "FOREIGN KEY(post_id) REFERENCES 'posts(id)'",
-            "FOREIGN KEY(comment_id) REFERENCES 'comments(id)'",
+            "FOREIGN KEY(sub_id) REFERENCES forum(id)",
+            "FOREIGN KEY(post_id) REFERENCES posts(id)",
+            "FOREIGN KEY(comment_id) REFERENCES comments(id)",
         }, opts)
 
         db.query([[
