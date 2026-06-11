@@ -4,9 +4,13 @@
             <p class="parent"></p>
             <span class="rank"><%= n %></span>
             <div class="midcol unvoted">
-                <div class="arrow up login-required access-required"></div>
+                <form class="arrow-form" method="POST" action="/vote/post/<%= post.id %>/up">
+                    <button class="arrow up" type="submit" aria-label="upvote"></button>
+                </form>
                 <div class="score unvoted" title=""><%= post.upvotes - post.downvotes %></div>
-                <div class="arrow down login-required access-required" role="button"></div>
+                <form class="arrow-form" method="POST" action="/vote/post/<%= post.id %>/down">
+                    <button class="arrow down" type="submit" aria-label="downvote"></button>
+                </form>
             </div>
             <% --[[
             <a class="thumbnail invisible-when-pinned may-blank loggedin " href="URL">
