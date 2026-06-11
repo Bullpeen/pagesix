@@ -12,6 +12,7 @@ describe("voting", function()
 	local Users = require("models.users")
 	local Forum = require("src.models.forum")
 	local Posts = require("src.models.posts")
+	local Comments = require("models.comments")
 	local Votes = require("src.models.votes")
 
 	setup(function()
@@ -63,5 +64,28 @@ describe("voting", function()
 		assert.is_not_nil(row)
 		assert.same(1, tonumber(row.upvotes))
 		assert.same(1, tonumber(row.downvotes))
+	end)
+
+	it("casts comment votes and aggregates them in Comments:listing", function()
+		local u, p = make_post("cvoter")
+		local c = Comments:create({ post_id = p.id, user_id = u.id, body = "hi" })
+		local u2 = Users:create({ user_name = "cvoter2", user_pass = "password", user_email = "c2@e.com" })
+
+		Votes:cast(u.id, p.id, c.id, 1)  -- upvote the comment
+		Votes:cast(u2.id, p.id, c.id, 0) -- downvote the comment
+
+		-- comment vote rows carry both post_id and comment_id
+		local v = Votes:find({ user_id = u.id, post_id = p.id, comment_id = c.id })
+		assert.same(1, tonumber(v.upvote))
+
+		local row
+		for _, r in ipairs(Comments:listing(p.id)) do
+			if r.id == c.id then row = r end
+		end
+		assert.is_not_nil(row)
+		assert.same(1, tonumber(row.upvotes))
+		assert.same(1, tonumber(row.downvotes))
+		assert.same(0, row.score)
+		assert.same("cvoter", row.author)
 	end)
 end)

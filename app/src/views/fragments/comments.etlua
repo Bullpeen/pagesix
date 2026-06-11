@@ -1,19 +1,23 @@
 <div class="commentarea">
     <div class="sitetable nestedlisting">
-        <% if comments ~= nil then
-            for comment in pairs(comments) do %>
+        <% if comments ~= nil and #comments > 0 then
+            for _, comment in ipairs(comments) do %>
                 <div class="thing comment">
                     <p class="parent"></p>
                     <div class="midcol">
-                        <div class="arrow up login-required access-required" data-event-action="upvote" role="button" aria-label="upvote" tabindex="0"></div>
-                        <div class="arrow down login-required access-required" data-event-action="downvote" role="button" aria-label="downvote" tabindex="0"></div>
+                        <form class="arrow-form" method="POST" action="/vote/comment/<%= comment.id %>/up">
+                            <button class="arrow up" type="submit" aria-label="upvote"></button>
+                        </form>
+                        <form class="arrow-form" method="POST" action="/vote/comment/<%= comment.id %>/down">
+                            <button class="arrow down" type="submit" aria-label="downvote"></button>
+                        </form>
                     </div>
                     <div class="entry">
                         <p class="tagline">
                             <a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a>
-                            <a class="author" href="<%= "/user/" .. comment.user_id %>"><%= comment.user_id %></a>
+                            <a class="author" href="<%= "/user/" .. comment.author %>"><%= comment.author %></a>
                             <span class="userattrs"></span>
-                            <span class="score likes" title="<% %>"><%= comment.score %># points</span>
+                            <span class="score likes"><%= comment.score %> points</span>
                             <time title="<%= comment.permalink %>" datetime="<%= comment.created_at %>" class=""><%= comment.created_at %> ago</time>
                             <span class="awardings-bar"></span>&nbsp;
                             <a href="javascript:void(0)">(# children)</a>

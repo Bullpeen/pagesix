@@ -31,9 +31,12 @@ return {
 
         local post_data, err = Posts:find(self.params.post_id)
         if err then print("WHOOPS!" .. err) end
+        if not post_data then
+            return self:write({ redirect_to = self:url_for("homepage") })
+        end
 
-        self.comments = post_data:get_comments()
-        print("Found " .. #self.comments .. " comments")
+        -- Comments with author + vote aggregates, ready for rendering.
+        self.comments = Comments:listing(post_data.id)
 
         -- print("Post data:")
         -- require 'pl.pretty'.dump(post_data[1])
