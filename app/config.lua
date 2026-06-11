@@ -10,6 +10,18 @@ local body_size = "1m"
 local lua_path = "./src/?.lua;./src/?/init.lua;./libs/?.lua;./libs/?/init.lua"
 local lua_cpath = ""
 
+-- Forward the LuaRocks search paths (exported by `luarocks path` in
+-- docker-entrypoint.sh) into OpenResty's lua_package_path/cpath. OpenResty's
+-- default paths do NOT include the LuaRocks trees, so without this the nginx
+-- workers cannot find rock modules (lapis, lpeg, lsqlite3, ...) and the server
+-- fails to boot. Guarded so it is a no-op when the vars are unset.
+if os.getenv("LUA_PATH") then
+	lua_path = lua_path .. ";" .. os.getenv("LUA_PATH")
+end
+if os.getenv("LUA_CPATH") then
+	lua_cpath = lua_cpath .. ";" .. os.getenv("LUA_CPATH")
+end
+
 -- https://github.com/snap-cloud/snapCloud/blob/master/config.lua
 -- config({'development', 'test'}, {
 --     use_daemon = 'off',
