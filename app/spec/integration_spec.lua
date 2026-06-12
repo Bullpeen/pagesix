@@ -48,6 +48,12 @@ describe("pagesix integration", function()
 			assert.same(200, (GET("/r/programming/controversial")))
 		end)
 
+		it("renders the meta listings /r/all and /r/popular", function()
+			assert.same(200, (GET("/r/all")))
+			assert.same(200, (GET("/r/all/top")))
+			assert.same(200, (GET("/r/popular")))
+		end)
+
 		it("lists subreddits", function()
 			local status, body = GET("/subreddits")
 			assert.same(200, status)

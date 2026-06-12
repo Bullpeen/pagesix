@@ -21,7 +21,7 @@ dependencies = {
   "luabitop",
   "moonscript",
 
-  "lapis >= 1.16.0",
+  "lapis >= 1.18.0",   -- latest; faster url_for, db.clause OR-combining, simulate_request
 
   "http ~> 0.4",
   "lapis-annotate ~> 2.0",

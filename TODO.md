@@ -45,7 +45,9 @@ image boots and serves; 23-spec Busted suite passes.
       import of `forum.feeds`) still only runs as a one-shot seed migration.
 - Spam/quality filtering — `lapis-bayes` is a dependency but unused.
 - Crossposts, image/video posts, post previews/thumbnails.
-- Public API — `src/api.lua` is ~150 stub endpoints, disabled in `app.lua`.
+- **API — deferred to a future phase.** `src/api.lua` is ~150 stub endpoints,
+  disabled in `app.lua`. Intentionally on hold until the web browsing
+  experience is locked in.
 - robots.txt / sitemap / output RSS feeds.
 
 ## SQLite performance notes

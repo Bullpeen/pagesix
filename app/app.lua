@@ -63,9 +63,10 @@ app:match("subreddits", "/subreddits", r2(require("actions.subreddits")))
 app:match("subreddits_type", "/subreddits/:type", r2(require("actions.subreddits")))
 app:match("user_profile", "/user/:user_name(/:type)", r2(require("actions.user")))
 
--- meta subreddits
--- app:match("r_all", "/r/all(/:sort)", r2(require("actions.r_all")))
--- app:match("r_popular", "/r/popular(/:sort)", r2(require("actions.r_popular")))
+-- meta subreddits (literal /r/all and /r/popular take precedence over the
+-- /r/:subreddit param route below)
+app:match("r_all", "/r/all(/:sort)", r2(require("actions.r_all")))
+app:match("r_popular", "/r/popular(/:sort)", r2(require("actions.r_popular")))
 
 app:match("search", "/search", r2(require("actions.search")))
 app:match("r_random", "/r/random", r2(require("actions.r_random")))

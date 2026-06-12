@@ -8,6 +8,15 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Changed
+- Enabled the **`/r/all`** and **`/r/popular`** meta-listing routes (the actions
+  were already implemented and tested but commented out in `app.lua`).
+- Pinned **Lapis >= 1.18.0** (we already run the latest; 1.16→1.18 brings a
+  faster `url_for`, `db.clause + db.clause` OR-combining, `Model:update` with a
+  `where` clause, and `simulate_request`/`simulate_action` test helpers).
+- **API deferred**: `src/api.lua` (~150 stub endpoints) is explicitly punted to
+  a later phase — we're locking in the web browsing experience first.
+
 ### Security / auth hardening (issue #6)
 - **Password hashing** — `src/utils/password` uses **bcrypt** (salted, slow).
   Registration hashes; login verifies; `verify` rejects non-bcrypt/legacy
