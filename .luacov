@@ -1,0 +1,22 @@
+-- LuaCov configuration. Run `busted --coverage` then `luacov`; the report is
+-- written to luacov.report.out.
+return {
+	statsfile = "luacov.stats.out",
+	reportfile = "luacov.report.out",
+
+	-- Only measure our own application code.
+	include = {
+		"^app/app$",
+		"^app/migrations$",
+		"^app/helpers$",
+		"^app/src/",
+	},
+	exclude = {
+		"^app/spec/",
+		"^app/static/",
+		"luacov",
+		"busted",
+		"lapis",
+		"etlua",
+	},
+}

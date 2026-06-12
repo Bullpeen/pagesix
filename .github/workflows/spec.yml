@@ -41,8 +41,12 @@ jobs:
           luarocks install moonscript
           luarocks install tableshape
           luarocks install lsqlite3
+          luarocks install luacov
           luarocks make
 
       - name: test
         run: |
-          busted -o utfTerminal -v
+          busted -o utfTerminal -v --coverage
+          luacov
+          echo "===== coverage summary ====="
+          awk '/^Summary/{f=1} f' luacov.report.out | tail -n 40

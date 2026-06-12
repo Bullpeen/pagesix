@@ -9,6 +9,14 @@ This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
 ### Added
+- **Test infrastructure**
+  - `luacov` coverage: added to the rockspec, the Docker image, and CI
+    (`busted --coverage` + a printed summary), configured via `.luacov` to
+    measure only `app/` code. Baseline is **76.7%** (725/945 lines).
+  - HTTP-level **integration tests** (`integration_spec`) that drive the real
+    app through `lapis.spec.request.mock_request` — routing, actions,
+    auth/session, redirects, and rendering for every feature (browse, vote,
+    comment/reply, subreddit creation, profiles). 38 specs total.
 - **Smaller polish**
   - Markdown rendering for comment bodies (and user-profile comments), via a
     `src/utils/markdown` helper that renders Markdown and **sanitizes** the

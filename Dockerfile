@@ -17,7 +17,9 @@ COPY pagesix-dev-1.rockspec /
 RUN luarocks --lua-version=5.1 build --only-deps /pagesix-dev-1.rockspec \
  && luarocks --lua-version=5.1 install lpeg \
  && luarocks --lua-version=5.1 install lsqlite3 \
- && luarocks --lua-version=5.1 install markdown
+ && luarocks --lua-version=5.1 install markdown \
+ && luarocks --lua-version=5.1 install busted \
+ && luarocks --lua-version=5.1 install luacov
 
 # Entrypoint
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

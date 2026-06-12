@@ -52,19 +52,13 @@ image boots and serves; 23-spec Busted suite passes.
       insert order and the seed data.
 - [ ] `PRAGMA busy_timeout` for write contention under WAL.
 
-## Test coverage assessment
-- **Strong**: data layer. 23 specs cover model relations, the listing/thread
-  SQL (incl. the recursive CTE), vote casting/aggregation, every seed
-  migration (FK integrity), Markdown rendering/sanitizing, model constraints,
-  and index usage — all against in-memory SQLite via `lapis.spec`.
-- **Gap**: no automated **action / HTTP-level** tests. The request cycle,
-  routing, auth/session, and redirects were verified manually (Docker + curl)
-  but aren't in CI — and several bugs this run were integration/template bugs
-  (route-name collision, `pairs` loops, `self.subs` collision) that the
-  model-level specs could not catch.
-  - [ ] Add `lapis.spec.request.mock_request` specs for the key routes
-        (home, `/r/:sub`, post page, vote, comment, create subreddit). Note:
-        `app.lua`'s `before_filter` uses the nginx `after_dispatch` context, so
-        the harness may need that guarded under the test env.
-- **Gap**: no template/view rendering assertions; `.busted` had `coverage`
-  enabled but `luacov` isn't installed — either install it or drop the flag.
+## Test coverage
+- **38 specs**, ~76.7% line coverage (luacov; run `busted --coverage && luacov`).
+- [x] Model/SQL layer: relations, listing/thread CTE, votes, seed migrations,
+      markdown, constraints, index usage.
+- [x] **HTTP integration** (`integration_spec` via `mock_request`): routing,
+      actions, auth/session, redirects, rendering for every feature.
+- [x] **luacov** wired into rockspec, Docker image, and CI.
+- Remaining low-coverage modules are the not-yet-wired legacy actions
+  (`register` 21%, `submit` 28%, `subscribed` 28%, `domain`/`r_random` ~30%,
+  `comment` 36%) and `sort` 50% — these get covered as the features below land.
