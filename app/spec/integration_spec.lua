@@ -220,6 +220,38 @@ describe("pagesix integration", function()
 		end)
 	end)
 
+	describe("saved & hidden posts", function()
+		local SavedPosts = require("models.saved_posts")
+		local HiddenPosts = require("models.hidden_posts")
+
+		it("saves/unsaves a post and lists it on /saved", function()
+			local p = Posts:create({ user_id = 1, sub_id = 1, title = "save me please", url = "https://sv.example" })
+			assert.same(302, (POST("/post/" .. p.id .. "/save", {}, "demo")))
+			assert.is_true(SavedPosts:is_saved(1, p.id))
+
+			local s, body = mock_request(app, "/saved", { method = "GET", session = { current_user = "demo" } })
+			assert.same(200, s)
+			assert.truthy(body:find("save me please", 1, true))
+
+			POST("/post/" .. p.id .. "/save", {}, "demo") -- toggle off
+			assert.is_false(SavedPosts:is_saved(1, p.id))
+		end)
+
+		it("hides a post so it drops from a user's listing", function()
+			local p = Posts:create({ user_id = 1, sub_id = 1, title = "hide me", url = "https://hd.example" })
+			POST("/post/" .. p.id .. "/hide", {}, "demo")
+			assert.is_true(HiddenPosts:is_hidden(1, p.id))
+
+			local hidden_filtered = {}
+			for _, r in ipairs(Posts:get_listing({ exclude_hidden_for = 1 })) do hidden_filtered[r.id] = true end
+			assert.is_nil(hidden_filtered[p.id])
+
+			local unfiltered = {}
+			for _, r in ipairs(Posts:get_listing({})) do unfiltered[r.id] = true end
+			assert.is_true(unfiltered[p.id])
+		end)
+	end)
+
 	describe("sorting & time windows", function()
 		local Sort = require("src.utils.sort")
 

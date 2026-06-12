@@ -38,20 +38,18 @@
                         <li class="share">
                             <a class="post-sharing-button" href="javascript: void 0;">share</a>
                         </li>
-                        <li class="link-save-button save-button login-required">
-                            <a href="#">save</a>
-                        </li>
-                        <li>
-                            <form action="/post/hide" method="post"
-                                class="state-button hide-button">
-                                <input type="hidden" name="executed" value="hidden">
-                                <span>
-                                    <a href="javascript:void(0)" class=" "
-                                        data-event-action="hide"
-                                        onclick="change_state(this, 'hide', hide_thing);">hide</a>
-                                </span>
+                        <% if current_user then %>
+                        <li class="link-save-button">
+                            <form method="POST" action="/post/<%= post.id %>/save">
+                                <button class="button-link" type="submit">save</button>
                             </form>
                         </li>
+                        <li class="hide-button">
+                            <form method="POST" action="/post/<%= post.id %>/hide">
+                                <button class="button-link" type="submit">hide</button>
+                            </form>
+                        </li>
+                        <% end %>
                         <li class="give-gold-button">
                             <a href="/gold"
                                 title="give an award in appreciation of this post."

@@ -28,8 +28,9 @@ image boots and serves; 23-spec Busted suite passes.
       by triggers; `GET /search?q=` ranks by relevance and excludes deleted.
 - [x] Time-windowed listings (`?t=hour|day|week|month|year`) and a `rising`
       sort (vote velocity).
-- [x] User karma (net votes on a user's posts + comments), shown on the
-      profile. Saved / hidden posts still TODO.
+- [x] User karma (net votes on a user's posts + comments), shown on the profile.
+- [x] Saved / hidden posts — per-user toggle; `/saved` page; hidden posts are
+      excluded from a user's listings.
 - Moderation: the `modlog` table is unused — lock/sticky/remove, mod tools.
 - Inbox / reply notifications; per-user message threads.
 - Flair, awards/gold (currently static placeholders).

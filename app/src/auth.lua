@@ -17,6 +17,9 @@ local function auth(app)
 	app:match("comment_delete", "/comment/:comment_id[%d]/delete", r2(require("actions.comment_delete")))
 	app:match("post_edit", "/post/:post_id[%d]/edit", r2(require("actions.post_edit")))
 	app:match("post_delete", "/post/:post_id[%d]/delete", r2(require("actions.post_delete")))
+	app:match("save_post", "/post/:post_id[%d]/save", r2(require("actions.save")))
+	app:match("hide_post", "/post/:post_id[%d]/hide", r2(require("actions.hide")))
+	app:match("saved", "/saved", r2(require("actions.saved")))
 
 	-- app:match("prefs", "/prefs", function(self) end) -- stub
 

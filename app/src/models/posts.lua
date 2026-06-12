@@ -112,6 +112,14 @@ function Posts:get_listing(filters)
 	if filters.since then
 		query = query .. " AND a.created_at >= " .. db.escape_literal(filters.since)
 	end
+	if filters.exclude_hidden_for then
+		query = query .. " AND a.id NOT IN (SELECT post_id FROM hidden_posts WHERE user_id = "
+			.. tonumber(filters.exclude_hidden_for) .. ")"
+	end
+	if filters.saved_for then
+		query = query .. " AND a.id IN (SELECT post_id FROM saved_posts WHERE user_id = "
+			.. tonumber(filters.saved_for) .. ")"
+	end
 	query = query .. " ORDER BY a.created_at DESC"
 
 	local rows = db.select(query)

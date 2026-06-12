@@ -272,6 +272,23 @@ return {
         db.query("INSERT INTO posts_fts(rowid, title, body) SELECT id, title, body FROM posts")
     end,
 
+    -- per-user saved and hidden posts
+    [8] = function()
+        for _, name in ipairs({ "saved_posts", "hidden_posts" }) do
+            schema.create_table(name, {
+                { "id",      types.integer({ unique = true, primary_key = true }) },
+                { "user_id", types.integer },
+                { "post_id", types.integer },
+                { "created_at", types.text },
+                { "updated_at", types.text },
+                "FOREIGN KEY(user_id) REFERENCES users(id)",
+                "FOREIGN KEY(post_id) REFERENCES posts(id)",
+                "UNIQUE(user_id, post_id)",
+            }, opts)
+            schema.create_index(name, "user_id", { if_not_exists = true })
+        end
+    end,
+
     -- create first User
     [10] = function()
         Users:create({

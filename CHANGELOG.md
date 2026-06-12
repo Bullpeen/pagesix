@@ -9,6 +9,10 @@ This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
 ### Added
+- **Saved / hidden posts** — `saved_posts`/`hidden_posts` tables (migration
+  `[8]`) with toggle models; `POST /post/:id/save` and `/hide`; a `/saved` page;
+  hidden posts are filtered out of a user's listings (`get_listing`
+  `exclude_hidden_for`/`saved_for`).
 - **`rising` sort + time windows** — `rising` ranks by vote velocity (net score
   per hour); listings accept `?t=hour|day|week|month|year` (`src/utils/
   timewindow` + a `since` filter on `get_listing`) to scope e.g. `top?t=week`.

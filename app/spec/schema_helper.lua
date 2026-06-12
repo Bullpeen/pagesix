@@ -3,7 +3,7 @@
 local migrations = require("migrations")
 
 return function()
-	for _, k in ipairs({ 1, 2, 3, 4, 5, 6, 7 }) do
+	for _, k in ipairs({ 1, 2, 3, 4, 5, 6, 7, 8 }) do
 		if migrations[k] then
 			migrations[k]()
 		end
