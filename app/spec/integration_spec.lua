@@ -220,6 +220,34 @@ describe("pagesix integration", function()
 		end)
 	end)
 
+	describe("search (FTS5)", function()
+		local function SEARCH(q)
+			return mock_request(app, "/search", { method = "GET", get = { q = q } })
+		end
+
+		it("finds posts by title and body, ranked, excluding non-matches", function()
+			Posts:create({ user_id = 1, sub_id = 1, title = "Unique Zebra Headline", url = "https://z.example" })
+			Posts:create({ user_id = 1, sub_id = 1, title = "plain title", body = "contains quokka here", is_self = 1 })
+
+			local s1, body = SEARCH("Zebra")
+			assert.same(200, s1)
+			assert.truthy(body:find("Unique Zebra Headline", 1, true))
+
+			local _, body2 = SEARCH("quokka") -- body match
+			assert.truthy(body2:find("plain title", 1, true))
+
+			local _, body3 = SEARCH("nonexistentxyzzy")
+			assert.is_nil(body3:find("Unique Zebra Headline", 1, true))
+		end)
+
+		it("excludes deleted posts from search", function()
+			local p = Posts:create({ user_id = 1, sub_id = 1, title = "Searchable Platypus", url = "https://p.example" })
+			assert.same(1, #Posts:search("Platypus"))
+			p:update({ deleted = 1 })
+			assert.same(0, #Posts:search("Platypus"))
+		end)
+	end)
+
 	describe("subscriptions", function()
 		it("toggles a subscription on and off", function()
 			assert.same(302, (POST("/subscribe/programming", {}, "demo")))

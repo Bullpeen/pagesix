@@ -246,6 +246,32 @@ return {
         schema.create_index("posts", "deleted", { if_not_exists = true })
     end,
 
+    -- full-text search over posts (SQLite FTS5), kept in sync by triggers
+    [7] = function()
+        db.query([[
+            CREATE VIRTUAL TABLE IF NOT EXISTS posts_fts
+            USING fts5(title, body, content='posts', content_rowid='id')
+        ]])
+        db.query([[
+            CREATE TRIGGER IF NOT EXISTS posts_fts_ai AFTER INSERT ON posts BEGIN
+                INSERT INTO posts_fts(rowid, title, body) VALUES (new.id, new.title, new.body);
+            END
+        ]])
+        db.query([[
+            CREATE TRIGGER IF NOT EXISTS posts_fts_ad AFTER DELETE ON posts BEGIN
+                INSERT INTO posts_fts(posts_fts, rowid, title, body) VALUES ('delete', old.id, old.title, old.body);
+            END
+        ]])
+        db.query([[
+            CREATE TRIGGER IF NOT EXISTS posts_fts_au AFTER UPDATE ON posts BEGIN
+                INSERT INTO posts_fts(posts_fts, rowid, title, body) VALUES ('delete', old.id, old.title, old.body);
+                INSERT INTO posts_fts(rowid, title, body) VALUES (new.id, new.title, new.body);
+            END
+        ]])
+        -- backfill any posts that already exist
+        db.query("INSERT INTO posts_fts(rowid, title, body) SELECT id, title, body FROM posts")
+    end,
+
     -- create first User
     [10] = function()
         Users:create({

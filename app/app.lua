@@ -61,6 +61,7 @@ app:match("user_profile", "/user/:user_name(/:type)", r2(require("actions.user")
 -- app:match("r_all", "/r/all(/:sort)", r2(require("actions.r_all")))
 -- app:match("r_popular", "/r/popular(/:sort)", r2(require("actions.r_popular")))
 
+app:match("search", "/search", r2(require("actions.search")))
 app:match("r_random", "/r/random", r2(require("actions.r_random")))
 app:match("subreddit", "/r/:subreddit(/:sort)", r2(require("actions.r_subreddit")))
 

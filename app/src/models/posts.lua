@@ -121,4 +121,40 @@ function Posts:get_listing(filters)
 	return rows
 end
 
+--- Full-text search over post titles/bodies via the FTS5 index (migration [7]),
+-- ordered by relevance. Returns the same enriched rows as get_listing.
+-- @tparam string query the user's search text
+-- @treturn table array of post rows
+function Posts:search(query)
+	if not query or query == "" then
+		return {}
+	end
+	-- Wrap as a quoted FTS5 phrase so arbitrary user input can't break the
+	-- MATCH syntax (double-quotes are escaped by doubling).
+	local phrase = '"' .. tostring(query):gsub('"', '""') .. '"'
+
+	local rows = db.select([[
+		a.id, a.title, a.url, a.body, a.is_self, a.over_18, a.locked, a.sub_id,
+			a.created_at AS age, a.created_at,
+			c.user_name AS author,
+			s.name AS subreddit,
+			(SELECT COUNT(*) FROM votes v WHERE v.post_id = a.id AND v.comment_id IS NULL AND v.upvote = 1) AS upvotes,
+			(SELECT COUNT(*) FROM votes v WHERE v.post_id = a.id AND v.comment_id IS NULL AND v.upvote = 0) AS downvotes,
+			(SELECT COUNT(*) FROM comments d WHERE d.post_id = a.id) AS num_comments
+		FROM posts_fts f
+		INNER JOIN posts a ON a.id = f.rowid
+		INNER JOIN users c ON a.user_id = c.id
+		INNER JOIN forum s ON a.sub_id = s.id
+		WHERE posts_fts MATCH ? AND a.deleted = 0
+		ORDER BY rank
+		LIMIT 50]], phrase)
+
+	for _, post in ipairs(rows) do
+		post.permalink = "/r/" .. post.subreddit .. "/comments/" .. post.id
+		post.domain = post.url and post.url:match("^%w+://([^/]+)") or ""
+	end
+
+	return rows
+end
+
 return Posts

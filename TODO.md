@@ -25,7 +25,8 @@ image boots and serves; 23-spec Busted suite passes.
       body); self posts render their body on the post page. (Preview still TODO.)
 
 ## Missing Reddit / HN features (backlog)
-- Search (the search box has no backend) — good fit for **SQLite FTS5**.
+- [x] Search — **SQLite FTS5** virtual table over post title/body, kept in sync
+      by triggers; `GET /search?q=` ranks by relevance and excludes deleted.
 - Time-windowed `top` (`?t=day|week|year`) and a `rising` sort (commented out).
 - Saved / hidden posts; user karma (aggregate of vote scores).
 - Moderation: the `modlog` table is unused — lock/sticky/remove, mod tools.

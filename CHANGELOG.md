@@ -9,6 +9,11 @@ This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
 ### Added
+- **Full-text search (SQLite FTS5)** — migration `[7]` adds a `posts_fts`
+  virtual table over post title/body, kept in sync by AFTER INSERT/UPDATE/DELETE
+  triggers. `GET /search?q=` (`Posts:search`) matches with a quoted phrase
+  (injection-safe), ranks by relevance (`ORDER BY rank`), and excludes deleted
+  posts; the header search box now points at it.
 - **Edit / delete** own posts and comments (author-only). Edits set `edited`
   (shown as "(edited)"). Deletes are soft: deleted comments stay in the thread
   as `[deleted]` so replies aren't orphaned (the recursive CTE now keeps them);
