@@ -1,3 +1,4 @@
 <div class="split-panel">
+    <% if error then %><p class="error c-alert c-alert-danger"><%= error %></p><% end %>
     <% render('views.fragments.registration_panel') %>
 </div>

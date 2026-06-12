@@ -8,6 +8,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Security / auth hardening (issue #6)
+- **Password hashing** — `src/utils/password` uses **bcrypt** (salted, slow).
+  Registration hashes; login verifies; `verify` rejects non-bcrypt/legacy
+  values rather than erroring. (Replaced an incomplete resty-sha512 sketch.)
+- **CSRF** on the login and register forms (Lapis `csrf` token + per-session
+  cookie); a tokenless POST is rejected and the form re-renders with an error.
+- **Uncached auth routes** — removed `cached()` from login/register/password
+  (they embed per-session CSRF tokens and must not be shared).
+- **Error feedback** — login/register re-render with a message on bad
+  credentials / mismatch / taken username / weak password (was a silent
+  bare `return`).
+- **Dev secret** now comes from `$SESSION_SECRET` (was a hardcoded `"hunter42"`).
+
 ### Added
 - **RSS output feeds** — `GET /.rss` (frontpage) and `GET /r/:subreddit/.rss`
   emit valid, XML-escaped RSS 2.0 (`src/utils/rss`), served as

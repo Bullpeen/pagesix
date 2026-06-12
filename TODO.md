@@ -9,9 +9,12 @@ create subreddits, view user profiles, Markdown comment bodies. The Docker
 image boots and serves; 23-spec Busted suite passes.
 
 ## Next up
-- [ ] **Auth/password hardening** (GitHub issue #6 — the deferred capstone):
-      hash passwords (bcrypt is a dep), CSRF tokens on forms, stop `cached()`
-      on the login/register routes, real login error feedback.
+- [x] **Auth/password hardening** (issue #6): bcrypt password hashing
+      (`src/utils/password`), CSRF on the login/register forms, uncached auth
+      routes, login/register error feedback, dev secret from `$SESSION_SECRET`.
+      Follow-ups: extend CSRF to all state-changing forms; password reset;
+      re-hash/seed the demo users (their seeded passwords are plaintext and
+      can't log in).
 - [x] **Subscribe / unsubscribe** — toggle action + the header's "my subs" and
       the `/subscribed` page now populate for the logged-in user.
 - [x] **Pagination** — frontpage / `/r/:sub` / `/r/all` / `/r/popular` paginate

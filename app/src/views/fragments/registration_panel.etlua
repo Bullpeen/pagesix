@@ -1,6 +1,7 @@
 <div class="split-panel-section split-panel-divider">
     <h4 class="modal-title">create a new account</h4>
     <form id="register-form" method="post" action="/register" class="form-v2">
+        <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
         <input type="hidden" name="op" value="reg">
         <input type="hidden" name="dest" value="/">
         <div class="c-form-group ">

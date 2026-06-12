@@ -1,7 +1,6 @@
 --- Auth URLs
 -- @module src.auth
 
-local cached = require("lapis.cache").cached
 local r2 = require("lapis.application").respond_to
 
 local function auth(app)
@@ -25,9 +24,11 @@ local function auth(app)
 
 	-- app:match("prefs", "/prefs", function(self) end) -- stub
 
-	app:match("login", "/login", cached(r2(require("actions.login"))))
-	app:match("password", "/password", cached(r2(require("actions.register"))))
-	app:match("register", "/register", cached(r2(require("actions.register"))))
+	-- NB: not cached -- auth pages embed a per-session CSRF token and must not
+	-- be shared across users.
+	app:match("login", "/login", r2(require("actions.login")))
+	app:match("password", "/password", r2(require("actions.register")))
+	app:match("register", "/register", r2(require("actions.register")))
 
 	app:match("logout", "/logout", function(self)
 		-- Logout

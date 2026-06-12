@@ -1,5 +1,5 @@
 <form class="form primary_form" method="POST" action="/login">
-	<input type="hidden" name="csrf_token" value="">
+	<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
     <div class="input_row">
         <label>
             <div class="label">Username</div>

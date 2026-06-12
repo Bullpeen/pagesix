@@ -74,9 +74,64 @@ describe("pagesix integration", function()
 	end)
 
 	describe("auth", function()
-		it("logs in with valid credentials", function()
-			local status = POST("/login", { username = "demo", password = "password" })
+		local Password = require("src.utils.password")
+
+		-- GET an auth page to obtain a CSRF token + its cookie (in the headers).
+		local function csrf_for(path)
+			local _, body, headers = mock_request(app, path, { method = "GET" })
+			return (body:match('name="csrf_token"%s+value="([^"]*)"')), headers
+		end
+
+		it("hashes and verifies passwords (bcrypt)", function()
+			local h = Password.hash("hunter2pass")
+			assert.is_true(h ~= "hunter2pass")
+			assert.is_true(Password.verify("hunter2pass", h))
+			assert.is_false(Password.verify("wrong", h))
+			assert.is_false(Password.verify("x", "legacy-plaintext")) -- non-bcrypt
+		end)
+
+		it("logs in with valid credentials and a CSRF token", function()
+			Users:create({ user_name = "authuser", user_pass = Password.hash("secret123"), user_email = "au@e.com" })
+			local token, headers = csrf_for("/login")
+			assert.is_true(token ~= nil and #token > 0)
+			local status = mock_request(app, "/login", {
+				method = "POST", prev = headers,
+				post = { username = "authuser", password = "secret123", csrf_token = token },
+			})
 			assert.same(302, status)
+		end)
+
+		it("rejects a wrong password (re-renders, no redirect)", function()
+			Users:create({ user_name = "authuser2", user_pass = Password.hash("secret123"), user_email = "au2@e.com" })
+			local token, headers = csrf_for("/login")
+			local status, body = mock_request(app, "/login", {
+				method = "POST", prev = headers,
+				post = { username = "authuser2", password = "WRONG", csrf_token = token },
+			})
+			assert.same(200, status)
+			assert.truthy(body:find("Invalid username or password", 1, true))
+		end)
+
+		it("rejects a login POST without a CSRF token", function()
+			Users:create({ user_name = "authuser3", user_pass = Password.hash("secret123"), user_email = "au3@e.com" })
+			local status, body = mock_request(app, "/login", {
+				method = "POST",
+				post = { username = "authuser3", password = "secret123" },
+			})
+			assert.same(200, status) -- not a 302: not logged in
+			assert.truthy(body:find("Invalid session", 1, true))
+		end)
+
+		it("registers a new user with a hashed password", function()
+			local token, headers = csrf_for("/register")
+			local status = mock_request(app, "/register", {
+				method = "POST", prev = headers,
+				post = { name = "newbie", passwd = "secret123", passwd2 = "secret123", email = "n@e.com", csrf_token = token },
+			})
+			assert.same(302, status)
+			local u = Users:find({ user_name = "newbie" })
+			assert.is_not_nil(u)
+			assert.is_true(Password.verify("secret123", u.user_pass)) -- stored hashed
 		end)
 
 		it("redirects gated actions to login when signed out", function()

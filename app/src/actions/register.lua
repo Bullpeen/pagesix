@@ -2,41 +2,57 @@
 -- @module action.register
 
 local Users = require("models.users")
+local Password = require("src.utils.password")
+local csrf = require("lapis.csrf")
+
+local function fail(self, message)
+	self.csrf_token = csrf.generate_token(self)
+	self.error = message
+	return { render = "register" }
+end
 
 return {
-	before = function(self) end,
+	before = function(self)
+		if self.session.current_user then
+			return self:write({ redirect_to = self:url_for("homepage") })
+		end
+	end,
 
 	GET = function(self)
+		self.csrf_token = csrf.generate_token(self)
 		return { render = "register" }
 	end,
 
 	POST = function(self)
-		-- Users model
-		print(
-			"self is "
-				.. self.params.name
-				.. ", "
-				.. self.params.passwd
-				.. ", "
-				.. self.params.passwd2
-				.. ", "
-				.. self.params.email
-		)
-
-		-- TODO make secure
-		-- https://github.com/snap-cloud/snapCloud/blob/master/passwords.lua
-		if self.params.passwd == self.params.passwd2 then
-			local s, err = Users:create({
-				user_name = self.params.name,
-				user_email = self.params.email,
-				user_pass = self.params.passwd,
-			})
-			if not err then
-				self.session.current_user = s.user_name
-			else
-				print("error creating " .. self.params.name)
-				print(err)
-			end
+		if not csrf.validate_token(self) then
+			return fail(self, "Invalid session. Please try again.")
 		end
+
+		local passwd = self.params.passwd or ""
+		if passwd ~= (self.params.passwd2 or "") then
+			return fail(self, "Passwords do not match.")
+		end
+		-- Validate the plaintext length here: the model's user_pass constraint
+		-- would only ever see the (always ~60 char) bcrypt hash.
+		if #passwd < 7 then
+			return fail(self, "Password must be at least 7 characters.")
+		end
+		if self.params.name and Users:find({ user_name = self.params.name }) then
+			return fail(self, "That username is taken.")
+		end
+
+		-- The Users model constraints validate the username/email; create
+		-- returns nil + the message on failure.
+		local user, err = Users:create({
+			user_name = self.params.name,
+			user_email = self.params.email,
+			user_pass = Password.hash(passwd),
+		})
+		if not user then
+			return fail(self, err or "Could not create account.")
+		end
+
+		self.session.current_user = user.user_name
+		return { redirect_to = self:url_for("homepage") }
 	end,
 }

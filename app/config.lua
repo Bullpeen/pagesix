@@ -50,7 +50,7 @@ config("development", {
 	num_workers = "1",
 	name = "[DEVEL] Page Six",
 	session_name = "dev_app_session",
-	secret = "hunter42", -- TODO: manage Secrets
+	secret = os.getenv("SESSION_SECRET") or "dev-insecure-secret-change-me",
 	measure_performance = true,
 	sqlite = {
 		database = "/var/data/dev.sqlite",

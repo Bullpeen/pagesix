@@ -1,5 +1,8 @@
-<% if not session then render('views.fragments.login') else %>
-Welcome, <%= session.current_user %>!
+<% if current_user then %>
+    <p>Welcome, <%= current_user.user_name %>!</p>
+<% else %>
+    <% if error then %><p class="error c-alert c-alert-danger"><%= error %></p><% end %>
+    <% render('views.fragments.login') %>
 <% end %>
 
 <% render('views.fragments.nav') %>
