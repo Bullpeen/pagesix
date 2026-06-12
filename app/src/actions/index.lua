@@ -11,7 +11,8 @@ return {
 		-- Frontpage: all subreddits. Posts:get_listing() computes vote/comment
 		-- aggregates directly, so this works on a freshly-migrated DB and does
 		-- not depend on the pre-seeded v_hot_frontpage view.
-		self.posts = Sort:sort(Posts:get_listing(), sort)
+		local sorted = Sort:sort(Posts:get_listing(), sort)
+		self.posts, self.pagination = require("src.utils.paginate")(sorted, self.params.page)
 	end,
 
 	GET = function(self)

@@ -8,5 +8,6 @@
 </div>
 
 <% render('views.fragments.posts') %>
+<% render('views.fragments.page_nav') %>
 
 <% render('views.fragments.nav') %>

@@ -9,6 +9,8 @@ This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
 ### Added
+- **Pagination** — the frontpage, `/r/:sub`, `/r/all`, and `/r/popular` paginate
+  via `?page=` (`src/utils/paginate`), with a prev/next `page_nav` fragment.
 - **User karma** — `Users:karma` sums the net votes (up − down) on a user's
   posts and comments in SQL; shown on the user profile.
 - **Full-text search (SQLite FTS5)** — migration `[7]` adds a `posts_fts`

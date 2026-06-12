@@ -220,6 +220,43 @@ describe("pagesix integration", function()
 		end)
 	end)
 
+	describe("pagination", function()
+		local paginate = require("src.utils.paginate")
+
+		it("slices items and reports metadata", function()
+			local items = {}
+			for i = 1, 30 do items[i] = i end
+
+			local page1, info1 = paginate(items, 1, 25)
+			assert.same(25, #page1)
+			assert.is_true(info1.has_next)
+			assert.is_false(info1.has_prev)
+
+			local page2, info2 = paginate(items, 2, 25)
+			assert.same(5, #page2)
+			assert.same(26, page2[1])
+			assert.is_false(info2.has_next)
+			assert.is_true(info2.has_prev)
+		end)
+
+		it("paginates the frontpage over HTTP", function()
+			for i = 1, 30 do
+				Posts:create({ user_id = 1, sub_id = 1, title = "page post " .. i, url = "https://p" .. i .. ".example" })
+			end
+			local function PAGE(n)
+				return mock_request(app, "/", { method = "GET", get = { page = tostring(n) } })
+			end
+
+			local s1, b1 = PAGE(1)
+			assert.same(200, s1)
+			assert.truthy(b1:find("page 1", 1, true)) -- page nav rendered
+
+			local s2, b2 = PAGE(2)
+			assert.same(200, s2)
+			assert.truthy(b2:find("page 2", 1, true))
+		end)
+	end)
+
 	describe("karma", function()
 		it("sums votes on a user's posts and comments", function()
 			local author = Users:create({ user_name = "karma_author", user_pass = "password", user_email = "k@e.com" })

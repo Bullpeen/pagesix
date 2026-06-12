@@ -1,1 +1,2 @@
-<%  render('views.fragments.posts') %>
+<% render('views.fragments.posts') %>
+<% render('views.fragments.page_nav') %>

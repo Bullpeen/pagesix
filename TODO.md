@@ -14,9 +14,8 @@ image boots and serves; 23-spec Busted suite passes.
       on the login/register routes, real login error feedback.
 - [x] **Subscribe / unsubscribe** — toggle action + the header's "my subs" and
       the `/subscribed` page now populate for the logged-in user.
-- [ ] **Pagination** — every listing/thread is unbounded (`TODO paginate`
-      markers throughout). Use Lapis `paginated`/SQLite `LIMIT/OFFSET` or
-      keyset pagination.
+- [x] **Pagination** — frontpage / `/r/:sub` / `/r/all` / `/r/popular` paginate
+      via `?page=`; prev/next nav. (Comment threads still unbounded.)
 - [x] **Edit / delete** own posts & comments — author-only edit (sets
       `edited`) and soft-delete. Deleted comments stay in the thread as
       `[deleted]` (replies kept); deleted posts drop from listings and show

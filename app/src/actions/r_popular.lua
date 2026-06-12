@@ -9,7 +9,8 @@ return {
 		local sort = self.params.sort or "hot"
 		-- "popular" is the cross-subreddit frontpage (same data as /), so it
 		-- needs posts; previously it rendered the index template with no posts.
-		self.posts = Sort:sort(Posts:get_listing(), sort)
+		local sorted = Sort:sort(Posts:get_listing(), sort)
+		self.posts, self.pagination = require("src.utils.paginate")(sorted, self.params.page)
 	end,
 
 	GET = function(self)

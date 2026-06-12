@@ -19,7 +19,8 @@ return {
         end
 
         self.subreddit = sub.name
-        self.posts = Sort:sort(Posts:get_listing(sub.id), sort)
+        local sorted = Sort:sort(Posts:get_listing(sub.id), sort)
+        self.posts, self.pagination = require("src.utils.paginate")(sorted, self.params.page)
 
         -- current_user is set by the app before_filter when signed in.
         if self.current_user then
