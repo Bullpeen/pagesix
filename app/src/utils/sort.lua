@@ -17,23 +17,25 @@ local function best(a, b)
     return num(a.upvotes) > num(b.upvotes)
 end
 
--- return the difference from val to goal
-local function nearest(val, goal)
-    goal = goal or 1.0
-    -- print("NEAREST " .. math.abs(val - goal))
-    return math.abs(val - goal)
+-- Reddit's controversy score: weight total vote volume by how evenly the votes
+-- are split. A post is only controversial if it drew votes on BOTH sides, so a
+-- one-sided (or unvoted) post scores 0.
+--
+--   score = (up + down) ^ (min(up, down) / max(up, down))
+--
+-- The exponent (the "balance") is 1.0 for a perfect 50/50 split and approaches
+-- 0 as the split becomes lopsided, so a hotly-contested 500/500 post outranks a
+-- quiet 1/1 even though both are perfectly balanced.
+local function controversy_score(x)
+    local up, down = num(x.upvotes), num(x.downvotes)
+    if up <= 0 or down <= 0 then return 0 end
+    local balance = math.min(up, down) / math.max(up, down)
+    return (up + down) ^ balance
 end
 
 local function controversial(a, b)
-    -- TODO taking the total number of votes and weighing it by bias, i.e. (up+down) ** (min(up, down)/max(up, down)).
-
-
-    -- ratio of Upvote:Downvote closest to 1.0
-    local a_dist = nearest(num(a.upvotes) - num(a.downvotes))
-    local b_dist = nearest(num(b.upvotes) - num(b.downvotes))
-    -- print("CONTROVERSIAL A=" .. a_dist .. ", B=" .. b_dist)
-
-    return a_dist < b_dist
+    -- sort descending by controversy score
+    return controversy_score(a) > controversy_score(b)
 end
 
 local function date_to_timestamp(date_str, pattern)
@@ -91,34 +93,21 @@ local function top(a, b)
     return a_total > b_total
 end
 
--- TODO use enum
--- todo replace if statement with single getfenv(algo) or _g[algo]() call
-function Sort:sort(items, algo)
-    print("Sorting by " .. algo)
+-- Comparators keyed by algo name; anything not listed falls back to `hot`.
+local comparators = {
+    best = best,
+    top = top,
+    controversial = controversial,
+    rising = rising,
+    hot = hot,
+}
 
-    -- local a = {
-    --     best = best,
-    --     controversial = controversial,
-    --     hot = hot,
-    --     -- rising = rising,
-    --     top = top,
-    -- }
+function Sort:sort(items, algo)
+    local cmp = comparators[algo] or hot
 
     local arr = {}
     for _,n in pairs(items) do table.insert(arr, n) end
-    -- table.sort(arr, a[algo])
-
-    if algo == 'best' then
-        table.sort(arr, best)
-    elseif algo == 'top' then
-        table.sort(arr, top)
-    elseif algo == 'controversial' then
-        table.sort(arr, controversial)
-    elseif algo == 'rising' then
-        table.sort(arr, rising)
-    else
-        table.sort(arr, hot)
-    end
+    table.sort(arr, cmp)
 
     return arr
 end

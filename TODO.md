@@ -9,7 +9,7 @@ full-text search (FTS5); open a post; vote on posts & comments; submit
 link/self posts; post threaded comments/replies with Markdown; edit/delete own
 posts & comments; subscribe/unsubscribe; saved/hidden posts; user profiles +
 karma; reply notifications (`/inbox`); basic moderation (remove); RSS output
-feeds; bcrypt + CSRF auth. The Docker image boots and serves; **78-spec Busted
+feeds; bcrypt + CSRF auth. The Docker image boots and serves; **85-spec Busted
 suite + luacheck pass**.
 
 ## Next up
@@ -106,11 +106,12 @@ suite + luacheck pass**.
     workload.
 
 ## From code comments (TODO/FIXME in the source)
-- [ ] **Real "controversial" ranking** — `sort.lua` uses a crude
-      `|up - down|` distance; use the Reddit formula
-      `(up + down) ^ (min(up,down)/max(up,down))` (`sort.lua:~28`).
-- [ ] **Refactor `Sort:sort`** — replace the if/elseif chain with a dispatch
-      table keyed by algo name (`sort.lua:~94`).
+- [x] **Real "controversial" ranking** — replaced the crude `|up - down|`
+      distance with the Reddit formula `(up + down) ^ (min/max)`
+      (`controversy_score` in `sort.lua`); one-sided/unvoted posts score 0.
+- [x] **Refactor `Sort:sort`** — the if/elseif chain is now a `comparators`
+      dispatch table keyed by algo name (default `hot`); dropped the debug
+      `print` and dead commented code (`sort.lua`).
 - [x] **Removed the dead `v_hot_*` / `v_forum` views + `Forum:get_frontpage()`**
       — listings use `Posts:get_listing`; the last view consumer (`domain.lua`)
       was switched to a `get_listing({ domain = ... })` filter, so all the
@@ -133,7 +134,7 @@ suite + luacheck pass**.
       `modlog` FK columns to integers (`:204`; ties into `foreign_keys = ON`).
 
 ## Test & quality
-- **78 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
+- **85 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
   coverage, and **luacheck** (0 warnings / 0 errors).
 - CI per push: super-linter, **luacheck** (`luacheck app`), **busted +
   luacov**, and a Docker **build + `lapis migrate`** smoke test.

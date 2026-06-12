@@ -8,6 +8,21 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Sorting
+- **Real "controversial" ranking** — `sort.lua` now scores posts with Reddit's
+  formula `(up + down) ^ (min(up, down) / max(up, down))` (`controversy_score`)
+  instead of the old crude `|up - down|` distance. The exponent rewards an even
+  up/down split while the base rewards volume, so a contested 500/500 post beats
+  a quiet 1/1, and one-sided or unvoted posts score 0 (not controversial).
+- **`Sort:sort` dispatch table** — the `if/elseif` algo chain is replaced by a
+  `comparators` lookup keyed by algo name (unknown algos fall back to `hot`).
+  Dropped the `print("Sorting by ...")` debug line and the dead commented-out
+  code around it.
+- **New `spec/sort_spec.lua`** (7 specs) — pure-Lua coverage for the comparators
+  (controversial ordering + the zero-score guard, `top`/`best`, the unknown-algo
+  fallback, and that the input table isn't mutated). It requires only
+  `src.utils.sort`, so it runs without the lapis/DB stack.
+
 ### Breaking schema / data integrity
 - **`PRAGMA foreign_keys = ON`** at runtime (and in tests) — the declared FKs
   are now enforced (verified: a vote on a non-existent post is rejected). The
@@ -42,7 +57,7 @@ test-covered Reddit clone. Highlights, newest first:
   ("Username is reserved"). The table existed but was never checked.
 
 ### Quality / CI
-- **Test suite now at 78 specs** (model/SQL + full HTTP integration), all green,
+- **Test suite now at 85 specs** (model/SQL + full HTTP integration), all green,
   with luacov coverage and a clean luacheck (0/0).
 - **luacheck** added to the rockspec, Docker image, and CI (a `luacheck app`
   step gates the build), configured via `.luacheckrc` (luajit + `ngx` global;
