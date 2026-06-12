@@ -20,6 +20,8 @@ test-covered Reddit clone. Highlights, newest first:
   redundant `modlog.user_id`.
 
 ### Quality / CI
+- **Test suite now at 76 specs** (model/SQL + full HTTP integration), all green,
+  with luacov coverage and a clean luacheck (0/0).
 - **luacheck** added to the rockspec, Docker image, and CI (a `luacheck app`
   step gates the build), configured via `.luacheckrc` (luajit + `ngx` global;
   busted std for specs). Fixed all findings — **0 warnings / 0 errors** across
