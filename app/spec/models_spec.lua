@@ -7,7 +7,6 @@ local use_test_env = require("lapis.spec").use_test_env
 describe("pagesix models", function()
 	use_test_env()
 
-	local migrations = require("migrations")
 	local Sort = require("src.utils.sort")
 	local Users = require("models.users")
 	local Forum = require("src.models.forum")

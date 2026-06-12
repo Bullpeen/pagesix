@@ -8,7 +8,6 @@ local db = require("lapis.db")
 describe("voting", function()
 	use_test_env()
 
-	local migrations = require("migrations")
 	local Users = require("models.users")
 	local Forum = require("src.models.forum")
 	local Posts = require("src.models.posts")

@@ -42,7 +42,11 @@ jobs:
           luarocks install tableshape
           luarocks install lsqlite3
           luarocks install luacov
+          luarocks install luacheck
           luarocks make
+
+      - name: luacheck
+        run: luacheck app
 
       - name: test
         run: |

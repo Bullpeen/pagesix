@@ -38,6 +38,7 @@ dependencies = {
   "inspect",              -- formats tables for debugging, https://github.com/kikito/inspect.lua
   "lester",               -- unit tests, https://github.com/edubart/lester
   "luacov",               -- test coverage, https://github.com/lunarmodules/luacov
+  "luacheck",             -- lua linter, https://github.com/lunarmodules/luacheck
   "lpeg_patterns",        -- parses IP addrs, URIs, email addrs, https://github.com/daurnimator/lpeg_patterns
   "lpeg",                 -- improved regex-like pattern matching, https://www.inf.puc-rio.br/~roberto/lpeg/lpeg.html
   -- "lrandom",           -- random numbers based on the Mersenne Twister

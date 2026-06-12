@@ -4,7 +4,6 @@
 local Comments = require("models.comments")
 local Forum = require("src.models.forum")
 local Posts = require("src.models.posts")
-local Users = require("models.users")
 
 return {
     before = function(self)

@@ -8,6 +8,14 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Quality / CI
+- **luacheck** added to the rockspec, Docker image, and CI (a `luacheck app`
+  step gates the build), configured via `.luacheckrc` (luajit + `ngx` global;
+  busted std for specs). Fixed all findings — **0 warnings / 0 errors** across
+  64 files (removed dead `require`s and unused locals).
+- CI now runs, per push: super-linter, **luacheck**, the **busted** suite with
+  **luacov coverage**, and a Docker **build + `lapis migrate`** smoke test.
+
 ### Performance (SQLite)
 - **Covering indexes** `votes(post_id, comment_id, upvote)` and
   `votes(comment_id, upvote)` make the per-row vote-count subqueries index-only

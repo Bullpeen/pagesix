@@ -5,7 +5,6 @@ local use_test_env = require("lapis.spec").use_test_env
 describe("comment threading", function()
 	use_test_env()
 
-	local migrations = require("migrations")
 	local Users = require("models.users")
 	local Forum = require("src.models.forum")
 	local Posts = require("src.models.posts")

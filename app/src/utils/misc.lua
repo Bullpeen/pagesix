@@ -104,7 +104,6 @@ end
 
 function Misc:generate_comments(post_id, n)
     local Comments = require("src.models.comments")
-    local Posts = require("src.models.posts")
     local Users = require("src.models.users")
     local Lorem = require("src.utils.lorem")
 

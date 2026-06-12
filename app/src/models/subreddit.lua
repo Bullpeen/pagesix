@@ -1,8 +1,8 @@
---- Subreddit model
+--- Subreddit model (placeholder)
 -- @module models.subreddit
-
-local Model = require("lapis.db.model").Model
-local Forum = require("src.models.forum")
+--
+-- Not used: subreddits live in the `forum` table (model `Forum`). Kept as a
+-- sketch of a future per-subreddit-view model.
 
 -- TODO for enum of subreddits?
 -- for name in Forum.object_types do

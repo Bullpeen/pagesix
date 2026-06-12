@@ -7,7 +7,6 @@ local mock_request = require("lapis.spec.request").mock_request
 describe("pagesix integration", function()
 	use_test_env()
 
-	local migrations = require("migrations")
 	local Users = require("models.users")
 	local Forum = require("src.models.forum")
 	local Posts = require("src.models.posts")

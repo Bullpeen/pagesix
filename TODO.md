@@ -73,13 +73,11 @@ image boots and serves; 23-spec Busted suite passes.
       tokens (password reset), `stats` for ranking. Needs `load_extension`
       enabled + per-platform builds in the image.
 
-## Test coverage
-- **38 specs**, ~76.7% line coverage (luacov; run `busted --coverage && luacov`).
-- [x] Model/SQL layer: relations, listing/thread CTE, votes, seed migrations,
-      markdown, constraints, index usage.
-- [x] **HTTP integration** (`integration_spec` via `mock_request`): routing,
-      actions, auth/session, redirects, rendering for every feature.
-- [x] **luacov** wired into rockspec, Docker image, and CI.
-- Remaining low-coverage modules are the not-yet-wired legacy actions
-  (`register` 21%, `submit` 28%, `subscribed` 28%, `domain`/`r_random` ~30%,
-  `comment` 36%) and `sort` 50% — these get covered as the features below land.
+## Test & quality
+- **75 specs** (model/SQL + full HTTP integration via `mock_request`), luacov
+  coverage, and **luacheck** (0 warnings / 0 errors).
+- CI per push: super-linter, **luacheck** (`luacheck app`), **busted +
+  luacov**, and a Docker **build + `lapis migrate`** smoke test.
+- [x] Model/SQL layer, HTTP integration for every feature, luacov + luacheck.
+- [ ] Optional: **stylua** formatting check (one-time reformat) and a coverage
+      threshold gate.

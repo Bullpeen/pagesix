@@ -1,14 +1,8 @@
 --- Comment action
 -- @module action.comment
 
-local db = require("lapis.db")
-
 local Comments = require("models.comments")
-local Forum = require("src.models.forum")
 local Posts = require("src.models.posts")
-local Subreddit = require("models.subreddit")
-local Users = require("models.users")
-local Votes = require("src.models.votes")
 
 
 return {
