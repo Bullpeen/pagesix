@@ -79,7 +79,7 @@ describe("voting", function()
 		assert.same(1, tonumber(v.upvote))
 
 		local row
-		for _, r in ipairs(Comments:listing(p.id)) do
+		for _, r in ipairs(Comments:thread(p.id)) do
 			if r.id == c.id then row = r end
 		end
 		assert.is_not_nil(row)

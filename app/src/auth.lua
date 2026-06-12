@@ -10,6 +10,7 @@ local function auth(app)
 	app:match("submit", "/submit", r2(require("actions.submit")))
 	app:match("vote", "/vote/post/:post_id[%d]/:direction", r2(require("actions.vote")))
 	app:match("vote_comment", "/vote/comment/:comment_id[%d]/:direction", r2(require("actions.vote")))
+	app:match("post_comment", "/post/:post_id[%d]/comment", r2(require("actions.comment_create")))
 
 	-- app:match("prefs", "/prefs", function(self) end) -- stub
 

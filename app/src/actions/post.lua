@@ -35,8 +35,8 @@ return {
             return self:write({ redirect_to = self:url_for("homepage") })
         end
 
-        -- Comments with author + vote aggregates, ready for rendering.
-        self.comments = Comments:listing(post_data.id)
+        -- Full comment thread (depth-ordered, with author + vote aggregates).
+        self.comments = Comments:thread(post_data.id)
 
         -- print("Post data:")
         -- require 'pl.pretty'.dump(post_data[1])

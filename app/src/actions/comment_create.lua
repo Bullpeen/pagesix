@@ -1,0 +1,47 @@
+--- Create comment action
+-- @module action.comment_create
+
+local Users = require("models.users")
+local Posts = require("src.models.posts")
+local Comments = require("models.comments")
+
+return {
+	-- POST /post/:post_id/comment  (form: body, optional parent_comment_id)
+	POST = function(self)
+		local user = self.session.current_user
+			and Users:find({ user_name = self.session.current_user })
+		if not user then
+			return { redirect_to = self:url_for("login") }
+		end
+
+		local post = Posts:find(tonumber(self.params.post_id))
+		if not post then
+			return { redirect_to = self:url_for("homepage") }
+		end
+
+		-- Only thread under a parent that actually belongs to this post.
+		local parent_id
+		if self.params.parent_comment_id and self.params.parent_comment_id ~= "" then
+			local parent = Comments:find(tonumber(self.params.parent_comment_id))
+			if parent and parent.post_id == post.id then
+				parent_id = parent.id
+			end
+		end
+
+		-- The Comments model's `body` constraint validates the text; create
+		-- returns nil + error if it fails.
+		local comment, err = Comments:create({
+			post_id = post.id,
+			user_id = user.id,
+			parent_comment_id = parent_id,
+			body = self.params.body,
+			is_submitter = post.user_id == user.id and 1 or 0,
+		})
+		if not comment then
+			self.errors = { err }
+		end
+
+		local referer = self.req.headers["referer"]
+		return { redirect_to = referer or self:url_for("homepage") }
+	end,
+}

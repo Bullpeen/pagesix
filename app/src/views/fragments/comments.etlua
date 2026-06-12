@@ -2,62 +2,43 @@
     <div class="sitetable nestedlisting">
         <% if comments ~= nil and #comments > 0 then
             for _, comment in ipairs(comments) do %>
-                <div class="thing comment">
-                    <p class="parent"></p>
+                <% -- depth-first order + depth come from Comments:thread (recursive CTE) %>
+                <div class="thing comment" style="margin-left: <%= comment.depth * 24 %>px">
                     <div class="midcol">
                         <form class="arrow-form" method="POST" action="/vote/comment/<%= comment.id %>/up">
                             <button class="arrow up" type="submit" aria-label="upvote"></button>
                         </form>
+                        <span class="score"><%= comment.score %></span>
                         <form class="arrow-form" method="POST" action="/vote/comment/<%= comment.id %>/down">
                             <button class="arrow down" type="submit" aria-label="downvote"></button>
                         </form>
                     </div>
                     <div class="entry">
                         <p class="tagline">
-                            <a href="javascript:void(0)" class="expand" onclick="return togglecomment(this)">[–]</a>
-                            <a class="author" href="<%= "/user/" .. comment.author %>"><%= comment.author %></a>
-                            <span class="userattrs"></span>
-                            <span class="score likes"><%= comment.score %> points</span>
-                            <time title="<%= comment.permalink %>" datetime="<%= comment.created_at %>" class=""><%= comment.created_at %> ago</time>
-                            <span class="awardings-bar"></span>&nbsp;
-                            <a href="javascript:void(0)">(# children)</a>
+                            <a class="author" href="/user/<%= comment.author %>"><%= comment.author %></a>
+                            <% if tonumber(comment.is_submitter) == 1 then %><span class="submitter" title="original poster">OP</span><% end %>
+                            <span class="score">&middot; <%= comment.score %> points</span>
+                            <time datetime="<%= comment.created_at %>"><%= comment.created_at %></time>
                         </p>
-                        <form action="#" class="usertext warn-on-unload">
-                            <input type="hidden" name="thing_id" value="">
-                            <div class="usertext-body may-blank-within md-container">
-                                <div class="md">
-                                    <p><%= comment.body %></p>
-                                </div>
-                            </div>
-                        </form>
+                        <div class="usertext-body md">
+                            <p><%= comment.body %></p>
+                        </div>
                         <ul class="flat-list buttons">
-                            <li class="first">
-                                <a href="<%= comment.permalink %>" data-event-action="permalink" class="bylink" rel="nofollow">permalink</a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0)" class="embed-comment">embed</a>
-                            </li>
-                            <li class="comment-save-button save-button login-required">
-                                <a href="javascript:void(0)">save</a>
-                            </li>
-                            <li class="report-button login-required">
-                                <a href="javascript:void(0)" class="reportbtn access-required" data-event-action="report">report</a>
-                            </li>
-                            <li class="give-gold-button">
-                                <a href="" title="give an award in appreciation of this post." class="give-gold login-required access-required gold-give-gold" rel="nofollow">give award</a>
-                            </li>
-                            <li class="reply-button login-required">
-                                <a class="access-required" href="javascript:void(0)" data-event-action="comment" onclick="return reply(this)">reply</a>
-                            </li>
+                            <li class="first"><a href="<%= comment.permalink %>" class="bylink" rel="nofollow">permalink</a></li>
                         </ul>
-                        <div class="reportform"></div>
+                        <details class="reply">
+                            <summary>reply</summary>
+                            <form method="POST" action="/post/<%= comment.post_id %>/comment">
+                                <input type="hidden" name="parent_comment_id" value="<%= comment.id %>">
+                                <textarea name="body" rows="3" required></textarea>
+                                <button class="button" type="submit">reply</button>
+                            </form>
+                        </details>
                     </div>
                 </div>
-                <div class="child"></div>
-                <div class="clearleft"></div>
             <% end %>
         <% else %>
-            Nothing (comments) to see here.
+            <p class="empty">No comments yet.</p>
         <% end %>
     </div>
 </div>

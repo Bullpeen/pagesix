@@ -1,0 +1,6 @@
+<% if post_id then %>
+    <form class="comment-form" method="POST" action="/post/<%= post_id %>/comment">
+        <textarea name="body" rows="4" placeholder="What are your thoughts?" required></textarea>
+        <button class="button" type="submit">Comment</button>
+    </form>
+<% end %>
