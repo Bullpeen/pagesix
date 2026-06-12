@@ -24,6 +24,7 @@ app:before_filter(function(self)
 		if user then
 			self.current_user = user
 			self.subs = require("models.subscriptions"):subscribed_forums(user.id)
+			self.unread_count = require("models.notifications"):unread_count(user.id)
 		end
 	end
 end)

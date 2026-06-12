@@ -289,6 +289,22 @@ return {
         end
     end,
 
+    -- reply notifications (inbox). `seen` avoids the SQL keyword `read`.
+    [9] = function()
+        schema.create_table("notifications", {
+            { "id",         types.integer({ unique = true, primary_key = true }) },
+            { "user_id",    types.integer },  -- recipient
+            { "comment_id", types.integer },  -- the reply comment
+            { "kind",       types.text },      -- post_reply | comment_reply
+            { "seen",       types.integer({ default = false }) },
+            { "created_at", types.text },
+            { "updated_at", types.text },
+            "FOREIGN KEY(user_id) REFERENCES users(id)",
+            "FOREIGN KEY(comment_id) REFERENCES comments(id)",
+        }, opts)
+        schema.create_index("notifications", "user_id", { if_not_exists = true })
+    end,
+
     -- create first User
     [10] = function()
         Users:create({

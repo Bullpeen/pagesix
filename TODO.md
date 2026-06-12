@@ -34,7 +34,9 @@ image boots and serves; 23-spec Busted suite passes.
 - [x] Moderation (basic): subreddit creator/mods can remove a post (recorded
       in `modlog`); removed posts drop from listings and show `[removed]`.
       Sticky / lock-comments / a public modlog page still TODO.
-- Inbox / reply notifications; per-user message threads.
+- [x] Reply notifications — replying to a post/comment notifies its author
+      (not self); `/inbox` lists them + marks read; header shows an unread count.
+      (Direct messages between users intentionally out of scope.)
 - Flair, awards/gold (currently static placeholders).
 - Per-subreddit RSS in/out (seed does a one-shot import; no live feeds).
 - Spam/quality filtering — `lapis-bayes` is a dependency but unused.

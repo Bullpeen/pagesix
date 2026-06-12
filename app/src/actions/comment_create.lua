@@ -4,6 +4,7 @@
 local Users = require("models.users")
 local Posts = require("src.models.posts")
 local Comments = require("models.comments")
+local Notifications = require("models.notifications")
 
 return {
 	-- POST /post/:post_id/comment  (form: body, optional parent_comment_id)
@@ -20,11 +21,13 @@ return {
 		end
 
 		-- Only thread under a parent that actually belongs to this post.
-		local parent_id
+		local parent_id, parent
 		if self.params.parent_comment_id and self.params.parent_comment_id ~= "" then
-			local parent = Comments:find(tonumber(self.params.parent_comment_id))
+			parent = Comments:find(tonumber(self.params.parent_comment_id))
 			if parent and parent.post_id == post.id then
 				parent_id = parent.id
+			else
+				parent = nil
 			end
 		end
 
@@ -39,6 +42,13 @@ return {
 		})
 		if not comment then
 			self.errors = { err }
+		else
+			-- Notify the parent comment's author (reply) or the post's author
+			-- (top-level comment), unless you're replying to yourself.
+			local recipient = parent and parent.user_id or post.user_id
+			if tonumber(recipient) ~= tonumber(user.id) then
+				Notifications:notify(recipient, comment.id, parent_id and "comment_reply" or "post_reply")
+			end
 		end
 
 		local referer = self.req.headers["referer"]

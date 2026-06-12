@@ -32,6 +32,12 @@
 						<span class="separator">-</span>
 						<a href="/r/random/" class="random choice">random</a>
 					</li>
+					<% if current_user then %>
+					<li>
+						<span class="separator">-</span>
+						<a href="/inbox" class="choice">inbox<% if unread_count and tonumber(unread_count) > 0 then %> (<%= unread_count %>)<% end %></a>
+					</li>
+					<% end %>
 
 					<% if subs ~= nil then %>
 					<% for _, sub in ipairs(subs) do %>

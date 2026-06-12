@@ -9,6 +9,10 @@ This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
 ### Added
+- **Reply notifications** — `notifications` table (migration `[9]`); commenting
+  notifies the parent comment's author (reply) or the post's author (top-level),
+  never yourself. `/inbox` lists them and marks them read; the header shows an
+  unread count. (No direct messages — out of scope by request.)
 - **Moderation (basic)** — `Forum:can_moderate` (creator or a listed
   `moderator_id`); `POST /post/:id/remove` lets a mod toggle removal (sets
   `locked`, which excludes the post from listings) and records it in `modlog`.

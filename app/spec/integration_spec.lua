@@ -220,6 +220,60 @@ describe("pagesix integration", function()
 		end)
 	end)
 
+	describe("reply notifications", function()
+		local Notifications = require("models.notifications")
+
+		it("notifies the post author when someone comments", function()
+			local op = Users:create({ user_name = "notif_op", user_pass = "password", user_email = "no@e.com" })
+			Users:create({ user_name = "notif_replier", user_pass = "password", user_email = "nr@e.com" })
+			local f = Forum:create({ name = "notifsub", creator_id = op.id })
+			local p = Posts:create({ user_id = op.id, sub_id = f.id, title = "notif post", url = "https://n.example" })
+
+			assert.same(0, Notifications:unread_count(op.id))
+			POST("/post/" .. p.id .. "/comment", { body = "nice post" }, "notif_replier")
+			assert.same(1, Notifications:unread_count(op.id))
+
+			local list = Notifications:for_user(op.id)
+			assert.same("post_reply", list[1].kind)
+			assert.same("nice post", list[1].body)
+		end)
+
+		it("notifies the parent comment's author on a reply", function()
+			local a = Users:create({ user_name = "notif_a", user_pass = "password", user_email = "na@e.com" })
+			Users:create({ user_name = "notif_b", user_pass = "password", user_email = "nb@e.com" })
+			local f = Forum:create({ name = "notifsub2", creator_id = a.id })
+			local p = Posts:create({ user_id = a.id, sub_id = f.id, title = "np2", url = "https://n2.example" })
+			local c = Comments:create({ post_id = p.id, user_id = a.id, body = "parent" })
+
+			POST("/post/" .. p.id .. "/comment", { body = "a reply", parent_comment_id = tostring(c.id) }, "notif_b")
+			assert.same(1, Notifications:unread_count(a.id))
+			assert.same("comment_reply", Notifications:for_user(a.id)[1].kind)
+		end)
+
+		it("does not notify on a self-reply", function()
+			local u = Users:create({ user_name = "notif_self", user_pass = "password", user_email = "ns@e.com" })
+			local f = Forum:create({ name = "notifsub3", creator_id = u.id })
+			local p = Posts:create({ user_id = u.id, sub_id = f.id, title = "np3", url = "https://n3.example" })
+
+			POST("/post/" .. p.id .. "/comment", { body = "my own comment" }, "notif_self")
+			assert.same(0, Notifications:unread_count(u.id))
+		end)
+
+		it("marks the inbox read when viewed", function()
+			local op = Users:create({ user_name = "notif_read", user_pass = "password", user_email = "nrd@e.com" })
+			Users:create({ user_name = "notif_reader2", user_pass = "password", user_email = "nr2@e.com" })
+			local f = Forum:create({ name = "notifsub4", creator_id = op.id })
+			local p = Posts:create({ user_id = op.id, sub_id = f.id, title = "np4", url = "https://n4.example" })
+			POST("/post/" .. p.id .. "/comment", { body = "hi there" }, "notif_reader2")
+			assert.same(1, Notifications:unread_count(op.id))
+
+			local s, body = mock_request(app, "/inbox", { method = "GET", session = { current_user = "notif_read" } })
+			assert.same(200, s)
+			assert.truthy(body:find("hi there", 1, true))
+			assert.same(0, Notifications:unread_count(op.id))
+		end)
+	end)
+
 	describe("moderation", function()
 		local Modlog = require("src.models.modlog")
 

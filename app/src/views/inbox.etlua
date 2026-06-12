@@ -1,0 +1,18 @@
+<h1>Inbox</h1>
+
+<% if notifications ~= nil and #notifications > 0 then
+    for _, n in ipairs(notifications) do %>
+    <div class="message <%= tonumber(n.seen) == 1 and "read" or "unread" %>">
+        <p class="subject">
+            <a class="author" href="/user/<%= n.author %>"><%= n.author %></a>
+            <%= n.kind == "post_reply" and "replied to your post" or "replied to your comment" %>
+            on <a href="<%= n.permalink %>"><%= n.post_title %></a>
+        </p>
+        <div class="usertext-body md">
+            <p><%= n.body %></p>
+        </div>
+    </div>
+    <% end %>
+<% else %>
+    <p class="empty">No messages.</p>
+<% end %>
