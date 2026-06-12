@@ -26,9 +26,9 @@ return {
 			local removing = tonumber(post.locked) ~= 1
 			post:update({ locked = removing and 1 or 0 })
 			Modlog:create({
-				mod_id = tostring(user.id),
-				post_id = tostring(post.id),
-				sub_id = tostring(post.sub_id),
+				mod_id = user.id,
+				post_id = post.id,
+				sub_id = post.sub_id,
 				action = removing and 1 or 0,
 				reason = removing and "removed" or "approved",
 			})

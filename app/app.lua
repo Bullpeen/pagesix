@@ -20,6 +20,7 @@ local function tune_sqlite()
 	if db_tuned then return end
 	db_tuned = true
 	local db = require("lapis.db")
+	pcall(db.query, "PRAGMA foreign_keys = ON") -- enforce the FK constraints
 	pcall(db.query, "PRAGMA busy_timeout = 5000") -- wait, don't error, on WAL write locks
 	pcall(db.query, "PRAGMA cache_size = -16000") -- ~16 MB page cache
 	pcall(db.query, "PRAGMA synchronous = NORMAL")

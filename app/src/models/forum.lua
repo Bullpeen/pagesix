@@ -71,17 +71,22 @@ function Forum:can_moderate(user_id, forum)
 	if not forum or not user_id then
 		return false
 	end
+	-- The creator is always a moderator.
 	if tonumber(forum.creator_id) == tonumber(user_id) then
 		return true
 	end
-	if forum.moderator_ids then
-		for id in tostring(forum.moderator_ids):gmatch("%d+") do
-			if tonumber(id) == tonumber(user_id) then
-				return true
-			end
-		end
+	-- Otherwise check the moderators join table (replaces the legacy
+	-- forum.moderator_ids CSV).
+	local Moderators = require("src.models.moderators")
+	return Moderators:find({ subreddit_id = forum.id, user_id = user_id }) ~= nil
+end
+
+--- Add a user as a moderator of a subreddit (idempotent).
+function Forum:add_moderator(subreddit_id, user_id)
+	local Moderators = require("src.models.moderators")
+	if not Moderators:find({ subreddit_id = subreddit_id, user_id = user_id }) then
+		Moderators:create({ subreddit_id = subreddit_id, user_id = user_id })
 	end
-	return false
 end
 
 Forum.object_types = enum({

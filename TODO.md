@@ -66,9 +66,9 @@ suite + luacheck pass**.
 - [x] `ANALYZE` after the seed migrations (migration `[99]`).
 - [x] Runtime `PRAGMA busy_timeout=5000` + `cache_size=-16000` set once per
       worker (Lapis's sqlite backend has no connect hook).
-- [ ] `PRAGMA foreign_keys = ON` — FKs are declared but **not enforced**;
-      enabling needs an insert-order + seed-data audit (and the `modlog` text
-      FK columns fixed).
+- [x] `PRAGMA foreign_keys = ON` enforced at runtime + in tests; `modlog`
+      columns fixed to integer FKs; moderators moved to a join table.
+      (`forum.moderator_ids` column is now legacy — drop in a future migration.)
 - [ ] Generated column for `posts.domain` (`GENERATED ALWAYS AS
       (url_host(url))`) instead of computing it in Lua.
 - [ ] **sqlean** extensions (load via `sqlite3.load_extension` once the `.so`s

@@ -8,6 +8,17 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Breaking schema / data integrity
+- **`PRAGMA foreign_keys = ON`** at runtime (and in tests) — the declared FKs
+  are now enforced (verified: a vote on a non-existent post is rejected). The
+  seed/runtime inserts were already FK-clean, so nothing broke.
+- **Moderators join table** (migration `[11]`) replaces the `forum.moderator_ids`
+  CSV: `Forum:can_moderate` checks the creator + the `moderators` table,
+  `Forum:add_moderator` is idempotent, and creating a subreddit records its
+  creator as a moderator. (`forum.moderator_ids` is now legacy/unused.)
+- **`modlog` columns fixed** to integers with real FKs (were text); dropped the
+  redundant `modlog.user_id`.
+
 ### Quality / CI
 - **luacheck** added to the rockspec, Docker image, and CI (a `luacheck app`
   step gates the build), configured via `.luacheckrc` (luajit + `ngx` global;

@@ -190,19 +190,17 @@ return {
 
         schema.create_table("modlog", {
             { "id",         types.integer({ unique = true, primary_key = true }) },
-            { "mod_id",     types.text },
-            { "user_id",    types.text({ null = true }) },
-            { "sub_id",     types.text({ null = true }) }, -- TODO remove?
-            { "post_id",    types.text({ null = true }) },
-            { "comment_id", types.text({ null = true }) },
+            { "mod_id",     types.integer },
+            { "sub_id",     types.integer({ null = true }) },
+            { "post_id",    types.integer({ null = true }) },
+            { "comment_id", types.integer({ null = true }) },
             { "action",     types.integer({ null = true }) },
             { "reason",     types.text },
 
             { "created_at", types.text },
             { "updated_at", types.text },
 
-            "FOREIGN KEY(mod_id) REFERENCES users(id)", -- TODO
-            "FOREIGN KEY(user_id) REFERENCES users(id)",
+            "FOREIGN KEY(mod_id) REFERENCES users(id)",
             "FOREIGN KEY(sub_id) REFERENCES forum(id)",
             "FOREIGN KEY(post_id) REFERENCES posts(id)",
             "FOREIGN KEY(comment_id) REFERENCES comments(id)",
@@ -318,6 +316,21 @@ return {
             user_email = "anonymous@localhost",
             user_pass = "",
         })
+    end,
+
+    -- moderators join table (replaces the forum.moderator_ids CSV)
+    [11] = function()
+        schema.create_table("moderators", {
+            { "id",           types.integer({ unique = true, primary_key = true }) },
+            { "subreddit_id", types.integer },
+            { "user_id",      types.integer },
+            { "created_at",   types.text },
+            { "updated_at",   types.text },
+            "FOREIGN KEY(subreddit_id) REFERENCES forum(id)",
+            "FOREIGN KEY(user_id) REFERENCES users(id)",
+            "UNIQUE(subreddit_id, user_id)",
+        }, opts)
+        schema.create_index("moderators", "user_id", { if_not_exists = true })
     end,
 
     -- create initial subreddits
