@@ -31,7 +31,9 @@ image boots and serves; 23-spec Busted suite passes.
 - [x] User karma (net votes on a user's posts + comments), shown on the profile.
 - [x] Saved / hidden posts — per-user toggle; `/saved` page; hidden posts are
       excluded from a user's listings.
-- Moderation: the `modlog` table is unused — lock/sticky/remove, mod tools.
+- [x] Moderation (basic): subreddit creator/mods can remove a post (recorded
+      in `modlog`); removed posts drop from listings and show `[removed]`.
+      Sticky / lock-comments / a public modlog page still TODO.
 - Inbox / reply notifications; per-user message threads.
 - Flair, awards/gold (currently static placeholders).
 - Per-subreddit RSS in/out (seed does a one-shot import; no live feeds).

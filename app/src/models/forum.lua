@@ -62,6 +62,28 @@ local Forum, Forum_mt = Model:extend("forum", {
 })
 
 
+--- Whether a user may moderate this subreddit: its creator, or listed in the
+-- comma-separated forum.moderator_ids.
+-- @tparam number user_id
+-- @tparam table forum a forum row
+-- @treturn boolean
+function Forum:can_moderate(user_id, forum)
+	if not forum or not user_id then
+		return false
+	end
+	if tonumber(forum.creator_id) == tonumber(user_id) then
+		return true
+	end
+	if forum.moderator_ids then
+		for id in tostring(forum.moderator_ids):gmatch("%d+") do
+			if tonumber(id) == tonumber(user_id) then
+				return true
+			end
+		end
+	end
+	return false
+end
+
 Forum.object_types = enum({
 	ask                   = 1,
 	aww                   = 2,

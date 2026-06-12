@@ -48,6 +48,9 @@ return {
         self.created_at = post_data["created_at"]
         self.edited = tonumber(post_data["edited"]) == 1
         self.post_user_id = post_data["user_id"]
+        self.removed = tonumber(post_data["locked"]) == 1
+        self.can_moderate = self.current_user
+            and Forum:can_moderate(self.current_user.id, subreddit)
 
         if tonumber(post_data["deleted"]) == 1 then
             -- Keep the page (and its comments) but blank the post itself.

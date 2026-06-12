@@ -9,6 +9,10 @@ This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
 ### Added
+- **Moderation (basic)** — `Forum:can_moderate` (creator or a listed
+  `moderator_id`); `POST /post/:id/remove` lets a mod toggle removal (sets
+  `locked`, which excludes the post from listings) and records it in `modlog`.
+  The post page shows a remove/approve control to mods and `[removed]` markers.
 - **Saved / hidden posts** — `saved_posts`/`hidden_posts` tables (migration
   `[8]`) with toggle models; `POST /post/:id/save` and `/hide`; a `/saved` page;
   hidden posts are filtered out of a user's listings (`get_listing`

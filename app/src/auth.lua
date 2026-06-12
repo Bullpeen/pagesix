@@ -20,6 +20,7 @@ local function auth(app)
 	app:match("save_post", "/post/:post_id[%d]/save", r2(require("actions.save")))
 	app:match("hide_post", "/post/:post_id[%d]/hide", r2(require("actions.hide")))
 	app:match("saved", "/saved", r2(require("actions.saved")))
+	app:match("mod_remove", "/post/:post_id[%d]/remove", r2(require("actions.mod_remove")))
 
 	-- app:match("prefs", "/prefs", function(self) end) -- stub
 

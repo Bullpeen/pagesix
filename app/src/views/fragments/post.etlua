@@ -15,8 +15,15 @@
 <p class="tagline">Submitted by
     <a href="/user/<%= user_name %>"><%= user_name %></a> at <%= created_at %>.
     <% if edited then %><span class="edited">(edited)</span><% end %>
+    <% if removed then %><span class="removed">[removed by a moderator]</span><% end %>
     <a href="/r/<%= subreddit %>/comments/<%= post_id %>" alt="permalink">Permalink</a>
 </p>
+
+<% if can_moderate then %>
+    <form class="mod-form" method="POST" action="/post/<%= post_id %>/remove">
+        <button class="button" type="submit"><%= removed and "approve" or "remove" %></button>
+    </form>
+<% end %>
 
 <% if current_user and not deleted and tonumber(current_user.id) == tonumber(post_user_id) then %>
     <div class="post-controls">

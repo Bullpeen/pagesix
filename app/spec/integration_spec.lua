@@ -220,6 +220,42 @@ describe("pagesix integration", function()
 		end)
 	end)
 
+	describe("moderation", function()
+		local Modlog = require("src.models.modlog")
+
+		it("recognizes the subreddit creator and listed mods", function()
+			local creator = Users:create({ user_name = "mod_creator", user_pass = "password", user_email = "mc@e.com" })
+			local modu = Users:create({ user_name = "mod_user", user_pass = "password", user_email = "mu@e.com" })
+			local other = Users:create({ user_name = "mod_other", user_pass = "password", user_email = "mo@e.com" })
+			local f = Forum:create({ name = "modsub", creator_id = creator.id, moderator_ids = tostring(modu.id) })
+
+			assert.is_true(Forum:can_moderate(creator.id, f))
+			assert.is_true(Forum:can_moderate(modu.id, f))
+			assert.is_false(Forum:can_moderate(other.id, f))
+		end)
+
+		it("lets a moderator remove a post (logged), hiding it from listings", function()
+			local creator = Users:create({ user_name = "mod_creator2", user_pass = "password", user_email = "mc2@e.com" })
+			local f = Forum:create({ name = "modsub2", creator_id = creator.id })
+			local p = Posts:create({ user_id = creator.id, sub_id = f.id, title = "bad post", url = "https://b.example" })
+
+			assert.same(302, (POST("/post/" .. p.id .. "/remove", {}, "mod_creator2")))
+			assert.same(1, tonumber(Posts:find(p.id).locked))
+			assert.same(0, #Posts:get_listing(f.id))
+			assert.truthy(#Modlog:select("where post_id = ?", tostring(p.id)) >= 1)
+		end)
+
+		it("won't let a non-moderator remove", function()
+			Users:create({ user_name = "not_mod", user_pass = "password", user_email = "nm@e.com" })
+			local creator = Users:create({ user_name = "mod_creator3", user_pass = "password", user_email = "mc3@e.com" })
+			local f = Forum:create({ name = "modsub3", creator_id = creator.id })
+			local p = Posts:create({ user_id = creator.id, sub_id = f.id, title = "ok post", url = "https://o.example" })
+
+			POST("/post/" .. p.id .. "/remove", {}, "not_mod")
+			assert.same(0, tonumber(Posts:find(p.id).locked))
+		end)
+	end)
+
 	describe("saved & hidden posts", function()
 		local SavedPosts = require("models.saved_posts")
 		local HiddenPosts = require("models.hidden_posts")
