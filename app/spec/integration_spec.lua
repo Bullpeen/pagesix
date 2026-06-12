@@ -220,6 +220,32 @@ describe("pagesix integration", function()
 		end)
 	end)
 
+	describe("RSS output feeds", function()
+		it("serves the frontpage feed as RSS XML", function()
+			local status, body, headers = mock_request(app, "/.rss", { method = "GET" })
+			assert.same(200, status)
+			assert.truthy(body:find("<rss", 1, true))
+			assert.truthy(body:find("<item>", 1, true))
+			local ct = headers["content-type"] or headers.content_type or ""
+			assert.truthy(ct:find("rss", 1, true))
+		end)
+
+		it("serves a subreddit feed and XML-escapes content", function()
+			local u = Users:create({ user_name = "rss_user", user_pass = "password", user_email = "rss@e.com" })
+			local f = Forum:create({ name = "rsssub", creator_id = u.id })
+			Posts:create({ user_id = u.id, sub_id = f.id, title = "A & B <tag>", url = "https://ab.example" })
+
+			local status, body = mock_request(app, "/r/rsssub/.rss", { method = "GET" })
+			assert.same(200, status)
+			assert.truthy(body:find("A &amp; B &lt;tag&gt;", 1, true))
+		end)
+
+		it("404s an unknown subreddit feed", function()
+			local status = mock_request(app, "/r/nosuchsub/.rss", { method = "GET" })
+			assert.same(404, status)
+		end)
+	end)
+
 	describe("reply notifications", function()
 		local Notifications = require("models.notifications")
 

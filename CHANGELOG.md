@@ -9,6 +9,10 @@ This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
 ### Added
+- **RSS output feeds** — `GET /.rss` (frontpage) and `GET /r/:subreddit/.rss`
+  emit valid, XML-escaped RSS 2.0 (`src/utils/rss`), served as
+  `application/rss+xml`; a visible RSS link on the subreddit page. (RSS *import*
+  of external feeds already exists in the seed migrations via `forum.feeds`.)
 - **Reply notifications** — `notifications` table (migration `[9]`); commenting
   notifies the parent comment's author (reply) or the post's author (top-level),
   never yourself. `/inbox` lists them and marks them read; the header shows an

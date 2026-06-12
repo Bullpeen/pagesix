@@ -47,6 +47,11 @@ app:enable("etlua")
 
 app.layout = require("views.layout")
 
+-- RSS output feeds (registered before the catch-alls; the literal `.rss`
+-- segment takes precedence over the :sort / :subreddit params).
+app:match("feed", "/.rss", r2(require("actions.feed")))
+app:match("subreddit_feed", "/r/:subreddit/.rss", r2(require("actions.feed")))
+
 app:match("homepage", "/(:sort)", r2(require("actions.index")))
 
 -- app:match("comments", "/comments", r2(require("actions.index")))
