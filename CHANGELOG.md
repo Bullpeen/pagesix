@@ -28,6 +28,18 @@ test-covered Reddit clone. Highlights, newest first:
   **luacov coverage**, and a Docker **build + `lapis migrate`** smoke test.
 
 ### Performance (SQLite)
+- **Partial index** `posts(sub_id, created_at) WHERE deleted = 0 AND locked = 0`
+  (migration `[6]`) — `Posts:get_listing` always filters out deleted/locked
+  posts, so this is a precise (and smaller) match for the listing hot path.
+  **Composite index** `comments(post_id, parent_comment_id)` (migration `[5]`)
+  for the thread CTE's anchor row lookup.
+- **Views evaluated** — no SQL `VIEW`s are used: the main listing is dynamic
+  (sort / time window / hidden / saved vary per request) so a view can't
+  capture it, and the FK + partial indexes serve the hot path. The remaining
+  `v_hot_*` / `v_forum` views (migration `[13]`) are dead and slated for
+  removal. **sqlean** modules were evaluated one-by-one in `TODO.md`
+  (`regexp`/`fuzzy`/`crypto` are the useful ones) — all deferred to a future
+  infra task since they need `load_extension` + bundled `.so`s.
 - **Covering indexes** `votes(post_id, comment_id, upvote)` and
   `votes(comment_id, upvote)` make the per-row vote-count subqueries index-only
   (verified `USING COVERING INDEX`).
@@ -42,7 +54,9 @@ test-covered Reddit clone. Highlights, newest first:
   were already implemented and tested but commented out in `app.lua`).
 - Pinned **Lapis >= 1.18.0** (we already run the latest; 1.16→1.18 brings a
   faster `url_for`, `db.clause + db.clause` OR-combining, `Model:update` with a
-  `where` clause, and `simulate_request`/`simulate_action` test helpers).
+  `where` clause, and `simulate_request`/`simulate_action` test helpers). The
+  integration suite now calls **`simulate_request`** directly (`mock_request` is
+  a deprecated alias as of 1.18).
 - **API deferred**: `src/api.lua` (~150 stub endpoints) is explicitly punted to
   a later phase — we're locking in the web browsing experience first.
 
@@ -108,7 +122,7 @@ test-covered Reddit clone. Highlights, newest first:
     (`busted --coverage` + a printed summary), configured via `.luacov` to
     measure only `app/` code. Baseline is **76.7%** (725/945 lines).
   - HTTP-level **integration tests** (`integration_spec`) that drive the real
-    app through `lapis.spec.request.mock_request` — routing, actions,
+    app through `lapis.spec.request.simulate_request` — routing, actions,
     auth/session, redirects, and rendering for every feature (browse, vote,
     comment/reply, subreddit creation, profiles). 38 specs total.
 - **Smaller polish**

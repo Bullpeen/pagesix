@@ -69,13 +69,38 @@ suite + luacheck pass**.
 - [x] `PRAGMA foreign_keys = ON` enforced at runtime + in tests; `modlog`
       columns fixed to integer FKs; moderators moved to a join table.
       (`forum.moderator_ids` column is now legacy — drop in a future migration.)
+- [x] **Partial index** `posts(sub_id, created_at) WHERE deleted = 0 AND
+      locked = 0` (migration `[6]`) — a tight match for the `get_listing`
+      hot path (which always filters out deleted/locked) and smaller than a
+      full index. **Composite index** `comments(post_id, parent_comment_id)`
+      (migration `[5]`) for the thread CTE anchor
+      (`WHERE post_id = ? AND parent_comment_id IS NULL`).
+- [ ] **Views**: we use no SQL `VIEW`s — the main listing is dynamic
+      (sort/time/hidden/saved vary per request), so a view can't capture it,
+      and the FK/partial indexes above already serve the hot path. The only
+      views in the tree are the dead per-subreddit `v_hot_*` / `v_forum`
+      (migration `[13]`), slated for removal (see code-comments section).
 - [ ] Generated column for `posts.domain` (`GENERATED ALWAYS AS
-      (url_host(url))`) instead of computing it in Lua.
-- [ ] **sqlean** extensions (load via `sqlite3.load_extension` once the `.so`s
-      are bundled): `fuzzy` for typo-tolerant search ranking, `text`/`regexp`
-      for domain/URL extraction + content normalization, `crypto` for secure
-      tokens (password reset), `stats` for ranking. Needs `load_extension`
-      enabled + per-platform builds in the image.
+      (url_host(url))`) instead of computing it in Lua — needs a host-extract
+      SQL function (sqlean `regexp`/`define`, below).
+- [ ] **sqlean** extensions — evaluated module-by-module
+      (<https://github.com/nalgeon/sqlean>). All require `load_extension`
+      enabled + per-platform `.so`s bundled in the image, so they're a single
+      future infra task. Per-module verdict:
+  - `regexp` — **useful**: `regexp_substr(url, ...)` to extract `posts.domain`
+    host in SQL (feeds the generated column above) + content normalization.
+  - `fuzzy` — **useful**: `dlevenshtein`/`soundex` for typo-tolerant search
+    ranking on top of FTS5.
+  - `crypto` — **useful**: `sha256`/`randomblob`-based secure tokens for the
+    pending password-reset flow.
+  - `text` — **minor**: `text_substring`/`split` helpers; mostly doable in Lua.
+  - `stats` / `math` — **minor**: could move the `hot`/`rising` score math into
+    SQL ranking, but `sort.lua` already does it; revisit if sorting becomes a
+    bottleneck.
+  - `uuid` — **maybe**: stable external ids for the future API phase.
+  - `define` — **maybe**: wrap the `url_host` logic as a reusable SQL function.
+  - `ipaddr`, `vsv`, `unicode`, `time`, `besttype` — **not needed** for this
+    workload.
 
 ## From code comments (TODO/FIXME in the source)
 - [ ] **Real "controversial" ranking** — `sort.lua` uses a crude
@@ -102,7 +127,7 @@ suite + luacheck pass**.
       `modlog` FK columns to integers (`:204`; ties into `foreign_keys = ON`).
 
 ## Test & quality
-- **75 specs** (model/SQL + full HTTP integration via `mock_request`), luacov
+- **76 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
   coverage, and **luacheck** (0 warnings / 0 errors).
 - CI per push: super-linter, **luacheck** (`luacheck app`), **busted +
   luacov**, and a Docker **build + `lapis migrate`** smoke test.

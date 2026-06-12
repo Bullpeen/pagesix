@@ -232,6 +232,8 @@ return {
         schema.create_index("comments", "post_id", idx)
         schema.create_index("comments", "parent_comment_id", idx)
         schema.create_index("comments", "user_id", idx)
+        -- thread CTE anchor: WHERE post_id = ? AND parent_comment_id IS NULL
+        schema.create_index("comments", "post_id", "parent_comment_id", idx)
         schema.create_index("votes", "post_id", idx)
         schema.create_index("votes", "comment_id", idx)
         schema.create_index("votes", "user_id", idx)
@@ -248,6 +250,11 @@ return {
     [6] = function()
         schema.add_column("posts", "deleted", types.integer({ default = false }))
         schema.create_index("posts", "deleted", { if_not_exists = true })
+        -- Partial index matching the listing filter (get_listing always does
+        -- WHERE locked = 0 AND deleted = 0), ordered by recency: smaller than a
+        -- full index and a tight match for the hot-path query.
+        schema.create_index("posts", "sub_id", "created_at",
+            { if_not_exists = true, where = "deleted = 0 AND locked = 0" })
     end,
 
     -- full-text search over posts (SQLite FTS5), kept in sync by triggers

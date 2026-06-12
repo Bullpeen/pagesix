@@ -1,8 +1,8 @@
---- Integration spec: drives the real app through mock_request (routing,
+--- Integration spec: drives the real app through simulate_request (routing,
 --- actions, auth/session, redirects, rendering) for each feature.
 
 local use_test_env = require("lapis.spec").use_test_env
-local mock_request = require("lapis.spec.request").mock_request
+local simulate_request = require("lapis.spec.request").simulate_request
 
 describe("pagesix integration", function()
 	use_test_env()
@@ -16,10 +16,10 @@ describe("pagesix integration", function()
 	local app = require("app")
 
 	local function GET(url)
-		return mock_request(app, url, { method = "GET" })
+		return simulate_request(app, url, { method = "GET" })
 	end
 	local function POST(url, params, user)
-		return mock_request(app, url, {
+		return simulate_request(app, url, {
 			method = "POST",
 			post = params or {},
 			session = user and { current_user = user } or nil,
@@ -83,7 +83,7 @@ describe("pagesix integration", function()
 
 		-- GET an auth page to obtain a CSRF token + its cookie (in the headers).
 		local function csrf_for(path)
-			local _, body, headers = mock_request(app, path, { method = "GET" })
+			local _, body, headers = simulate_request(app, path, { method = "GET" })
 			return (body:match('name="csrf_token"%s+value="([^"]*)"')), headers
 		end
 
@@ -99,7 +99,7 @@ describe("pagesix integration", function()
 			Users:create({ user_name = "authuser", user_pass = Password.hash("secret123"), user_email = "au@e.com" })
 			local token, headers = csrf_for("/login")
 			assert.is_true(token ~= nil and #token > 0)
-			local status = mock_request(app, "/login", {
+			local status = simulate_request(app, "/login", {
 				method = "POST", prev = headers,
 				post = { username = "authuser", password = "secret123", csrf_token = token },
 			})
@@ -109,7 +109,7 @@ describe("pagesix integration", function()
 		it("rejects a wrong password (re-renders, no redirect)", function()
 			Users:create({ user_name = "authuser2", user_pass = Password.hash("secret123"), user_email = "au2@e.com" })
 			local token, headers = csrf_for("/login")
-			local status, body = mock_request(app, "/login", {
+			local status, body = simulate_request(app, "/login", {
 				method = "POST", prev = headers,
 				post = { username = "authuser2", password = "WRONG", csrf_token = token },
 			})
@@ -119,7 +119,7 @@ describe("pagesix integration", function()
 
 		it("rejects a login POST without a CSRF token", function()
 			Users:create({ user_name = "authuser3", user_pass = Password.hash("secret123"), user_email = "au3@e.com" })
-			local status, body = mock_request(app, "/login", {
+			local status, body = simulate_request(app, "/login", {
 				method = "POST",
 				post = { username = "authuser3", password = "secret123" },
 			})
@@ -129,7 +129,7 @@ describe("pagesix integration", function()
 
 		it("registers a new user with a hashed password", function()
 			local token, headers = csrf_for("/register")
-			local status = mock_request(app, "/register", {
+			local status = simulate_request(app, "/register", {
 				method = "POST", prev = headers,
 				post = { name = "newbie", passwd = "secret123", passwd2 = "secret123", email = "n@e.com", csrf_token = token },
 			})
@@ -282,7 +282,7 @@ describe("pagesix integration", function()
 
 	describe("RSS output feeds", function()
 		it("serves the frontpage feed as RSS XML", function()
-			local status, body, headers = mock_request(app, "/.rss", { method = "GET" })
+			local status, body, headers = simulate_request(app, "/.rss", { method = "GET" })
 			assert.same(200, status)
 			assert.truthy(body:find("<rss", 1, true))
 			assert.truthy(body:find("<item>", 1, true))
@@ -295,13 +295,13 @@ describe("pagesix integration", function()
 			local f = Forum:create({ name = "rsssub", creator_id = u.id })
 			Posts:create({ user_id = u.id, sub_id = f.id, title = "A & B <tag>", url = "https://ab.example" })
 
-			local status, body = mock_request(app, "/r/rsssub/.rss", { method = "GET" })
+			local status, body = simulate_request(app, "/r/rsssub/.rss", { method = "GET" })
 			assert.same(200, status)
 			assert.truthy(body:find("A &amp; B &lt;tag&gt;", 1, true))
 		end)
 
 		it("404s an unknown subreddit feed", function()
-			local status = mock_request(app, "/r/nosuchsub/.rss", { method = "GET" })
+			local status = simulate_request(app, "/r/nosuchsub/.rss", { method = "GET" })
 			assert.same(404, status)
 		end)
 	end)
@@ -353,7 +353,7 @@ describe("pagesix integration", function()
 			POST("/post/" .. p.id .. "/comment", { body = "hi there" }, "notif_reader2")
 			assert.same(1, Notifications:unread_count(op.id))
 
-			local s, body = mock_request(app, "/inbox", { method = "GET", session = { current_user = "notif_read" } })
+			local s, body = simulate_request(app, "/inbox", { method = "GET", session = { current_user = "notif_read" } })
 			assert.same(200, s)
 			assert.truthy(body:find("hi there", 1, true))
 			assert.same(0, Notifications:unread_count(op.id))
@@ -415,7 +415,7 @@ describe("pagesix integration", function()
 			assert.same(302, (POST("/post/" .. p.id .. "/save", {}, "demo")))
 			assert.is_true(SavedPosts:is_saved(1, p.id))
 
-			local s, body = mock_request(app, "/saved", { method = "GET", session = { current_user = "demo" } })
+			local s, body = simulate_request(app, "/saved", { method = "GET", session = { current_user = "demo" } })
 			assert.same(200, s)
 			assert.truthy(body:find("save me please", 1, true))
 
@@ -467,7 +467,7 @@ describe("pagesix integration", function()
 		end)
 
 		it("renders /r/:sub/top?t=week", function()
-			local s = mock_request(app, "/r/programming/top", { method = "GET", get = { t = "week" } })
+			local s = simulate_request(app, "/r/programming/top", { method = "GET", get = { t = "week" } })
 			assert.same(200, s)
 		end)
 	end)
@@ -496,7 +496,7 @@ describe("pagesix integration", function()
 				Posts:create({ user_id = 1, sub_id = 1, title = "page post " .. i, url = "https://p" .. i .. ".example" })
 			end
 			local function PAGE(n)
-				return mock_request(app, "/", { method = "GET", get = { page = tostring(n) } })
+				return simulate_request(app, "/", { method = "GET", get = { page = tostring(n) } })
 			end
 
 			local s1, b1 = PAGE(1)
@@ -527,7 +527,7 @@ describe("pagesix integration", function()
 
 	describe("search (FTS5)", function()
 		local function SEARCH(q)
-			return mock_request(app, "/search", { method = "GET", get = { q = q } })
+			return simulate_request(app, "/search", { method = "GET", get = { q = q } })
 		end
 
 		it("finds posts by title and body, ranked, excluding non-matches", function()
@@ -564,13 +564,13 @@ describe("pagesix integration", function()
 		it("lists subscriptions on /subscribed and in the header nav", function()
 			POST("/subscribe/programming", {}, "demo")
 
-			local s1, sub_body = mock_request(app, "/subscribed",
+			local s1, sub_body = simulate_request(app, "/subscribed",
 				{ method = "GET", session = { current_user = "demo" } })
 			assert.same(200, s1)
 			assert.truthy(sub_body:find("/r/programming", 1, true))
 
 			-- the layout header shows "my subs" on any page when signed in
-			local _, home = mock_request(app, "/",
+			local _, home = simulate_request(app, "/",
 				{ method = "GET", session = { current_user = "demo" } })
 			assert.truthy(home:find("/r/programming", 1, true))
 
