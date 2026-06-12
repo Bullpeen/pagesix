@@ -9,6 +9,10 @@ This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
 ### Added
+- **Self / text posts** — the submit form now takes a title plus *either* a URL
+  (link post) or a Markdown body (self post); `is_self` is set accordingly,
+  `posts.url` is nullable, a Lapis `title` constraint validates submissions, and
+  the post page renders the self-text body as sanitized Markdown.
 - **Subscribe / unsubscribe** — `POST /subscribe/:subreddit` toggles a
   subscription (`Subscriptions:toggle`); a `before_filter` loads the signed-in
   user and their subscribed forums into every view, so the layout header's "my

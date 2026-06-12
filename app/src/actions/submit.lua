@@ -29,11 +29,23 @@ return {
             return { render = "submit" }
         end
 
+        -- A post is either a link (url) or a self/text post (body). If a body
+        -- is given and no url, it's a self post.
+        local url = self.params.url
+        local body = self.params.body
+        if (url == nil or url == "") and (body == nil or body == "") then
+            self.errors = { "Provide a URL or some text" }
+            return { render = "submit" }
+        end
+        local is_self = (url == nil or url == "") and body ~= nil and body ~= ""
+
         local post, err = Posts:create({
             user_id = user.id,
             sub_id = sub.id,
             title = self.params.title,
-            url = self.params.url,
+            url = (url ~= "") and url or nil,
+            body = (body ~= "") and body or nil,
+            is_self = is_self and 1 or 0,
         })
 
         if not post then

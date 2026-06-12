@@ -1,21 +1,26 @@
 <form class="form primary_form" method="POST" action="/submit">
-	<input type="hidden" name="csrf_token" value="">
     <div class="input_row">
         <label>
-            <div class="label">URL</div>
-            <input autofocus="" autocomplete="url" name="url" required="required" type="text" autocapitalize="none" autocorrect="off">
+            <div class="label">Title</div>
+            <input name="title" required="required" type="text" autocapitalize="words" autocorrect="off">
         </label>
     </div>
     <div class="input_row">
         <label>
-            <div class="label">Title</div>
-            <input autofocus="" autocomplete="" name="title" required="required" type="text" autocapitalize="words" autocorrect="off">
+            <div class="label">URL <span class="optional">(for a link post)</span></div>
+            <input autocomplete="url" name="url" type="text" autocapitalize="none" autocorrect="off">
+        </label>
+    </div>
+    <div class="input_row">
+        <label>
+            <div class="label">Text <span class="optional">(for a self post; Markdown supported)</span></div>
+            <textarea name="body" rows="6"></textarea>
         </label>
     </div>
     <div class="input_row">
         <label>
             <div class="label">Subreddit</div>
-            <input autofocus="" autocomplete="" name="subreddit" required="required" type="text" autocapitalize="none" autocorrect="off">
+            <input name="subreddit" required="required" type="text" autocapitalize="none" autocorrect="off">
         </label>
     </div>
     <div class="button_row">

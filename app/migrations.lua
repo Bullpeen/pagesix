@@ -132,7 +132,7 @@ return {
             { "sub_id",     types.integer },
 
             { "title",      types.text },
-            { "url",        types.text },
+            { "url",        types.text({ null = true }) }, -- null for self/text posts
             -- { "domain", types.TEXT, "GENERATED ALWAYS AS (url_host(url)) VIRTUAL"},
             { "created_at", types.text },
             { "updated_at", types.text },

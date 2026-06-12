@@ -1,5 +1,18 @@
-<% if params.is_self ~= nil then %>
-    self post
+<h1 class="post-title">
+    <% if url then %>
+        <a href="<%= url %>"><%= title %></a>
+    <% else %>
+        <%= title %>
+    <% end %>
+</h1>
+
+<% if is_self and body_html then %>
+    <div class="usertext-body md self-text">
+        <%- body_html %>
+    </div>
 <% end %>
 
-<p>Submitted by <%= user_name %> at <%= created_at %>. <a href="/r/<%= subreddit %>/comments/<%= post_id %>" alt="permalink">Permalink</a></p>
+<p class="tagline">Submitted by
+    <a href="/user/<%= user_name %>"><%= user_name %></a> at <%= created_at %>.
+    <a href="/r/<%= subreddit %>/comments/<%= post_id %>" alt="permalink">Permalink</a>
+</p>

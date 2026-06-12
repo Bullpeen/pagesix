@@ -29,7 +29,9 @@ app:before_filter(function(self)
 end)
 
 function app:default_route()
-	ngx.log(ngx.NOTICE, "Unknown path " .. self.req.parsed_url.path) -- luacheck: ignore
+	if ngx and ngx.log then
+		ngx.log(ngx.NOTICE, "Unknown path " .. self.req.parsed_url.path) -- luacheck: ignore
+	end
 
 	-- call the original implementaiton to preserve the functionality it provides
 	return lapis.Application.default_route(self)

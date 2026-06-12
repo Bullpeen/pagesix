@@ -19,7 +19,8 @@ image boots and serves; 23-spec Busted suite passes.
       keyset pagination.
 - [ ] **Edit / delete** own posts & comments — the `edited`/`deleted` columns
       exist and `thread` already hides deleted; just need routes + UI.
-- [ ] **Submit self-posts** with a body + Markdown preview (link vs text).
+- [x] **Submit self-posts** — the submit form takes a title + (url OR Markdown
+      body); self posts render their body on the post page. (Preview still TODO.)
 
 ## Missing Reddit / HN features (backlog)
 - Search (the search box has no backend) — good fit for **SQLite FTS5**.

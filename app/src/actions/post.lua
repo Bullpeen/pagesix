@@ -48,9 +48,9 @@ return {
         self.title_stub = self.params.title_stub
         self.permalink = post_data["permalink"]
         self.created_at = post_data["created_at"]
-        if post_data["is_self"] == 1 then
+        if tonumber(post_data["is_self"]) == 1 then
             self.is_self = true
-            self.body = post_data["body"]
+            self.body_html = require("src.utils.markdown")(post_data["body"])
         end
 
         local u = post_data:get_user()

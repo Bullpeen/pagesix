@@ -124,6 +124,37 @@ describe("pagesix integration", function()
 		end)
 	end)
 
+	describe("submitting posts", function()
+		it("creates a self/text post and renders its Markdown body", function()
+			local status, _, headers = POST("/submit",
+				{ title = "My text post", body = "hello **world**", subreddit = "programming" }, "demo")
+			assert.same(302, status)
+
+			local p = Posts:find({ title = "My text post" })
+			assert.is_not_nil(p)
+			assert.same(1, tonumber(p.is_self))
+			assert.truthy(headers.location:find("/comments/" .. p.id, 1, true))
+
+			local s2, body = GET("/r/programming/comments/" .. p.id .. "/my_text_post")
+			assert.same(200, s2)
+			assert.truthy(body:find("<strong>world</strong>", 1, true))
+		end)
+
+		it("creates a link post", function()
+			local status = POST("/submit",
+				{ title = "A link post", url = "https://link.example", subreddit = "programming" }, "demo")
+			assert.same(302, status)
+			local p = Posts:find({ title = "A link post" })
+			assert.is_not_nil(p)
+			assert.same(0, tonumber(p.is_self))
+		end)
+
+		it("rejects a post with neither url nor body", function()
+			POST("/submit", { title = "empty post", subreddit = "programming" }, "demo")
+			assert.is_nil(Posts:find({ title = "empty post" }))
+		end)
+	end)
+
 	describe("subreddit creation", function()
 		it("creates a subreddit", function()
 			local status = POST("/subreddit/create", { name = "newcommunity", description = "x" }, "demo")

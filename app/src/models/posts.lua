@@ -8,6 +8,18 @@ local Model, enum = model.Model, model.enum
 local Posts = Model:extend("posts", {
 	timestamp = true,
 
+	constraints = {
+		-- Lapis validates the title on create/update; truthy return blocks it.
+		title = function(self, value)
+			if not value or value == "" then
+				return "Title is required"
+			end
+			if #value > 300 then
+				return "Title must be under 300 characters"
+			end
+		end,
+	},
+
 	-- https://leafo.net/lapis/reference/actions.html#request-object-methods/request:url_for/passing-an-object-to-url-for
 	-- Build the args for url_for("post", ...) so `url_for(post)` resolves to
 	-- /r/<subreddit>/comments/<id>/<title-stub>.
