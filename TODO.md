@@ -55,18 +55,23 @@ image boots and serves; 23-spec Busted suite passes.
       verified with `EXPLAIN QUERY PLAN` (the vote-count subquery now does
       `SEARCH ... USING INDEX votes_post_id_idx`).
 - [x] WAL + `mmap_size` + `temp_store=MEMORY` already set (migration `[1]`).
-- [ ] **Covering indexes** for the count subqueries, e.g.
-      `votes(post_id, comment_id, upvote)` and `votes(comment_id, upvote)`, to
-      make them index-only.
-- [ ] **FTS5** virtual table for searching posts/comments by text.
-- [ ] `ANALYZE` / `PRAGMA optimize` after migrations (migration `[99]` is a
-      placeholder) so the planner has stats.
-- [ ] Generated column for `posts.domain` (there's a commented-out
-      `GENERATED ALWAYS AS (url_host(url))`) instead of computing it in Lua.
-- [ ] `PRAGMA foreign_keys = ON` — FKs are currently declared but **not
-      enforced** (some are even malformed-but-inert). Enabling means auditing
-      insert order and the seed data.
-- [ ] `PRAGMA busy_timeout` for write contention under WAL.
+- [x] **Covering indexes** `votes(post_id, comment_id, upvote)` and
+      `votes(comment_id, upvote)` so the count subqueries are index-only
+      (verified with `EXPLAIN QUERY PLAN ... USING COVERING INDEX`).
+- [x] **FTS5** virtual table for search.
+- [x] `ANALYZE` after the seed migrations (migration `[99]`).
+- [x] Runtime `PRAGMA busy_timeout=5000` + `cache_size=-16000` set once per
+      worker (Lapis's sqlite backend has no connect hook).
+- [ ] `PRAGMA foreign_keys = ON` — FKs are declared but **not enforced**;
+      enabling needs an insert-order + seed-data audit (and the `modlog` text
+      FK columns fixed).
+- [ ] Generated column for `posts.domain` (`GENERATED ALWAYS AS
+      (url_host(url))`) instead of computing it in Lua.
+- [ ] **sqlean** extensions (load via `sqlite3.load_extension` once the `.so`s
+      are bundled): `fuzzy` for typo-tolerant search ranking, `text`/`regexp`
+      for domain/URL extraction + content normalization, `crypto` for secure
+      tokens (password reset), `stats` for ranking. Needs `load_extension`
+      enabled + per-platform builds in the image.
 
 ## Test coverage
 - **38 specs**, ~76.7% line coverage (luacov; run `busted --coverage && luacov`).

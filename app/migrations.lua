@@ -238,6 +238,12 @@ return {
         schema.create_index("votes", "comment_id", idx)
         schema.create_index("votes", "user_id", idx)
         schema.create_index("subscriptions", "subreddit_id", idx)
+
+        -- Covering indexes so the per-row vote-count subqueries in get_listing /
+        -- thread are index-only (no table lookups): they filter on
+        -- (post_id|comment_id, upvote).
+        schema.create_index("votes", "post_id", "comment_id", "upvote", idx)
+        schema.create_index("votes", "comment_id", "upvote", idx)
     end,
 
     -- soft-delete flag for posts (comments already have one)
@@ -500,8 +506,9 @@ return {
     end,
 
     [99] = function()
-        -- db.query("PRAGMA vacuum")
-        -- db.query("PRAGMA optimize")
+        -- Gather statistics so the query planner picks the right indexes for
+        -- the now-populated tables.
+        db.query("ANALYZE")
     end,
 
     -- classify text : https://github.com/leafo/lapis-bayes

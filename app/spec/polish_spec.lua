@@ -76,4 +76,14 @@ describe("subreddit + user-profile polish", function()
 		end
 		assert.truthy(text:upper():find("INDEX", 1, true), "expected an index scan, got:" .. text)
 	end)
+
+	it("uses a covering index for the full vote-count subquery", function()
+		local plan = db.query(
+			"EXPLAIN QUERY PLAN SELECT COUNT(*) FROM votes WHERE post_id = 1 AND comment_id IS NULL AND upvote = 1")
+		local text = ""
+		for _, row in ipairs(plan) do
+			text = text .. " " .. tostring(row.detail)
+		end
+		assert.truthy(text:upper():find("COVERING INDEX", 1, true), "expected covering index, got:" .. text)
+	end)
 end)

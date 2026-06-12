@@ -8,6 +8,16 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Performance (SQLite)
+- **Covering indexes** `votes(post_id, comment_id, upvote)` and
+  `votes(comment_id, upvote)` make the per-row vote-count subqueries index-only
+  (verified `USING COVERING INDEX`).
+- **`ANALYZE`** after the seed migrations (migration `[99]`) so the planner has
+  table stats.
+- Runtime **`busy_timeout=5000`** (avoids SQLITE_BUSY under WAL with multiple
+  workers) + **`cache_size=-16000`** (~16 MB) set once per worker in the
+  `before_filter` (Lapis's sqlite backend exposes no connect hook).
+
 ### Changed
 - Enabled the **`/r/all`** and **`/r/popular`** meta-listing routes (the actions
   were already implemented and tested but commented out in `app.lua`).

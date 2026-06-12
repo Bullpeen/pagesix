@@ -11,7 +11,23 @@ local console = require("lapis.console")
 
 local app = lapis.Application()
 
+-- Per-connection SQLite tuning. Lapis's sqlite backend has no connect hook, so
+-- set these on the worker's connection on first request (persists for the
+-- worker when code_cache is on; cheap to repeat when off). WAL + page_size are
+-- already set persistently in migration [1].
+local db_tuned = false
+local function tune_sqlite()
+	if db_tuned then return end
+	db_tuned = true
+	local db = require("lapis.db")
+	pcall(db.query, "PRAGMA busy_timeout = 5000") -- wait, don't error, on WAL write locks
+	pcall(db.query, "PRAGMA cache_size = -16000") -- ~16 MB page cache
+	pcall(db.query, "PRAGMA synchronous = NORMAL")
+end
+
 app:before_filter(function(self)
+	tune_sqlite()
+
 	after_dispatch(function()
 		-- https://leafo.net/lapis/reference/configuration.html#performance-measurement
 		-- print(to_json(ngx.ctx.performance))
