@@ -80,8 +80,14 @@ they run inside the Docker image, the same way CI does:
 
 ```
 docker build -t pagesix-test .
-docker run --rm -v "$PWD/app:/var/www" --entrypoint busted pagesix-test -o utfTerminal
+# Mount the repo at /src and run busted from there (it needs the root .busted
+# config + spec/). Set the LuaRocks paths the way the entrypoint does so the
+# workers find lapis/lsqlite3/etc.
+docker run --rm -v "$PWD:/src" -w /src --entrypoint bash pagesix-test -lc \
+  'eval "$(luarocks --lua-version=5.1 path)"; export LUA_PATH="$LUA_PATH;/usr/local/openresty/lualib/?.lua"; busted -o utfTerminal'
 ```
+
+(The mount needs the repo dir to be in Docker Desktop's File Sharing list.)
 
 CI (`.github/workflows/spec.yml`) runs `luacheck app` then `busted --coverage`
 across the `5.1 / 5.4 / luajit` matrix, plus a Docker build/run job.

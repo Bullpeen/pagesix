@@ -4,6 +4,10 @@
 local Comments = require("models.comments")
 local Forum = require("src.models.forum")
 local Posts = require("src.models.posts")
+local paginate_thread = require("src.utils.paginate_thread")
+
+-- Root comments per page on a post.
+local COMMENTS_PER_PAGE = 25
 
 return {
     before = function(self)
@@ -26,16 +30,16 @@ return {
             return self:write({ redirect_to = self:url_for("homepage") })
         end
 
-        -- TODO paginate
-
         local post_data, err = Posts:find(self.params.post_id)
         if err then print("WHOOPS!" .. err) end
         if not post_data then
             return self:write({ redirect_to = self:url_for("homepage") })
         end
 
-        -- Full comment thread (depth-ordered, with author + vote aggregates).
-        self.comments = Comments:thread(post_data.id)
+        -- Full comment thread (depth-ordered, with author + vote aggregates),
+        -- paginated by root comment so a root's replies never split across pages.
+        self.comments, self.pagination =
+            paginate_thread(Comments:thread(post_data.id), self.params.page, COMMENTS_PER_PAGE)
 
         -- print("Post data:")
         -- require 'pl.pretty'.dump(post_data[1])

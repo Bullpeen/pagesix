@@ -1,5 +1,6 @@
 <% render('views.fragments.user_profile') %>
 <% render('views.fragments.posts') %>
 <% render('views.fragments.comments') %>
+<% render('views.fragments.page_nav') %>
 
 <% render('views.fragments.nav') %>

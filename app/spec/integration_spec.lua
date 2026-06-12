@@ -473,24 +473,8 @@ describe("pagesix integration", function()
 	end)
 
 	describe("pagination", function()
-		local paginate = require("src.utils.paginate")
-
-		it("slices items and reports metadata", function()
-			local items = {}
-			for i = 1, 30 do items[i] = i end
-
-			local page1, info1 = paginate(items, 1, 25)
-			assert.same(25, #page1)
-			assert.is_true(info1.has_next)
-			assert.is_false(info1.has_prev)
-
-			local page2, info2 = paginate(items, 2, 25)
-			assert.same(5, #page2)
-			assert.same(26, page2[1])
-			assert.is_false(info2.has_next)
-			assert.is_true(info2.has_prev)
-		end)
-
+		-- The pure slicing logic is unit-tested in spec/paginate_spec.lua; these
+		-- drive it through real requests.
 		it("paginates the frontpage over HTTP", function()
 			for i = 1, 30 do
 				Posts:create({ user_id = 1, sub_id = 1, title = "page post " .. i, url = "https://p" .. i .. ".example" })
@@ -506,6 +490,55 @@ describe("pagesix integration", function()
 			local s2, b2 = PAGE(2)
 			assert.same(200, s2)
 			assert.truthy(b2:find("page 2", 1, true))
+		end)
+
+		it("paginates a post's comment thread by root over HTTP", function()
+			local post = Posts:create({
+				user_id = 1, sub_id = 1, title = "thread paging", url = "https://thread.example",
+			})
+			-- 27 root comments -> 25 on page 1, 2 on page 2 (COMMENTS_PER_PAGE=25).
+			for i = 1, 27 do
+				Comments:create({
+					post_id = post.id, user_id = 1,
+					body = string.format("rootcomment_%03d", i),
+				})
+			end
+			local function PAGE(n)
+				return simulate_request(app, "/r/programming/comments/" .. post.id .. "/_",
+					{ method = "GET", get = { page = tostring(n) } })
+			end
+
+			local s1, b1 = PAGE(1)
+			assert.same(200, s1)
+			assert.truthy(b1:find("rootcomment_001", 1, true)) -- first root present
+			assert.is_nil(b1:find("rootcomment_027", 1, true)) -- last root not yet
+			assert.truthy(b1:find('rel="next"', 1, true)) -- next link rendered
+
+			local s2, b2 = PAGE(2)
+			assert.same(200, s2)
+			assert.truthy(b2:find("rootcomment_027", 1, true)) -- spills onto page 2
+			assert.is_nil(b2:find("rootcomment_001", 1, true))
+			assert.truthy(b2:find('rel="prev"', 1, true)) -- prev link rendered
+		end)
+
+		it("paginates a user's profile over HTTP", function()
+			local u = Users:create({ user_name = "prolific", user_pass = "password", user_email = "p@e.com" })
+			for i = 1, 27 do
+				Posts:create({ user_id = u.id, sub_id = 1, title = "prof post " .. i, url = "https://pp" .. i .. ".example" })
+			end
+			local function PAGE(n)
+				return simulate_request(app, "/user/prolific", { method = "GET", get = { page = tostring(n) } })
+			end
+
+			local s1, b1 = PAGE(1)
+			assert.same(200, s1)
+			assert.truthy(b1:find("page 1", 1, true))
+			assert.truthy(b1:find('rel="next"', 1, true)) -- >25 posts -> a next page
+
+			local s2, b2 = PAGE(2)
+			assert.same(200, s2)
+			assert.truthy(b2:find("page 2", 1, true))
+			assert.truthy(b2:find('rel="prev"', 1, true))
 		end)
 	end)
 

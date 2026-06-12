@@ -8,6 +8,22 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Pagination
+- **Comment threads paginate** — a post's comment thread now pages off `?page=`
+  (`COMMENTS_PER_PAGE = 25`). Paging is by **root comment**: a new
+  `utils/paginate_thread` keeps each selected root together with its whole
+  subtree, so a reply never gets orphaned onto a different page than its parent
+  (a naive flat slice would). `actions/post.lua` no longer loads the full,
+  unbounded thread.
+- **User profiles paginate** — `actions/user.lua` pages a user's posts and
+  comments off a shared `?page=`; the nav advances while *either* list still has
+  more. Both reuse the existing `page_nav` fragment (rendered on the post and
+  profile pages).
+- **New `spec/paginate_spec.lua`** (10 pure-Lua specs) for `paginate` and
+  `paginate_thread` (subtree-keeping, root counting, empty/over-range pages),
+  plus HTTP integration tests that page a 27-root thread and a 27-post profile.
+  Removed a redundant inline `paginate` unit test from the integration spec.
+
 ### Sorting
 - **Real "controversial" ranking** — `sort.lua` now scores posts with Reddit's
   formula `(up + down) ^ (min(up, down) / max(up, down))` (`controversy_score`)
@@ -57,7 +73,7 @@ test-covered Reddit clone. Highlights, newest first:
   ("Username is reserved"). The table existed but was never checked.
 
 ### Quality / CI
-- **Test suite now at 85 specs** (model/SQL + full HTTP integration), all green,
+- **Test suite now at 96 specs** (model/SQL + full HTTP integration), all green,
   with luacov coverage and a clean luacheck (0/0).
 - **luacheck** added to the rockspec, Docker image, and CI (a `luacheck app`
   step gates the build), configured via `.luacheckrc` (luajit + `ngx` global;

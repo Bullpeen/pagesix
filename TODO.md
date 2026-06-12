@@ -9,7 +9,7 @@ full-text search (FTS5); open a post; vote on posts & comments; submit
 link/self posts; post threaded comments/replies with Markdown; edit/delete own
 posts & comments; subscribe/unsubscribe; saved/hidden posts; user profiles +
 karma; reply notifications (`/inbox`); basic moderation (remove); RSS output
-feeds; bcrypt + CSRF auth. The Docker image boots and serves; **85-spec Busted
+feeds; bcrypt + CSRF auth. The Docker image boots and serves; **96-spec Busted
 suite + luacheck pass**.
 
 ## Next up
@@ -124,8 +124,10 @@ suite + luacheck pass**.
       rejects any name in it (returns "Username is reserved").
 - [ ] **Finish the single-comment permalink view** — `actions/comment.lua` is
       flat; the `?context=N` parent-walk is stubbed/disabled (`comment.lua:26,39`).
-- [ ] **Paginate comment threads and user profiles** — only the post listings
-      paginate (`post.lua:~29 "TODO paginate"`, `user.lua:~24`).
+- [x] **Paginate comment threads and user profiles** — the post page paginates
+      its comment thread by *root* comment (a new `utils/paginate_thread` keeps
+      each root's whole subtree on one page), and the profile paginates its
+      posts + comments off a shared `?page=`. Both reuse the `page_nav` fragment.
 - [ ] **Seed perf** — use `Users:count()` instead of `Users:select()` in the
       seed generators (`misc.lua:84`); move the `[13]` inline JSON read into a
       util (`migrations.lua:325`).
@@ -134,7 +136,7 @@ suite + luacheck pass**.
       `modlog` FK columns to integers (`:204`; ties into `foreign_keys = ON`).
 
 ## Test & quality
-- **85 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
+- **96 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
   coverage, and **luacheck** (0 warnings / 0 errors).
 - CI per push: super-linter, **luacheck** (`luacheck app`), **busted +
   luacov**, and a Docker **build + `lapis migrate`** smoke test.
