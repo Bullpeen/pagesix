@@ -20,7 +20,11 @@ return {
 
         self.subreddit = sub.name
         local since = require("src.utils.timewindow")(self.params.t)
-        local sorted = Sort:sort(Posts:get_listing({ sub_id = sub.id, since = since }), sort)
+        local sorted = Sort:sort(Posts:get_listing({
+            sub_id = sub.id,
+            since = since,
+            exclude_hidden_for = self.current_user and self.current_user.id,
+        }), sort)
         self.posts, self.pagination = require("src.utils.paginate")(sorted, self.params.page)
 
         -- current_user is set by the app before_filter when signed in.

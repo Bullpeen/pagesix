@@ -12,7 +12,10 @@ return {
 		-- aggregates directly, so this works on a freshly-migrated DB and does
 		-- not depend on the pre-seeded v_hot_frontpage view.
 		local since = require("src.utils.timewindow")(self.params.t)
-		local sorted = Sort:sort(Posts:get_listing({ since = since }), sort)
+		local sorted = Sort:sort(Posts:get_listing({
+			since = since,
+			exclude_hidden_for = self.current_user and self.current_user.id,
+		}), sort)
 		self.posts, self.pagination = require("src.utils.paginate")(sorted, self.params.page)
 	end,
 
