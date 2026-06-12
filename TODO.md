@@ -3,10 +3,14 @@
 Status of the Page Six PoC and what's next. See `CHANGELOG.md` for history.
 
 ## Working now
-Browse (frontpage + per-subreddit, sorts hot/new/top/controversial/best),
-open a post, vote on posts and comments, post threaded comments/replies,
-create subreddits, view user profiles, Markdown comment bodies. The Docker
-image boots and serves; 23-spec Busted suite passes.
+Browse (frontpage, `/r/:sub`, `/r/all`, `/r/popular`) with sorts
+hot/new/top/controversial/best/rising and `?t=` time windows + pagination;
+full-text search (FTS5); open a post; vote on posts & comments; submit
+link/self posts; post threaded comments/replies with Markdown; edit/delete own
+posts & comments; subscribe/unsubscribe; saved/hidden posts; user profiles +
+karma; reply notifications (`/inbox`); basic moderation (remove); RSS output
+feeds; bcrypt + CSRF auth. The Docker image boots and serves; **75-spec Busted
+suite + luacheck pass**.
 
 ## Next up
 - [x] **Auth/password hardening** (issue #6): bcrypt password hashing
@@ -72,6 +76,30 @@ image boots and serves; 23-spec Busted suite passes.
       for domain/URL extraction + content normalization, `crypto` for secure
       tokens (password reset), `stats` for ranking. Needs `load_extension`
       enabled + per-platform builds in the image.
+
+## From code comments (TODO/FIXME in the source)
+- [ ] **Real "controversial" ranking** — `sort.lua` uses a crude
+      `|up - down|` distance; use the Reddit formula
+      `(up + down) ^ (min(up,down)/max(up,down))` (`sort.lua:~28`).
+- [ ] **Refactor `Sort:sort`** — replace the if/elseif chain with a dispatch
+      table keyed by algo name (`sort.lua:~94`).
+- [ ] **Remove the dead `v_hot_*` / `v_forum` views + `Forum:get_frontpage()`**
+      — listings now use `Posts:get_listing`, so the per-subreddit hot views
+      built in migration `[13]` and `Forum_mt:get_frontpage` are unused
+      (`forum.lua:52,131`).
+- [ ] **Enforce reserved usernames** at registration — the `reserved_usernames`
+      table exists but the `Users.user_name` constraint never checks it
+      (`users.lua:28`).
+- [ ] **Finish the single-comment permalink view** — `actions/comment.lua` is
+      flat; the `?context=N` parent-walk is stubbed/disabled (`comment.lua:26,39`).
+- [ ] **Paginate comment threads and user profiles** — only the post listings
+      paginate (`post.lua:~29 "TODO paginate"`, `user.lua:~24`).
+- [ ] **Seed perf** — use `Users:count()` instead of `Users:select()` in the
+      seed generators (`misc.lua:84`); move the `[13]` inline JSON read into a
+      util (`migrations.lua:325`).
+- [ ] **Schema cleanup** — rename `forum.creator_id` (`migrations.lua:114`),
+      drop the redundant `modlog.sub_id` (`:195`), and fix the text-typed
+      `modlog` FK columns to integers (`:204`; ties into `foreign_keys = ON`).
 
 ## Test & quality
 - **75 specs** (model/SQL + full HTTP integration via `mock_request`), luacov
