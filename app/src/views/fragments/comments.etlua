@@ -21,7 +21,7 @@
                             <time datetime="<%= comment.created_at %>"><%= comment.created_at %></time>
                         </p>
                         <div class="usertext-body md">
-                            <p><%= comment.body %></p>
+                            <%- comment.body_html %>
                         </div>
                         <ul class="flat-list buttons">
                             <li class="first"><a href="<%= comment.permalink %>" class="bylink" rel="nofollow">permalink</a></li>

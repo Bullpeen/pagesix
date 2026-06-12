@@ -8,7 +8,7 @@
 			</div>
 			<div class="drop-choices srdrop">
                 <% if subs ~= nil then %>
-				<% for sub in pairs(subs) do %>
+				<% for _, sub in ipairs(subs) do %>
 				    <a href="/r/<%= sub.name %>" class="choice"><%= sub.name %></a>
                 <% end %>
                 <% end %>
@@ -34,14 +34,12 @@
 					</li>
 
 					<% if subs ~= nil then %>
-					<% for sub in pairs(subs) do %>
+					<% for _, sub in ipairs(subs) do %>
 					<li>
 						<span class="separator">-</span>
 						<a href="/r/<%= sub.name %>/" class="choice"><%= sub.name %></a>
 					</li>
 					<% end %>
-					<% else %> 
-					<% print("NOPE") %>
 					<% end %>
 
 				</ul>

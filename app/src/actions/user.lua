@@ -2,12 +2,11 @@
 -- @module action.user
 
 local Users = require("models.users")
+local Posts = require("src.models.posts")
+local Comments = require("models.comments")
 
 return {
     before = function(self)
-        -- self.params.user_name
-
-        -- print("Looking up " .. self.params.user_name)
         local user = Users:find({ user_name = self.params.user_name })
 
         -- Unknown user: redirect home instead of crashing on a nil index.
@@ -17,13 +16,12 @@ return {
 
         self.user_name = user.user_name
 
+        -- The posts/comments fragments expect rows with vote aggregates etc.,
+        -- so use the same enriched queries the listing pages do (filtered to
+        -- this user) rather than the raw relation rows.
         -- TODO paginate
-        self.comments = user:get_comments()
-        -- print("Number of comments: " .. #self.comments)
-
-        -- TODO paginate
-        self.posts = user:get_posts()
-        -- print("Number of posts: " .. #self.posts)
+        self.posts = Posts:get_listing({ user_id = user.id })
+        self.comments = Comments:by_user(user.id)
     end,
 
     GET = function(self)

@@ -68,9 +68,16 @@ Posts.statuses = enum({
 -- This replaces the dependency on the pre-seeded v_hot_* SQL views: it works
 -- on a freshly-migrated database, includes posts with zero votes, and is not
 -- tied to any single sort order (callers pass the rows through Sort:sort).
--- @tparam[opt] number sub_id restrict to a single subreddit (forum.id)
+-- @tparam[opt] number|table filters a subreddit id (legacy), or a table of
+--   { sub_id = ..., user_id = ... } to restrict the listing
 -- @treturn table array of plain post rows
-function Posts:get_listing(sub_id)
+function Posts:get_listing(filters)
+	-- Backwards compatible: a bare number means sub_id.
+	if type(filters) == "number" then
+		filters = { sub_id = filters }
+	end
+	filters = filters or {}
+
 	local query = [[
 		a.id, a.title, a.url, a.body, a.is_self, a.over_18, a.locked, a.sub_id,
 			a.created_at AS age, a.created_at,
@@ -84,8 +91,11 @@ function Posts:get_listing(sub_id)
 		INNER JOIN forum s ON a.sub_id = s.id
 		WHERE a.locked = 0]]
 
-	if sub_id then
-		query = query .. " AND a.sub_id = " .. tonumber(sub_id)
+	if filters.sub_id then
+		query = query .. " AND a.sub_id = " .. tonumber(filters.sub_id)
+	end
+	if filters.user_id then
+		query = query .. " AND a.user_id = " .. tonumber(filters.user_id)
 	end
 	query = query .. " ORDER BY a.created_at DESC"
 

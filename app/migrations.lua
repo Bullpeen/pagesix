@@ -222,6 +222,24 @@ return {
             "v_forum")
     end,
 
+    -- Performance indexes on the foreign keys the listing / thread / vote-count
+    -- queries filter and join on. The UNIQUE constraints only index their
+    -- leading column (e.g. user_id), which those aggregate subqueries don't
+    -- filter by, so dedicated single-column indexes are still needed.
+    [5] = function()
+        local idx = { if_not_exists = true }
+        schema.create_index("posts", "sub_id", idx)
+        schema.create_index("posts", "user_id", idx)
+        schema.create_index("posts", "created_at", idx)
+        schema.create_index("comments", "post_id", idx)
+        schema.create_index("comments", "parent_comment_id", idx)
+        schema.create_index("comments", "user_id", idx)
+        schema.create_index("votes", "post_id", idx)
+        schema.create_index("votes", "comment_id", idx)
+        schema.create_index("votes", "user_id", idx)
+        schema.create_index("subscriptions", "subreddit_id", idx)
+    end,
+
     -- create first User
     [10] = function()
         Users:create({

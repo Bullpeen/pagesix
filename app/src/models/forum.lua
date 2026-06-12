@@ -18,28 +18,26 @@ local Forum, Forum_mt = Model:extend("forum", {
 		-- @tparam table value User data
 		-- @treturn string error
 		name = function(self, value)
-			local reserved_subreddit_names = {
-				"admin",
-				"all",
-				"controversial",
-				"mods",
-				"new",
-				"pagesix",
-				"popular",
-				"random",
-				"subscribed",
-				"unsubscribed"
+			if not value or value == "" then
+				return "Subreddit name is required"
+			end
+
+			-- A SET keyed by name (the previous array, indexed by string, never
+			-- matched, so reserved names slipped through).
+			local reserved = {
+				admin = true, all = true, controversial = true, mods = true,
+				new = true, pagesix = true, popular = true, random = true,
+				subscribed = true, unsubscribed = true,
 			}
-			if reserved_subreddit_names[value] then
+			if reserved[value] then
 				return "Subreddit name is reserved"
 			end
 
-			-- check for valid length (2-64]
-			if string.len(value) >= 64 then
+			-- valid length (2-64]
+			if #value >= 64 then
 				return "Subreddits must be less than 64 characters"
 			end
-
-			if string.len(value) < 2 then
+			if #value < 2 then
 				return "Subreddits must be at least 2 characters"
 			end
 		end,

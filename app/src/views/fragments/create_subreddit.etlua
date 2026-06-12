@@ -1,2 +1,17 @@
-h1("Hello, " .. params.name)
-p("Create a new subreddit")
+<form class="create-subreddit primary_form" method="POST" action="/subreddit/create">
+    <div class="input_row">
+        <label>
+            <div class="label">Name</div>
+            <input name="name" required pattern="[A-Za-z0-9_]+" autocapitalize="none" autocomplete="off" placeholder="programming">
+        </label>
+    </div>
+    <div class="input_row">
+        <label>
+            <div class="label">Description</div>
+            <input name="description" placeholder="What is this community about?">
+        </label>
+    </div>
+    <div class="button_row">
+        <button class="button" type="submit">Create subreddit</button>
+    </div>
+</form>

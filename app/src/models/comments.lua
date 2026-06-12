@@ -3,6 +3,7 @@
 
 local Model = require("lapis.db.model").Model
 local db = require("lapis.db")
+local render_markdown = require("src.utils.markdown")
 
 local Comments = Model:extend("comments", {
 	timestamp = true,
@@ -76,6 +77,35 @@ function Comments:thread(post_id)
 	for _, c in ipairs(rows) do
 		c.score = tonumber(c.upvotes) - tonumber(c.downvotes)
 		c.permalink = "/r/" .. c.subreddit .. "/comments/" .. c.post_id .. "/_/" .. c.id
+		c.body_html = render_markdown(c.body)
+	end
+
+	return rows
+end
+
+--- A user's recent comments (flat, newest first) with the same fields the
+-- comments fragment renders. depth is 0 since these aren't shown as a tree.
+-- @tparam number user_id
+-- @treturn table array of comment rows
+function Comments:by_user(user_id)
+	local rows = db.select([[
+		a.id, a.post_id, a.user_id, a.body, a.created_at, a.parent_comment_id,
+			a.is_submitter, 0 AS depth,
+			u.user_name AS author,
+			s.name AS subreddit,
+			(SELECT COUNT(*) FROM votes v WHERE v.comment_id = a.id AND v.upvote = 1) AS upvotes,
+			(SELECT COUNT(*) FROM votes v WHERE v.comment_id = a.id AND v.upvote = 0) AS downvotes
+		FROM comments a
+		INNER JOIN users u ON a.user_id = u.id
+		INNER JOIN posts p ON a.post_id = p.id
+		INNER JOIN forum s ON p.sub_id = s.id
+		WHERE a.user_id = ]] .. tonumber(user_id) .. [[ AND a.deleted = 0
+		ORDER BY a.created_at DESC]])
+
+	for _, c in ipairs(rows) do
+		c.score = tonumber(c.upvotes) - tonumber(c.downvotes)
+		c.permalink = "/r/" .. c.subreddit .. "/comments/" .. c.post_id .. "/_/" .. c.id
+		c.body_html = render_markdown(c.body)
 	end
 
 	return rows

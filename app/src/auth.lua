@@ -11,6 +11,7 @@ local function auth(app)
 	app:match("vote", "/vote/post/:post_id[%d]/:direction", r2(require("actions.vote")))
 	app:match("vote_comment", "/vote/comment/:comment_id[%d]/:direction", r2(require("actions.vote")))
 	app:match("post_comment", "/post/:post_id[%d]/comment", r2(require("actions.comment_create")))
+	app:match("create_subreddit", "/subreddit/create", r2(require("actions.create_subreddit")))
 
 	-- app:match("prefs", "/prefs", function(self) end) -- stub
 

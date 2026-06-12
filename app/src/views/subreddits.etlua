@@ -1,21 +1,20 @@
 <%  render('views.fragments.search_pane') %>
 <%  render('views.fragments.info_bar') %>
 
+<% render('views.fragments.create_subreddit') %>
+
 <div id="siteTable" class="sitetable linklisting">
-    <% if subs ~= nil then %>
-        <% for sub in pairs(subs) do 
-            name = sub.name
-            render('views.fragments.subreddit_listing',
-                {
-                    name = sub.name,
-                    description = sub.description,
-                    subscribers = sub.subscribers
-                })
+    <% if subreddits ~= nil and #subreddits > 0 then %>
+        <% for _, sub in ipairs(subreddits) do
+            render('views.fragments.subreddit_listing', {
+                name = sub.name,
+                description = sub.description,
+                subscribers = sub.subscribers,
+            })
         end %>
     <% else %>
         No subreddits found.
     <% end %>
-
 </div>
 
 <%  render('views.fragments.nav_bar') %>
