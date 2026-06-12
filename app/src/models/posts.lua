@@ -120,6 +120,9 @@ function Posts:get_listing(filters)
 		query = query .. " AND a.id IN (SELECT post_id FROM saved_posts WHERE user_id = "
 			.. tonumber(filters.saved_for) .. ")"
 	end
+	if filters.domain then
+		query = query .. " AND a.url LIKE " .. db.escape_literal("%" .. filters.domain .. "%")
+	end
 	query = query .. " ORDER BY a.created_at DESC"
 
 	local rows = db.select(query)

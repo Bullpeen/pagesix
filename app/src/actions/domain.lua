@@ -1,28 +1,22 @@
---- Domain action
+--- Domain action: list posts whose link points at a given domain.
 -- @module action.domain
 
-local db = require("lapis.db")
+local Posts = require("models.posts")
 
 return {
 	before = function(self)
-		-- self.params.domain
+		self.domain = self.params.domain or ""
 
-		self.domain = self.params.domain
-
-		-- Check if domain is nil or empty
-		if self.domain == nil or self.domain == "" then
-			print("Domain is unknown: " .. self.domain)
-			-- return self:write({ redirect_to = self:url_for("homepage") })
+		-- A bare word with no dot isn't a domain; show nothing rather than
+		-- matching every URL substring.
+		if self.domain == "" or not string.find(self.domain, "%.") then
+			self.posts = {}
+			return
 		end
 
-		-- check if domain has a period anywhere in it
-		if not string.find(self.domain, "%.") then
-			print("Domain is invalid: " .. self.domain)
-			-- return self:write({ redirect_to = self:url_for("homepage") })
-		end
-
-		-- SELECT id FROM sometable WHERE url like '%domain%'
-		self.posts = db.select("* FROM ? WHERE url LIKE ?", "v_hot_frontpage", "%" .. self.domain .. "%")
+		-- Canonical listing path (same vote/comment aggregates as everywhere
+		-- else); the LIKE filter matches the host inside the stored URL.
+		self.posts = Posts:get_listing({ domain = self.domain })
 	end,
 
 	GET = function(self)

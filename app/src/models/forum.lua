@@ -2,10 +2,9 @@
 -- @module models.forum
 
 local model = require("lapis.db.model")
-local Model, enum = model.Model, model.enum
-local db = require("lapis.db")
+local Model = model.Model
 
-local Forum, Forum_mt = Model:extend("forum", {
+local Forum = Model:extend("forum", {
 	timestamp = true,
 
 	-- url_params = function(self, req, ...)
@@ -48,22 +47,12 @@ local Forum, Forum_mt = Model:extend("forum", {
 		{ "moderators", has_many = "Users" },
 		{ "subscribers", has_many = "Subscriptions" },
 		{ "posts", has_many = "Posts" },
-
-		-- TODO replace Forum_mt:get_frontpage() with a relation to Preload data
-		-- { "frontpage",
-		-- 	fetch = function()
-		-- 		local v = "v_hot_" .. "frontpage"
-		-- 		return db.select("* FROM ? LIMIT ?", v, 20)
-		-- 	end,
-		-- 	preload = nil,
-		-- 	many = true
-		-- }
 	},
 })
 
 
---- Whether a user may moderate this subreddit: its creator, or listed in the
--- comma-separated forum.moderator_ids.
+--- Whether a user may moderate this subreddit: its creator, or a member of the
+-- moderators join table.
 -- @tparam number user_id
 -- @tparam table forum a forum row
 -- @treturn boolean
@@ -87,61 +76,6 @@ function Forum:add_moderator(subreddit_id, user_id)
 	if not Moderators:find({ subreddit_id = subreddit_id, user_id = user_id }) then
 		Moderators:create({ subreddit_id = subreddit_id, user_id = user_id })
 	end
-end
-
-Forum.object_types = enum({
-	ask                   = 1,
-	aww                   = 2,
-	best_of               = 3,
-	blog                  = 4,
-	books                 = 5,
-	data_is_beautiful     = 6,
-	documentaries         = 7,
-	food                  = 8,
-	funny                 = 9,
-	futurology            = 10,
-
-	gadgets               = 11,
-	gaming                = 12,
-	gifs                  = 13,
-	history               = 14,
-	ask_me_anything       = 15,
-	internet_is_beautiful = 16,
-	memes                 = 17,
-	mildly_amusing        = 18,
-	mildly_disappointing  = 19,
-	mildly_infuriating    = 20,
-
-	mildly_interesting    = 21,
-	movies                = 22,
-	music                 = 23,
-	news                  = 24,
-	pics                  = 25,
-	politics              = 26,
-	programming           = 27,
-	science               = 28,
-	space                 = 29,
-	sports                = 30,
-
-	technology            = 31,
-	television            = 32,
-	today_i_learned       = 33,
-	videos                = 34,
-	world_news            = 35,
-	wtf                   = 36,
-})
-
---- Get frontpage of a Subreddit from view
--- @tparam string subreddit_name e.g. 'technology', 'politics'
--- @tparam string sort e.g. 'hot', 'new', 'controversial' -- TODO use enum?
--- @treturn table posts
-function Forum_mt:get_frontpage(subreddit_name, sort)
-	-- TODO implement as a 'frontpage' relation on the Forum
-	subreddit_name = subreddit_name or "frontpage"
-	sort = sort or "hot"
-
-	local v = "v_" .. sort .. "_" .. subreddit_name
-	return db.select("* FROM ? LIMIT ?", v, 100)
 end
 
 return Forum

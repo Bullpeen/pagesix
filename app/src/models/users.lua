@@ -4,7 +4,7 @@
 local db = require("lapis.db")
 local Model = require("lapis.db.model").Model
 
-local Users, Users_mt = Model:extend("users", {
+local Users = Model:extend("users", {
 	timestamp = true,
 
 	-- https://leafo.net/lapis/reference/actions.html#request-object-methods/request:url_for/using-the-url-key-method
@@ -24,24 +24,21 @@ local Users, Users_mt = Model:extend("users", {
 		-- @tparam table value User data
 		-- @treturn string error
 		user_name = function(self, value)
-
-			-- TODO : check if value is in reserved names
-			-- if db:find("reserved_usernames", { user_name = value }) then
-			-- 	return nil, "Username is reserved"
-			-- end
-
-			if value then
-				-- check for valid length (2-64]
-				if string.len(value) >= 64 then
-					return nil, "Username must be less than 64 characters"
-				end
-
-				if string.len(value) <= 2 then
-					return nil, "Username must be more than 2 characters"
-				end
-			else
-				-- print("ERROR, value is empty")
-				return nil, "value is empty"
+			if not value or value == "" then
+				return "Username is required"
+			end
+			-- check for valid length (2-64]
+			if string.len(value) >= 64 then
+				return "Username must be less than 64 characters"
+			end
+			if string.len(value) <= 2 then
+				return "Username must be more than 2 characters"
+			end
+			-- Reserved usernames live in the reserved_usernames table (seeded in
+			-- migration [2]); block registration of any of them.
+			local taken = db.select("1 FROM reserved_usernames WHERE user_name = ? LIMIT 1", value:lower())
+			if taken[1] then
+				return "Username is reserved"
 			end
 		end,
 
@@ -75,15 +72,6 @@ local Users, Users_mt = Model:extend("users", {
 		{ "posts", has_many = "Posts" },
 		{ "votes", has_many = "Votes" },
 		{ "comments", has_many = "Comments" },
-		-- TODO: moderation is currently stored as a CSV in forum.moderator_ids,
-		-- so there is no `moderator_id` FK column to key a relation off, and there
-		-- is no `Subreddits` model. Re-enable once a `moderators` join table exists.
-		-- {
-		-- 	"moderates",
-		-- 	has_many = "Forum",
-		-- 	order = "id desc",
-		-- 	key = "moderator_id"
-		-- },
 		{
 			"authored_posts",
 			has_many = "Posts",
@@ -100,16 +88,6 @@ local Users, Users_mt = Model:extend("users", {
 		},
 	},
 })
-
-function Users_mt:get_name_from_id(id)
-	local res = db.select("user_name from users WHERE id=?", id)
-	return res[1]
-end
-
-function Users_mt:get_id_from_name(name)
-	local res = db.select("id from users WHERE user_name=?", name)
-	return res[1]
-end
 
 --- Karma: net score (upvotes - downvotes) of all votes cast on this user's
 -- posts and comments.

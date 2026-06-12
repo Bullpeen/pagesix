@@ -19,8 +19,30 @@ test-covered Reddit clone. Highlights, newest first:
 - **`modlog` columns fixed** to integers with real FKs (were text); dropped the
   redundant `modlog.user_id`.
 
+### Removed (dead code)
+- **All `CREATE VIEW` machinery** — the per-subreddit `v_hot_*` views and the
+  frontpage `v_hot_frontpage` view (migration `[13]`) plus `v_forum`
+  (migration `[4]`) were unused (listings go through `Posts:get_listing`). The
+  one remaining consumer, the `/domain/:domain` action, now uses a
+  `get_listing({ domain = ... })` filter (a new LIKE filter on the canonical
+  query) — which also fixes it to include self-posts and zero-vote posts the
+  hot view omitted. With the views gone, `Forum:get_frontpage`, the unused
+  `Forum.object_types` enum, and the legacy `forum.moderator_ids` column went
+  too.
+- **Dead files** `src/models/subreddit.lua` (a fully commented-out placeholder)
+  and `src/utils/errors.lua` (API error helpers never wired up; `api.lua`
+  doesn't require it).
+- **Dead methods** `Users:get_name_from_id` / `Users:get_id_from_name` (zero
+  callers).
+
+### Security / validation
+- **Reserved usernames enforced** — the `reserved_usernames` table is now
+  seeded (migration `[2]`: `admin`, `root`, `mod`, `pagesix`, …) and the
+  `Users.user_name` constraint rejects any of them at registration
+  ("Username is reserved"). The table existed but was never checked.
+
 ### Quality / CI
-- **Test suite now at 76 specs** (model/SQL + full HTTP integration), all green,
+- **Test suite now at 78 specs** (model/SQL + full HTTP integration), all green,
   with luacov coverage and a clean luacheck (0/0).
 - **luacheck** added to the rockspec, Docker image, and CI (a `luacheck app`
   step gates the build), configured via `.luacheckrc` (luajit + `ngx` global;
@@ -35,11 +57,11 @@ test-covered Reddit clone. Highlights, newest first:
   posts, so this is a precise (and smaller) match for the listing hot path.
   **Composite index** `comments(post_id, parent_comment_id)` (migration `[5]`)
   for the thread CTE's anchor row lookup.
-- **Views evaluated** — no SQL `VIEW`s are used: the main listing is dynamic
-  (sort / time window / hidden / saved vary per request) so a view can't
-  capture it, and the FK + partial indexes serve the hot path. The remaining
-  `v_hot_*` / `v_forum` views (migration `[13]`) are dead and slated for
-  removal. **sqlean** modules were evaluated one-by-one in `TODO.md`
+- **Views evaluated + removed** — no SQL `VIEW`s are used: the main listing is
+  dynamic (sort / time window / hidden / saved vary per request) so a view
+  can't capture it, and the FK + partial indexes serve the hot path. The dead
+  `v_hot_*` / `v_forum` views (migrations `[4]`/`[13]`) were dropped (see
+  *Removed*). **sqlean** modules were evaluated one-by-one in `TODO.md`
   (`regexp`/`fuzzy`/`crypto` are the useful ones) — all deferred to a future
   infra task since they need `load_extension` + bundled `.so`s.
 - **Covering indexes** `votes(post_id, comment_id, upvote)` and

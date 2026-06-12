@@ -9,7 +9,7 @@ full-text search (FTS5); open a post; vote on posts & comments; submit
 link/self posts; post threaded comments/replies with Markdown; edit/delete own
 posts & comments; subscribe/unsubscribe; saved/hidden posts; user profiles +
 karma; reply notifications (`/inbox`); basic moderation (remove); RSS output
-feeds; bcrypt + CSRF auth. The Docker image boots and serves; **76-spec Busted
+feeds; bcrypt + CSRF auth. The Docker image boots and serves; **78-spec Busted
 suite + luacheck pass**.
 
 ## Next up
@@ -67,19 +67,19 @@ suite + luacheck pass**.
 - [x] Runtime `PRAGMA busy_timeout=5000` + `cache_size=-16000` set once per
       worker (Lapis's sqlite backend has no connect hook).
 - [x] `PRAGMA foreign_keys = ON` enforced at runtime + in tests; `modlog`
-      columns fixed to integer FKs; moderators moved to a join table.
-      (`forum.moderator_ids` column is now legacy — drop in a future migration.)
+      columns fixed to integer FKs; moderators moved to a join table; the
+      legacy `forum.moderator_ids` CSV column has been **dropped**.
 - [x] **Partial index** `posts(sub_id, created_at) WHERE deleted = 0 AND
       locked = 0` (migration `[6]`) — a tight match for the `get_listing`
       hot path (which always filters out deleted/locked) and smaller than a
       full index. **Composite index** `comments(post_id, parent_comment_id)`
       (migration `[5]`) for the thread CTE anchor
       (`WHERE post_id = ? AND parent_comment_id IS NULL`).
-- [ ] **Views**: we use no SQL `VIEW`s — the main listing is dynamic
+- [x] **Views**: we use no SQL `VIEW`s — the main listing is dynamic
       (sort/time/hidden/saved vary per request), so a view can't capture it,
-      and the FK/partial indexes above already serve the hot path. The only
-      views in the tree are the dead per-subreddit `v_hot_*` / `v_forum`
-      (migration `[13]`), slated for removal (see code-comments section).
+      and the FK/partial indexes above already serve the hot path. The dead
+      `v_hot_*` / `v_forum` views have now been **removed** (see code-comments
+      section).
 - [ ] Generated column for `posts.domain` (`GENERATED ALWAYS AS
       (url_host(url))`) instead of computing it in Lua — needs a host-extract
       SQL function (sqlean `regexp`/`define`, below).
@@ -108,13 +108,16 @@ suite + luacheck pass**.
       `(up + down) ^ (min(up,down)/max(up,down))` (`sort.lua:~28`).
 - [ ] **Refactor `Sort:sort`** — replace the if/elseif chain with a dispatch
       table keyed by algo name (`sort.lua:~94`).
-- [ ] **Remove the dead `v_hot_*` / `v_forum` views + `Forum:get_frontpage()`**
-      — listings now use `Posts:get_listing`, so the per-subreddit hot views
-      built in migration `[13]` and `Forum_mt:get_frontpage` are unused
-      (`forum.lua:52,131`).
-- [ ] **Enforce reserved usernames** at registration — the `reserved_usernames`
-      table exists but the `Users.user_name` constraint never checks it
-      (`users.lua:28`).
+- [x] **Removed the dead `v_hot_*` / `v_forum` views + `Forum:get_frontpage()`**
+      — listings use `Posts:get_listing`; the last view consumer (`domain.lua`)
+      was switched to a `get_listing({ domain = ... })` filter, so all the
+      `CREATE VIEW` blocks (migrations `[4]`/`[13]`), `get_frontpage`, and the
+      dead `Forum.object_types` enum are gone. Also deleted the unused
+      `models/subreddit.lua` and `utils/errors.lua`, and the dead
+      `Users:get_name_from_id`/`get_id_from_name` helpers.
+- [x] **Enforce reserved usernames** at registration — `reserved_usernames`
+      is now seeded (migration `[2]`) and the `Users.user_name` constraint
+      rejects any name in it (returns "Username is reserved").
 - [ ] **Finish the single-comment permalink view** — `actions/comment.lua` is
       flat; the `?context=N` parent-walk is stubbed/disabled (`comment.lua:26,39`).
 - [ ] **Paginate comment threads and user profiles** — only the post listings
@@ -127,7 +130,7 @@ suite + luacheck pass**.
       `modlog` FK columns to integers (`:204`; ties into `foreign_keys = ON`).
 
 ## Test & quality
-- **76 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
+- **78 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
   coverage, and **luacheck** (0 warnings / 0 errors).
 - CI per push: super-linter, **luacheck** (`luacheck app`), **busted +
   luacov**, and a Docker **build + `lapis migrate`** smoke test.

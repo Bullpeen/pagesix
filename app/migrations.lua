@@ -95,10 +95,20 @@ return {
             { "id",         types.integer({ unique = true, primary_key = true }) },
             { "user_name",  types.text({ unique = true }) },
 
-            { "created_at", types.text },
-            { "updated_at", types.text },
+            { "created_at", types.text({ null = true }) },
+            { "updated_at", types.text({ null = true }) },
 
         }, opts)
+
+        -- Names that must never be registered (route/UI collisions + impersonation).
+        -- The Users `user_name` constraint checks this table on create.
+        for _, name in ipairs({
+            "admin", "administrator", "root", "mod", "moderator", "mods",
+            "pagesix", "system", "support", "help", "null", "deleted",
+            "anonymous", "everyone", "all", "popular", "random",
+        }) do
+            db.insert("reserved_usernames", { user_name = name })
+        end
     end,
 
     -- create Forum table
@@ -113,7 +123,6 @@ return {
 
             { "creator_id",    types.integer({ default = 1 }) }, -- TODO rename
             { "description",   types.text({ null = true }) },
-            { "moderator_ids", types.text({ null = true }) },
             { "nsfw",          types.integer({ default = false }) },
             { "feeds",         types.text({ null = true }) },
 
@@ -205,19 +214,6 @@ return {
             "FOREIGN KEY(post_id) REFERENCES posts(id)",
             "FOREIGN KEY(comment_id) REFERENCES comments(id)",
         }, opts)
-
-        db.query([[
-				CREATE VIEW IF NOT EXISTS ?
-				AS
-				SELECT COUNT(*) subscribers,
-					a.name, a.description, a.nsfw
-				FROM 'forum' a
-				INNER JOIN 'subscriptions' b ON a.id = b.subreddit_id
-				WHERE a.id = b.subreddit_id
-				GROUP BY a.id, b.subreddit_id
-				ORDER BY COUNT(*) DESC;
-			]],
-            "v_forum")
     end,
 
     -- Performance indexes on the foreign keys the listing / thread / vote-count
@@ -382,60 +378,7 @@ return {
                 print(e)
             end
 
-            -- print("NAME IS " .. sub.name)
-            -- local slug = util:slugify(sub.name)
-            -- print("SLUG IN " .. slug)
-
-            -- Hot sort subreddit
-            db.query(
-                [[
-					CREATE VIEW IF NOT EXISTS ?
-					AS
-					SELECT
-						(SELECT COUNT(*) upvotes FROM 'votes' b WHERE b.post_id = a.id AND b.comment_id IS NULL AND b.upvote = 1) upvotes,
-						(SELECT COUNT(*) upvotes FROM 'votes' b WHERE b.post_id = a.id AND b.comment_id IS NULL AND b.upvote = 0) downvotes,
-						(SELECT COUNT(*) num_comments FROM 'comments' d WHERE d.post_id = a.id) num_comments,
-						a.title, a.url, a.over_18, a.locked, a.created_at age,
-						c.user_name author
-					FROM 'posts' a
-					INNER JOIN 'votes' b ON a.id = b.post_id
-					INNER JOIN 'users' c ON b.user_id = c.id
-					WHERE a.locked = 0
-						AND b.comment_id IS NULL
-						AND b.upvote = 1
-						AND a.id = b.post_id
-						AND a.sub_id = ?
-					GROUP BY a.id, b.post_id
-					ORDER BY COUNT(*) DESC;
-				]],
-                "v_hot_" .. s.name,
-                s.id
-            )
         end
-
-        -- Hot sort frontpage
-        db.query(
-            [[
-					CREATE VIEW IF NOT EXISTS ?
-					AS
-					SELECT
-						(SELECT COUNT(*) upvotes FROM 'votes' b WHERE b.post_id = a.id AND b.comment_id IS NULL AND b.upvote = 1) upvotes,
-						(SELECT COUNT(*) upvotes FROM 'votes' b WHERE b.post_id = a.id AND b.comment_id IS NULL AND b.upvote = 0) downvotes,
-						(SELECT COUNT(*) num_comments FROM 'comments' d WHERE d.post_id = a.id) num_comments,
-						a.title, a.url, a.over_18, a.locked, a.created_at age,
-						c.user_name author
-					FROM 'posts' a
-					INNER JOIN 'votes' b ON a.id = b.post_id
-					INNER JOIN 'users' c ON b.user_id = c.id
-					WHERE a.locked = 0
-						AND b.comment_id IS NULL
-						AND b.upvote = 1
-						AND a.id = b.post_id
-					GROUP BY a.id, b.post_id
-					ORDER BY COUNT(*) DESC;
-			]],
-            "v_hot_frontpage"
-        )
     end,
 
     -- create Users with random user_names

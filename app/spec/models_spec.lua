@@ -137,6 +137,34 @@ describe("pagesix models", function()
 		assert.same(1, #Posts:get_listing(b.id))
 	end)
 
+	it("rejects a reserved username (seeded in migration [2])", function()
+		-- 'admin' is seeded into reserved_usernames; the user_name constraint
+		-- blocks it and Users:create returns nil + the error message.
+		local user, err = Users:create({
+			user_name = "admin",
+			user_pass = "password",
+			user_email = "admin@example.com",
+		})
+		assert.is_nil(user)
+		assert.same("Username is reserved", err)
+		-- A non-reserved name still works.
+		assert.is_truthy(make_user("grace"))
+	end)
+
+	it("get_listing filters by link domain", function()
+		local user = make_user("heidi")
+		local sub = Forum:create({ name = "technology", creator_id = user.id })
+		Posts:create({ user_id = user.id, sub_id = sub.id, title = "on github",
+			url = "https://github.com/a/b" })
+		Posts:create({ user_id = user.id, sub_id = sub.id, title = "elsewhere",
+			url = "https://example.org/x" })
+
+		local gh = Posts:get_listing({ domain = "github.com" })
+		assert.same(1, #gh)
+		assert.same("on github", gh[1].title)
+		assert.same("github.com", gh[1].domain)
+	end)
+
 	it("Sort orders by 'top' and tolerates rows missing vote fields", function()
 		local rows = {
 			{ id = 1, upvotes = 1, downvotes = 0 },
