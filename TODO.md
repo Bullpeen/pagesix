@@ -84,9 +84,12 @@ suite + luacheck pass**.
       (url_host(url))`) instead of computing it in Lua — needs a host-extract
       SQL function (sqlean `regexp`/`define`, below).
 - [ ] **sqlean** extensions — evaluated module-by-module
-      (<https://github.com/nalgeon/sqlean>). All require `load_extension`
-      enabled + per-platform `.so`s bundled in the image, so they're a single
-      future infra task. Per-module verdict:
+      (<https://github.com/nalgeon/sqlean>); see **`docs/sqlean-plan.md`** for
+      the concrete integration plan (verified that `lsqlite3:load_extension`
+      works at the C-API level; a `lsqlite3.open` wrapper in `init_by_lua` is
+      the per-connection hook; `crypto` is unnecessary since `hex(randomblob())`
+      is built-in). All require per-platform `.so`s bundled in the image, so
+      they're a single future infra task. Per-module verdict:
   - `regexp` — **useful**: `regexp_substr(url, ...)` to extract `posts.domain`
     host in SQL (feeds the generated column above) + content normalization.
   - `fuzzy` — **useful**: `dlevenshtein`/`soundex` for typo-tolerant search
