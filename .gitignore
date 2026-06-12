@@ -53,6 +53,8 @@ image_cache/
 /lua
 /lua_modules
 /.luarocks
+# hererocks-managed local Lua + luarocks (see scripts/dev-setup.sh)
+/.lua
 
 *.sqlite
 *.sqlite-shm

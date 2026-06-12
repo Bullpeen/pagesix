@@ -376,7 +376,7 @@ describe("pagesix integration", function()
 		end)
 
 		it("enforces foreign keys (PRAGMA foreign_keys = ON)", function()
-			local Votes = require("src.models.votes")
+			-- Votes is required at module scope; reuse it.
 			-- a vote on a non-existent post is rejected by the FK constraint
 			local ok = pcall(function()
 				Votes:create({ user_id = 1, post_id = 999999, upvote = 1 })
