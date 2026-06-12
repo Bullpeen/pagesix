@@ -109,6 +109,9 @@ function Posts:get_listing(filters)
 	if filters.user_id then
 		query = query .. " AND a.user_id = " .. tonumber(filters.user_id)
 	end
+	if filters.since then
+		query = query .. " AND a.created_at >= " .. db.escape_literal(filters.since)
+	end
 	query = query .. " ORDER BY a.created_at DESC"
 
 	local rows = db.select(query)

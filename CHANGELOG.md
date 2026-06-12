@@ -9,6 +9,9 @@ This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
 ### Added
+- **`rising` sort + time windows** — `rising` ranks by vote velocity (net score
+  per hour); listings accept `?t=hour|day|week|month|year` (`src/utils/
+  timewindow` + a `since` filter on `get_listing`) to scope e.g. `top?t=week`.
 - **Pagination** — the frontpage, `/r/:sub`, `/r/all`, and `/r/popular` paginate
   via `?page=` (`src/utils/paginate`), with a prev/next `page_nav` fragment.
 - **User karma** — `Users:karma` sums the net votes (up − down) on a user's

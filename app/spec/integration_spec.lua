@@ -220,6 +220,40 @@ describe("pagesix integration", function()
 		end)
 	end)
 
+	describe("sorting & time windows", function()
+		local Sort = require("src.utils.sort")
+
+		it("sorts by rising (velocity), tolerating missing fields", function()
+			local hour_ago = os.date("!%Y-%m-%d %H:%M:%S", os.time() - 3600)
+			local rows = {
+				{ id = 1, upvotes = 2, downvotes = 0, age = hour_ago },
+				{ id = 2, upvotes = 10, downvotes = 0, age = hour_ago },
+				{ id = 3 }, -- missing fields, must not crash
+			}
+			local sorted = Sort:sort(rows, "rising")
+			assert.same(2, sorted[1].id)
+		end)
+
+		it("filters a listing to a time window", function()
+			local old = Posts:create({ user_id = 1, sub_id = 1, title = "ancient", url = "https://o.example" })
+			old:update({ created_at = "2000-01-01 00:00:00" })
+			local recent = Posts:create({ user_id = 1, sub_id = 1, title = "fresh window", url = "https://f.example" })
+
+			local since = require("src.utils.timewindow")("day")
+			local ids = {}
+			for _, r in ipairs(Posts:get_listing({ sub_id = 1, since = since })) do
+				ids[r.id] = true
+			end
+			assert.is_nil(ids[old.id])
+			assert.is_true(ids[recent.id])
+		end)
+
+		it("renders /r/:sub/top?t=week", function()
+			local s = mock_request(app, "/r/programming/top", { method = "GET", get = { t = "week" } })
+			assert.same(200, s)
+		end)
+	end)
+
 	describe("pagination", function()
 		local paginate = require("src.utils.paginate")
 

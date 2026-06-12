@@ -9,7 +9,8 @@ return {
 		local sort = self.params.sort or "hot"
 		-- Posts:select() returns bare rows without vote/comment aggregates,
 		-- which Sort needs; get_listing() supplies them.
-		local sorted = Sort:sort(Posts:get_listing(), sort)
+		local since = require("src.utils.timewindow")(self.params.t)
+		local sorted = Sort:sort(Posts:get_listing({ since = since }), sort)
 		self.posts, self.pagination = require("src.utils.paginate")(sorted, self.params.page)
 	end,
 

@@ -26,7 +26,8 @@ image boots and serves; 23-spec Busted suite passes.
 ## Missing Reddit / HN features (backlog)
 - [x] Search — **SQLite FTS5** virtual table over post title/body, kept in sync
       by triggers; `GET /search?q=` ranks by relevance and excludes deleted.
-- Time-windowed `top` (`?t=day|week|year`) and a `rising` sort (commented out).
+- [x] Time-windowed listings (`?t=hour|day|week|month|year`) and a `rising`
+      sort (vote velocity).
 - [x] User karma (net votes on a user's posts + comments), shown on the
       profile. Saved / hidden posts still TODO.
 - Moderation: the `modlog` table is unused — lock/sticky/remove, mod tools.

@@ -71,14 +71,17 @@ local function hot(a, b)
     return a_hot > b_hot
 end
 
--- local function rising(a, b)
---     -- like "top" except over a shorter time period
---     -- sort descending by Upvotes - Downvotes
---     local a_total = a.upvotes - a.downvotes
---     local b_total = b.upvotes - b.downvotes
---     print("RISING A=" .. a_total .. ", B=" .. b_total)
---     return a_total > b_total
--- end
+-- "rising" = vote velocity: net score per hour since posting, so new posts
+-- gaining votes quickly outrank old posts with more total votes.
+local function velocity(x)
+    local age_seconds = os.time() - date_to_timestamp(x.age)
+    local hours = math.max(age_seconds / 3600, 1)
+    return (num(x.upvotes) - num(x.downvotes)) / hours
+end
+
+local function rising(a, b)
+    return velocity(a) > velocity(b)
+end
 
 local function top(a, b)
     -- sort descending by Upvotes - Downvotes
@@ -111,8 +114,8 @@ function Sort:sort(items, algo)
         table.sort(arr, top)
     elseif algo == 'controversial' then
         table.sort(arr, controversial)
-    -- elseif algo == 'rising' then
-    --     table.sort(arr, rising)
+    elseif algo == 'rising' then
+        table.sort(arr, rising)
     else
         table.sort(arr, hot)
     end
