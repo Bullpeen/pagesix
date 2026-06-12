@@ -9,6 +9,8 @@ This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
 ### Added
+- **User karma** — `Users:karma` sums the net votes (up − down) on a user's
+  posts and comments in SQL; shown on the user profile.
 - **Full-text search (SQLite FTS5)** — migration `[7]` adds a `posts_fts`
   virtual table over post title/body, kept in sync by AFTER INSERT/UPDATE/DELETE
   triggers. `GET /search?q=` (`Posts:search`) matches with a quoted phrase

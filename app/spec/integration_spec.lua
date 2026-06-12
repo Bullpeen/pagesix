@@ -220,6 +220,22 @@ describe("pagesix integration", function()
 		end)
 	end)
 
+	describe("karma", function()
+		it("sums votes on a user's posts and comments", function()
+			local author = Users:create({ user_name = "karma_author", user_pass = "password", user_email = "k@e.com" })
+			local v1 = Users:create({ user_name = "karma_v1", user_pass = "password", user_email = "k1@e.com" })
+			local v2 = Users:create({ user_name = "karma_v2", user_pass = "password", user_email = "k2@e.com" })
+			local p = Posts:create({ user_id = author.id, sub_id = 1, title = "karma post", url = "https://k.example" })
+			Votes:cast(v1.id, p.id, nil, 1) -- +1
+			Votes:cast(v2.id, p.id, nil, 0) -- -1
+			Votes:cast(author.id, p.id, nil, 1) -- +1  => post net +1
+			local c = Comments:create({ post_id = p.id, user_id = author.id, body = "hi" })
+			Votes:cast(v1.id, p.id, c.id, 1) -- comment +1
+
+			assert.same(2, Users:karma(author.id))
+		end)
+	end)
+
 	describe("search (FTS5)", function()
 		local function SEARCH(q)
 			return mock_request(app, "/search", { method = "GET", get = { q = q } })

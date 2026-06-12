@@ -111,4 +111,22 @@ function Users_mt:get_id_from_name(name)
 	return res[1]
 end
 
+--- Karma: net score (upvotes - downvotes) of all votes cast on this user's
+-- posts and comments.
+-- @tparam number user_id
+-- @treturn number
+function Users:karma(user_id)
+	local row = db.select([[
+		COALESCE((
+			SELECT SUM(CASE WHEN v.upvote = 1 THEN 1 ELSE -1 END)
+			FROM votes v JOIN posts p ON v.post_id = p.id
+			WHERE v.comment_id IS NULL AND p.user_id = ]] .. tonumber(user_id) .. [[
+		), 0) + COALESCE((
+			SELECT SUM(CASE WHEN v.upvote = 1 THEN 1 ELSE -1 END)
+			FROM votes v JOIN comments c ON v.comment_id = c.id
+			WHERE c.user_id = ]] .. tonumber(user_id) .. [[
+		), 0) AS karma]])
+	return tonumber(row[1].karma) or 0
+end
+
 return Users

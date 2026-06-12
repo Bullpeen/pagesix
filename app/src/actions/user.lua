@@ -15,6 +15,8 @@ return {
         end
 
         self.user_name = user.user_name
+        self.created_at = user.created_at
+        self.karma = Users:karma(user.id)
 
         -- The posts/comments fragments expect rows with vote aggregates etc.,
         -- so use the same enriched queries the listing pages do (filtered to

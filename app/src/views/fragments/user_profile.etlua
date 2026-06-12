@@ -1,3 +1,5 @@
-<h1>User Profile for <%= params.user_name %></h1>
-
-User since <%= params.created_at %>.
+<div class="user-profile">
+    <h1>User Profile for <%= user_name %></h1>
+    <p class="karma"><%= karma %> karma</p>
+    <% if created_at then %><p class="cake">User since <%= created_at %>.</p><% end %>
+</div>
