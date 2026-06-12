@@ -1,14 +1,11 @@
-
-<% if subreddits ~= nil then
-    for sub in pairs(subreddits) do 
-        require 'pl.pretty'.dump(sub)
-        render('views.fragments.subreddit_listing',
-            {
-                name = sub.name,
-                description = sub.description,
-                subscribers = sub.subscribers
-            })
+<% if subreddits ~= nil and #subreddits > 0 then
+    for _, sub in ipairs(subreddits) do
+        render('views.fragments.subreddit_listing', {
+            name = sub.name,
+            description = sub.description,
+            subscribers = sub.subscribers,
+        })
     end %>
 <% else %>
-    Nothing
+    <p class="empty">You have no subscriptions yet.</p>
 <% end %>

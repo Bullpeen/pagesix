@@ -20,6 +20,12 @@ return {
 
         self.subreddit = sub.name
         self.posts = Sort:sort(Posts:get_listing(sub.id), sort)
+
+        -- current_user is set by the app before_filter when signed in.
+        if self.current_user then
+            self.subscribed =
+                require("models.subscriptions"):is_subscribed(self.current_user.id, sub.id)
+        end
     end,
 
     -- https://github.com/karai17/lapis-chan/blob/master/app/src/utils/generate.lua

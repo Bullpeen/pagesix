@@ -16,6 +16,16 @@ app:before_filter(function(self)
 		-- https://leafo.net/lapis/reference/configuration.html#performance-measurement
 		-- print(to_json(ngx.ctx.performance))
 	end)
+
+	-- Make the logged-in user and their subscriptions available to every view
+	-- (the layout header renders `subs` as the "my subs" nav).
+	if self.session and self.session.current_user then
+		local user = require("models.users"):find({ user_name = self.session.current_user })
+		if user then
+			self.current_user = user
+			self.subs = require("models.subscriptions"):subscribed_forums(user.id)
+		end
+	end
 end)
 
 function app:default_route()

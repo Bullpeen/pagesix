@@ -9,6 +9,11 @@ This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
 ### Added
+- **Subscribe / unsubscribe** — `POST /subscribe/:subreddit` toggles a
+  subscription (`Subscriptions:toggle`); a `before_filter` loads the signed-in
+  user and their subscribed forums into every view, so the layout header's "my
+  subs" nav and the `/subscribed` page populate, and the subreddit page shows a
+  Subscribe/Unsubscribe button reflecting current state.
 - **Test infrastructure**
   - `luacov` coverage: added to the rockspec, the Docker image, and CI
     (`busted --coverage` + a printed summary), configured via `.luacov` to

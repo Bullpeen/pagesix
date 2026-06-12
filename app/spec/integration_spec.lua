@@ -13,6 +13,7 @@ describe("pagesix integration", function()
 	local Posts = require("src.models.posts")
 	local Comments = require("models.comments")
 	local Votes = require("src.models.votes")
+	local Subscriptions = require("models.subscriptions")
 	local app = require("app")
 
 	local function GET(url)
@@ -133,6 +134,31 @@ describe("pagesix integration", function()
 		it("rejects a reserved name", function()
 			POST("/subreddit/create", { name = "all" }, "demo")
 			assert.is_nil(Forum:find({ name = "all" }))
+		end)
+	end)
+
+	describe("subscriptions", function()
+		it("toggles a subscription on and off", function()
+			assert.same(302, (POST("/subscribe/programming", {}, "demo")))
+			assert.same(1, #Subscriptions:select("where user_id = 1 and subreddit_id = 1"))
+			POST("/subscribe/programming", {}, "demo") -- toggle off
+			assert.same(0, #Subscriptions:select("where user_id = 1 and subreddit_id = 1"))
+		end)
+
+		it("lists subscriptions on /subscribed and in the header nav", function()
+			POST("/subscribe/programming", {}, "demo")
+
+			local s1, sub_body = mock_request(app, "/subscribed",
+				{ method = "GET", session = { current_user = "demo" } })
+			assert.same(200, s1)
+			assert.truthy(sub_body:find("/r/programming", 1, true))
+
+			-- the layout header shows "my subs" on any page when signed in
+			local _, home = mock_request(app, "/",
+				{ method = "GET", session = { current_user = "demo" } })
+			assert.truthy(home:find("/r/programming", 1, true))
+
+			POST("/subscribe/programming", {}, "demo") -- cleanup
 		end)
 	end)
 end)

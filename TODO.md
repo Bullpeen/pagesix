@@ -12,8 +12,8 @@ image boots and serves; 23-spec Busted suite passes.
 - [ ] **Auth/password hardening** (GitHub issue #6 — the deferred capstone):
       hash passwords (bcrypt is a dep), CSRF tokens on forms, stop `cached()`
       on the login/register routes, real login error feedback.
-- [ ] **Subscribe / unsubscribe** — the buttons are inert; wire
-      `Subscriptions` + populate the header's "my subs" for the logged-in user.
+- [x] **Subscribe / unsubscribe** — toggle action + the header's "my subs" and
+      the `/subscribed` page now populate for the logged-in user.
 - [ ] **Pagination** — every listing/thread is unbounded (`TODO paginate`
       markers throughout). Use Lapis `paginated`/SQLite `LIMIT/OFFSET` or
       keyset pagination.
