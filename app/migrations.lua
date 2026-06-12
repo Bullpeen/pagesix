@@ -240,6 +240,12 @@ return {
         schema.create_index("subscriptions", "subreddit_id", idx)
     end,
 
+    -- soft-delete flag for posts (comments already have one)
+    [6] = function()
+        schema.add_column("posts", "deleted", types.integer({ default = false }))
+        schema.create_index("posts", "deleted", { if_not_exists = true })
+    end,
+
     -- create first User
     [10] = function()
         Users:create({

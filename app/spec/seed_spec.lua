@@ -15,10 +15,7 @@ describe("seed migrations", function()
 	local Forum = require("src.models.forum")
 
 	setup(function()
-		migrations[1]() -- pragmas
-		migrations[2]() -- users / user_profiles / subscriptions / reserved
-		migrations[3]() -- forum
-		migrations[4]() -- posts / comments / votes / modlog / views
+		require("spec.schema_helper")()
 
 		-- Prerequisites the seed steps assume: at least one user and some subs.
 		Users:create({ user_name = "seed_anon", user_pass = "password", user_email = "a@e.com" })

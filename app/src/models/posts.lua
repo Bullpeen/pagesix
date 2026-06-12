@@ -101,7 +101,7 @@ function Posts:get_listing(filters)
 		FROM posts a
 		INNER JOIN users c ON a.user_id = c.id
 		INNER JOIN forum s ON a.sub_id = s.id
-		WHERE a.locked = 0]]
+		WHERE a.locked = 0 AND a.deleted = 0]]
 
 	if filters.sub_id then
 		query = query .. " AND a.sub_id = " .. tonumber(filters.sub_id)

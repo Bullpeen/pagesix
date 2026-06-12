@@ -9,6 +9,12 @@ This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
 ### Added
+- **Edit / delete** own posts and comments (author-only). Edits set `edited`
+  (shown as "(edited)"). Deletes are soft: deleted comments stay in the thread
+  as `[deleted]` so replies aren't orphaned (the recursive CTE now keeps them);
+  deleted posts (new `posts.deleted` column, migration `[6]`) drop out of
+  listings and render as `[deleted]`. Added a shared `spec/schema_helper` so
+  specs build the full schema in one call.
 - **Self / text posts** — the submit form now takes a title plus *either* a URL
   (link post) or a Markdown body (self post); `is_self` is set accordingly,
   `posts.url` is nullable, a Lapis `title` constraint validates submissions, and

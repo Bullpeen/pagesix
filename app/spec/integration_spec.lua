@@ -28,9 +28,7 @@ describe("pagesix integration", function()
 	end
 
 	setup(function()
-		for _, k in ipairs({ 1, 2, 3, 4, 5 }) do
-			migrations[k]()
-		end
+		require("spec.schema_helper")()
 		local u = Users:create({ user_name = "demo", user_pass = "password", user_email = "d@e.com" })
 		local s = Forum:create({ name = "programming", creator_id = u.id, description = "Coding" })
 		local p = Posts:create({ user_id = u.id, sub_id = s.id, title = "Hello World", url = "https://example.com/x" })
@@ -121,6 +119,60 @@ describe("pagesix integration", function()
 			assert.same(302, status)
 			local replies = Comments:select("where parent_comment_id = 1")
 			assert.truthy(#replies >= 1)
+		end)
+	end)
+
+	describe("editing & deleting comments", function()
+		it("lets the author edit their comment", function()
+			local c = Comments:create({ post_id = 1, user_id = 1, body = "original" })
+			local status = POST("/comment/" .. c.id .. "/edit", { body = "edited body" }, "demo")
+			assert.same(302, status)
+			local updated = Comments:find(c.id)
+			assert.same("edited body", updated.body)
+			assert.same(1, tonumber(updated.edited))
+		end)
+
+		it("won't let a non-author edit", function()
+			Users:create({ user_name = "intruder", user_pass = "password", user_email = "i@e.com" })
+			local c = Comments:create({ post_id = 1, user_id = 1, body = "mine" })
+			POST("/comment/" .. c.id .. "/edit", { body = "hacked" }, "intruder")
+			assert.same("mine", Comments:find(c.id).body)
+		end)
+
+		it("soft-deletes the author's comment", function()
+			local c = Comments:create({ post_id = 1, user_id = 1, body = "to delete" })
+			local status = POST("/comment/" .. c.id .. "/delete", {}, "demo")
+			assert.same(302, status)
+			assert.same(1, tonumber(Comments:find(c.id).deleted))
+		end)
+	end)
+
+	describe("editing & deleting posts", function()
+		it("lets the author edit a self post", function()
+			local p = Posts:create({ user_id = 1, sub_id = 1, title = "editable", body = "orig", is_self = 1 })
+			local status = POST("/post/" .. p.id .. "/edit", { body = "new body" }, "demo")
+			assert.same(302, status)
+			local up = Posts:find(p.id)
+			assert.same("new body", up.body)
+			assert.same(1, tonumber(up.edited))
+		end)
+
+		it("soft-deletes the author's post and drops it from listings", function()
+			local p = Posts:create({ user_id = 1, sub_id = 1, title = "deleteme", url = "https://d.example" })
+			POST("/post/" .. p.id .. "/delete", {}, "demo")
+			assert.same(1, tonumber(Posts:find(p.id).deleted))
+			local found = false
+			for _, row in ipairs(Posts:get_listing(1)) do
+				if row.id == p.id then found = true end
+			end
+			assert.is_false(found)
+		end)
+
+		it("won't let a non-author delete", function()
+			Users:create({ user_name = "post_intruder", user_pass = "password", user_email = "pi@e.com" })
+			local p = Posts:create({ user_id = 1, sub_id = 1, title = "safe", url = "https://s.example" })
+			POST("/post/" .. p.id .. "/delete", {}, "post_intruder")
+			assert.same(0, tonumber(Posts:find(p.id).deleted))
 		end)
 	end)
 

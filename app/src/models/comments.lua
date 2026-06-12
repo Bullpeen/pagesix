@@ -44,25 +44,23 @@ local Comments = Model:extend("comments", {
 function Comments:thread(post_id)
 	local rows = db.query([[
 		WITH RECURSIVE thread AS (
-			SELECT c.id, c.post_id, c.user_id, c.body, c.created_at,
-				c.parent_comment_id, c.is_submitter,
+			SELECT c.id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
+				c.deleted, c.parent_comment_id, c.is_submitter,
 				0 AS depth,
 				printf('%020d', c.id) AS path
 			FROM comments c
 			WHERE c.post_id = ]] .. tonumber(post_id) .. [[
 				AND c.parent_comment_id IS NULL
-				AND c.deleted = 0
 			UNION ALL
-			SELECT c.id, c.post_id, c.user_id, c.body, c.created_at,
-				c.parent_comment_id, c.is_submitter,
+			SELECT c.id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
+				c.deleted, c.parent_comment_id, c.is_submitter,
 				t.depth + 1,
 				t.path || '.' || printf('%020d', c.id)
 			FROM comments c
 			JOIN thread t ON c.parent_comment_id = t.id
-			WHERE c.deleted = 0
 		)
-		SELECT t.id, t.post_id, t.user_id, t.body, t.created_at,
-			t.parent_comment_id, t.is_submitter, t.depth,
+		SELECT t.id, t.post_id, t.user_id, t.body, t.created_at, t.edited,
+			t.deleted, t.parent_comment_id, t.is_submitter, t.depth,
 			u.user_name AS author,
 			s.name AS subreddit,
 			(SELECT COUNT(*) FROM votes v WHERE v.comment_id = t.id AND v.upvote = 1) AS upvotes,
@@ -74,10 +72,17 @@ function Comments:thread(post_id)
 		ORDER BY t.path
 	]])
 
+	-- Deleted comments are kept in the tree (so replies aren't orphaned) but
+	-- shown as [deleted].
 	for _, c in ipairs(rows) do
 		c.score = tonumber(c.upvotes) - tonumber(c.downvotes)
 		c.permalink = "/r/" .. c.subreddit .. "/comments/" .. c.post_id .. "/_/" .. c.id
-		c.body_html = render_markdown(c.body)
+		if tonumber(c.deleted) == 1 then
+			c.author = "[deleted]"
+			c.body_html = "[deleted]"
+		else
+			c.body_html = render_markdown(c.body)
+		end
 	end
 
 	return rows

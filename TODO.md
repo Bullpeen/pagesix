@@ -17,8 +17,10 @@ image boots and serves; 23-spec Busted suite passes.
 - [ ] **Pagination** — every listing/thread is unbounded (`TODO paginate`
       markers throughout). Use Lapis `paginated`/SQLite `LIMIT/OFFSET` or
       keyset pagination.
-- [ ] **Edit / delete** own posts & comments — the `edited`/`deleted` columns
-      exist and `thread` already hides deleted; just need routes + UI.
+- [x] **Edit / delete** own posts & comments — author-only edit (sets
+      `edited`) and soft-delete. Deleted comments stay in the thread as
+      `[deleted]` (replies kept); deleted posts drop from listings and show
+      `[deleted]` on their page.
 - [x] **Submit self-posts** — the submit form takes a title + (url OR Markdown
       body); self posts render their body on the post page. (Preview still TODO.)
 

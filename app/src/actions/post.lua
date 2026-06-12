@@ -41,21 +41,30 @@ return {
         -- print("Post data:")
         -- require 'pl.pretty'.dump(post_data[1])
 
-        self.title = post_data["title"]
-        self.url = post_data["url"]
         self.subreddit = self.params.subreddit
         self.post_id = self.params.post_id
         self.title_stub = self.params.title_stub
         self.permalink = post_data["permalink"]
         self.created_at = post_data["created_at"]
-        if tonumber(post_data["is_self"]) == 1 then
-            self.is_self = true
-            self.body_html = require("src.utils.markdown")(post_data["body"])
-        end
+        self.edited = tonumber(post_data["edited"]) == 1
+        self.post_user_id = post_data["user_id"]
 
-        local u = post_data:get_user()
-        -- print("User_name is " .. u['user_name'])
-        self.user_name = u['user_name']
+        if tonumber(post_data["deleted"]) == 1 then
+            -- Keep the page (and its comments) but blank the post itself.
+            self.title = "[deleted]"
+            self.user_name = "[deleted]"
+            self.deleted = true
+        else
+            self.title = post_data["title"]
+            self.url = post_data["url"]
+            if tonumber(post_data["is_self"]) == 1 then
+                self.is_self = true
+                self.body_html = require("src.utils.markdown")(post_data["body"])
+                self.body = post_data["body"]
+            end
+            local u = post_data:get_user()
+            self.user_name = u["user_name"]
+        end
     end,
 
     GET = function(self)

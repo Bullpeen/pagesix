@@ -19,10 +19,7 @@ describe("pagesix models", function()
 	setup(function()
 		-- Only the schema-creating migrations; skip the seed/RSS/sample-data
 		-- migrations (13+), which need external files and network access.
-		migrations[1]() -- pragmas
-		migrations[2]() -- users, user_profiles, subscriptions, reserved_usernames
-		migrations[3]() -- forum
-		migrations[4]() -- posts, comments, votes, modlog, views
+		require("spec.schema_helper")()
 	end)
 
 	local function make_user(name)

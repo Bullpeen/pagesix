@@ -19,6 +19,7 @@
                             <% if tonumber(comment.is_submitter) == 1 then %><span class="submitter" title="original poster">OP</span><% end %>
                             <span class="score">&middot; <%= comment.score %> points</span>
                             <time datetime="<%= comment.created_at %>"><%= comment.created_at %></time>
+                            <% if tonumber(comment.edited) == 1 then %><span class="edited">(edited)</span><% end %>
                         </p>
                         <div class="usertext-body md">
                             <%- comment.body_html %>
@@ -26,6 +27,7 @@
                         <ul class="flat-list buttons">
                             <li class="first"><a href="<%= comment.permalink %>" class="bylink" rel="nofollow">permalink</a></li>
                         </ul>
+                        <% if tonumber(comment.deleted) ~= 1 then %>
                         <details class="reply">
                             <summary>reply</summary>
                             <form method="POST" action="/post/<%= comment.post_id %>/comment">
@@ -34,6 +36,19 @@
                                 <button class="button" type="submit">reply</button>
                             </form>
                         </details>
+                        <% end %>
+                        <% if current_user and tonumber(current_user.id) == tonumber(comment.user_id) and tonumber(comment.deleted) ~= 1 then %>
+                        <details class="edit">
+                            <summary>edit</summary>
+                            <form method="POST" action="/comment/<%= comment.id %>/edit">
+                                <textarea name="body" rows="3" required><%= comment.body %></textarea>
+                                <button class="button" type="submit">save</button>
+                            </form>
+                        </details>
+                        <form class="delete-form" method="POST" action="/comment/<%= comment.id %>/delete">
+                            <button class="button" type="submit">delete</button>
+                        </form>
+                        <% end %>
                     </div>
                 </div>
             <% end %>

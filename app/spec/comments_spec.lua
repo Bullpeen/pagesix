@@ -12,10 +12,7 @@ describe("comment threading", function()
 	local Comments = require("models.comments")
 
 	setup(function()
-		migrations[1]()
-		migrations[2]()
-		migrations[3]()
-		migrations[4]()
+		require("spec.schema_helper")()
 	end)
 
 	local function scaffold(name)
@@ -49,16 +46,19 @@ describe("comment threading", function()
 		assert.same("Comment cannot be empty", err)
 	end)
 
-	it("excludes deleted comments from the thread", function()
+	it("keeps deleted comments in the thread as [deleted]", function()
 		local u, p = scaffold("deleter")
 		Comments:create({ post_id = p.id, user_id = u.id, body = "keep" })
 		local gone = Comments:create({ post_id = p.id, user_id = u.id, body = "gone" })
 		gone:update({ deleted = 1 })
 
-		local bodies = {}
-		for _, c in ipairs(Comments:thread(p.id)) do
-			table.insert(bodies, c.body)
+		local thread = Comments:thread(p.id)
+		assert.same(2, #thread) -- node kept so replies aren't orphaned
+		local del
+		for _, c in ipairs(thread) do
+			if c.id == gone.id then del = c end
 		end
-		assert.same({ "keep" }, bodies)
+		assert.same("[deleted]", del.body_html)
+		assert.same("[deleted]", del.author)
 	end)
 end)

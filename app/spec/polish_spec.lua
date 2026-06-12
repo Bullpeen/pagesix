@@ -31,11 +31,7 @@ describe("subreddit + user-profile polish", function()
 	local Comments = require("models.comments")
 
 	setup(function()
-		migrations[1]()
-		migrations[2]()
-		migrations[3]()
-		migrations[4]()
-		migrations[5]() -- indexes
+		require("spec.schema_helper")()
 	end)
 
 	it("rejects reserved and too-short subreddit names via the Lapis constraint", function()

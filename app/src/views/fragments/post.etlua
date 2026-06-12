@@ -14,5 +14,23 @@
 
 <p class="tagline">Submitted by
     <a href="/user/<%= user_name %>"><%= user_name %></a> at <%= created_at %>.
+    <% if edited then %><span class="edited">(edited)</span><% end %>
     <a href="/r/<%= subreddit %>/comments/<%= post_id %>" alt="permalink">Permalink</a>
 </p>
+
+<% if current_user and not deleted and tonumber(current_user.id) == tonumber(post_user_id) then %>
+    <div class="post-controls">
+        <% if is_self then %>
+        <details class="edit">
+            <summary>edit</summary>
+            <form method="POST" action="/post/<%= post_id %>/edit">
+                <textarea name="body" rows="6" required><%= body %></textarea>
+                <button class="button" type="submit">save</button>
+            </form>
+        </details>
+        <% end %>
+        <form class="delete-form" method="POST" action="/post/<%= post_id %>/delete">
+            <button class="button" type="submit">delete</button>
+        </form>
+    </div>
+<% end %>

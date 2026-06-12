@@ -16,10 +16,7 @@ describe("voting", function()
 	local Votes = require("src.models.votes")
 
 	setup(function()
-		migrations[1]()
-		migrations[2]()
-		migrations[3]()
-		migrations[4]()
+		require("spec.schema_helper")()
 	end)
 
 	local function make_post(name)
