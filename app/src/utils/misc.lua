@@ -81,7 +81,9 @@ function Misc:generate_posts(subreddit_id, n)
     local Posts = require("src.models.posts")
 
     local Users = require("src.models.users")
-    local users = Users:select() -- TODO use :count()
+    -- Need the rows (a random user is picked below), so :select() is required
+    -- here -- :count() can't return the ids.
+    local users = Users:select()
 
     if #users == 0 then return end
 

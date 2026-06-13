@@ -2,8 +2,7 @@
 -- @script migrations
 
 local db = require("lapis.db")
-local io = require("io")
-local json = require("cjson")
+local read_json = require("src.utils.read_json")
 local Lorem = require("src.utils.lorem")
 -- local util = require("lapis.util")
 local misc = require("src.utils.misc")
@@ -338,16 +337,9 @@ return {
 
     -- create initial subreddits
     [13] = function()
-        -- TODO figure out utils module
-        local data = {}
         local path = "/var/data/initial_subs.json"
-        local file = io.open(path, "rb")
-
-        if file then
-            local content = file:read("*a") -- *a or *all reads the whole file
-            file:close()
-            data = json.decode(content)
-            -- require 'pl.pretty'.dump(data)
+        local data = read_json(path) or {}
+        if #data > 0 then
             print("Read in " .. #data .. " subreddits from " .. path)
         end
 

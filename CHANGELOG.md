@@ -8,6 +8,16 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Seed / migrations
+- **`utils/read_json`** — migration `[13]` (seed initial subreddits) inlined an
+  `io.open` + `cjson.decode` (with a `-- TODO figure out utils module` note);
+  that's now a small `read_json(path)` util that tolerates a missing file
+  (returns `nil`) and raises on malformed JSON so seeding fails loudly. Dropped
+  the now-unused `io`/`cjson` requires from `migrations.lua`. Unit-tested in
+  `spec/read_json_spec.lua` (3 pure-Lua specs). The sibling `misc.lua:84`
+  `Users:select()` → `:count()` note was a non-fix (the rows are needed to pick
+  a random user) — corrected in place rather than "done".
+
 ### Comments
 - **Single-comment permalink view finished** — the `/r/:sub/comments/:post/_/:id`
   page was a static HTML mockup (hardcoded `COMMENT1`/`USER_NAME` placeholders)
@@ -86,7 +96,7 @@ test-covered Reddit clone. Highlights, newest first:
   ("Username is reserved"). The table existed but was never checked.
 
 ### Quality / CI
-- **Test suite now at 101 specs** (model/SQL + full HTTP integration), all green,
+- **Test suite now at 104 specs** (model/SQL + full HTTP integration), all green,
   with luacov coverage and a clean luacheck (0/0).
 - **luacheck** added to the rockspec, Docker image, and CI (a `luacheck app`
   step gates the build), configured via `.luacheckrc` (luajit + `ngx` global;

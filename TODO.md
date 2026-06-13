@@ -9,7 +9,7 @@ full-text search (FTS5); open a post; vote on posts & comments; submit
 link/self posts; post threaded comments/replies with Markdown; edit/delete own
 posts & comments; subscribe/unsubscribe; saved/hidden posts; user profiles +
 karma; reply notifications (`/inbox`); basic moderation (remove); RSS output
-feeds; bcrypt + CSRF auth. The Docker image boots and serves; **101-spec Busted
+feeds; bcrypt + CSRF auth. The Docker image boots and serves; **104-spec Busted
 suite + luacheck pass**.
 
 ## Next up
@@ -131,15 +131,16 @@ suite + luacheck pass**.
       its comment thread by *root* comment (a new `utils/paginate_thread` keeps
       each root's whole subtree on one page), and the profile paginates its
       posts + comments off a shared `?page=`. Both reuse the `page_nav` fragment.
-- [ ] **Seed perf** — use `Users:count()` instead of `Users:select()` in the
-      seed generators (`misc.lua:84`); move the `[13]` inline JSON read into a
-      util (`migrations.lua:325`).
+- [x] **Seed perf** — migration `[13]`'s inline `io.open`/`cjson.decode` is now
+      `utils/read_json` (unit-tested; tolerates a missing file). The
+      `misc.lua:84` `Users:select()` → `:count()` note was a non-fix (the rows
+      are needed to pick a random user); comment corrected in place.
 - [ ] **Schema cleanup** — rename `forum.creator_id` (`migrations.lua:114`),
       drop the redundant `modlog.sub_id` (`:195`), and fix the text-typed
       `modlog` FK columns to integers (`:204`; ties into `foreign_keys = ON`).
 
 ## Test & quality
-- **101 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
+- **104 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
   coverage, and **luacheck** (0 warnings / 0 errors).
 - CI per push: super-linter, **luacheck** (`luacheck app`), **busted +
   luacov**, and a Docker **build + `lapis migrate`** smoke test.

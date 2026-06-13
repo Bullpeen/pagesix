@@ -37,6 +37,7 @@ echo "==> installing test/lint toolchain"
 luarocks install busted
 luarocks install luacheck
 luarocks install luacov
+luarocks install lua-cjson   # used by a couple of pure-Lua specs (e.g. read_json)
 
 echo
 echo "Done. Activate the env and run the fast loop with:"
