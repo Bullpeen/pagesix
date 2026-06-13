@@ -34,6 +34,71 @@ local Comments = Model:extend("comments", {
 	},
 })
 
+-- Finalize raw comment rows for rendering: vote score, permalink, and the
+-- Markdown/[deleted] body. Shared by thread/permalink/by_user so they stay in
+-- sync. Deleted comments are kept (so replies aren't orphaned) but blanked.
+local function enrich(rows)
+	for _, c in ipairs(rows) do
+		c.score = tonumber(c.upvotes) - tonumber(c.downvotes)
+		c.permalink = "/r/" .. c.subreddit .. "/comments/" .. c.post_id .. "/_/" .. c.id
+		if tonumber(c.deleted) == 1 then
+			c.author = "[deleted]"
+			c.body_html = "[deleted]"
+		else
+			c.body_html = render_markdown(c.body)
+		end
+	end
+	return rows
+end
+
+-- A single comment row shaped like a thread row (author, subreddit, vote
+-- aggregates) but without depth/path, or nil. Used to pull in ancestor rows.
+local function fetch_one(comment_id)
+	local rows = db.query([[
+		SELECT c.id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
+			c.deleted, c.parent_comment_id, c.is_submitter,
+			u.user_name AS author, s.name AS subreddit,
+			(SELECT COUNT(*) FROM votes v WHERE v.comment_id = c.id AND v.upvote = 1) AS upvotes,
+			(SELECT COUNT(*) FROM votes v WHERE v.comment_id = c.id AND v.upvote = 0) AS downvotes
+		FROM comments c
+		JOIN users u ON c.user_id = u.id
+		JOIN posts p ON c.post_id = p.id
+		JOIN forum s ON p.sub_id = s.id
+		WHERE c.id = ]] .. tonumber(comment_id))
+	return rows[1]
+end
+
+-- The focused comment plus all of its descendants, depth-ordered (the focused
+-- comment is depth 0). A recursive CTE walks the parent->child links and builds
+-- a zero-padded `path` so children sort directly under their parent.
+local function subtree(comment_id)
+	return db.query([[
+		WITH RECURSIVE sub AS (
+			SELECT c.id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
+				c.deleted, c.parent_comment_id, c.is_submitter,
+				0 AS depth, printf('%020d', c.id) AS path
+			FROM comments c
+			WHERE c.id = ]] .. tonumber(comment_id) .. [[
+			UNION ALL
+			SELECT c.id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
+				c.deleted, c.parent_comment_id, c.is_submitter,
+				t.depth + 1, t.path || '.' || printf('%020d', c.id)
+			FROM comments c
+			JOIN sub t ON c.parent_comment_id = t.id
+		)
+		SELECT t.id, t.post_id, t.user_id, t.body, t.created_at, t.edited,
+			t.deleted, t.parent_comment_id, t.is_submitter, t.depth,
+			u.user_name AS author, s.name AS subreddit,
+			(SELECT COUNT(*) FROM votes v WHERE v.comment_id = t.id AND v.upvote = 1) AS upvotes,
+			(SELECT COUNT(*) FROM votes v WHERE v.comment_id = t.id AND v.upvote = 0) AS downvotes
+		FROM sub t
+		JOIN users u ON t.user_id = u.id
+		JOIN posts p ON t.post_id = p.id
+		JOIN forum s ON p.sub_id = s.id
+		ORDER BY t.path
+	]])
+end
+
 --- The full comment thread for a post, ordered depth-first with a `depth`
 -- level for indentation. A SQLite recursive CTE walks the parent -> child
 -- links, building a zero-padded materialized `path` so children always sort
@@ -72,20 +137,7 @@ function Comments:thread(post_id)
 		ORDER BY t.path
 	]])
 
-	-- Deleted comments are kept in the tree (so replies aren't orphaned) but
-	-- shown as [deleted].
-	for _, c in ipairs(rows) do
-		c.score = tonumber(c.upvotes) - tonumber(c.downvotes)
-		c.permalink = "/r/" .. c.subreddit .. "/comments/" .. c.post_id .. "/_/" .. c.id
-		if tonumber(c.deleted) == 1 then
-			c.author = "[deleted]"
-			c.body_html = "[deleted]"
-		else
-			c.body_html = render_markdown(c.body)
-		end
-	end
-
-	return rows
+	return enrich(rows)
 end
 
 --- A user's recent comments (flat, newest first) with the same fields the
@@ -94,8 +146,8 @@ end
 -- @treturn table array of comment rows
 function Comments:by_user(user_id)
 	local rows = db.select([[
-		a.id, a.post_id, a.user_id, a.body, a.created_at, a.parent_comment_id,
-			a.is_submitter, 0 AS depth,
+		a.id, a.post_id, a.user_id, a.body, a.created_at, a.deleted,
+			a.parent_comment_id, a.is_submitter, 0 AS depth,
 			u.user_name AS author,
 			s.name AS subreddit,
 			(SELECT COUNT(*) FROM votes v WHERE v.comment_id = a.id AND v.upvote = 1) AS upvotes,
@@ -107,13 +159,48 @@ function Comments:by_user(user_id)
 		WHERE a.user_id = ]] .. tonumber(user_id) .. [[ AND a.deleted = 0
 		ORDER BY a.created_at DESC]])
 
-	for _, c in ipairs(rows) do
-		c.score = tonumber(c.upvotes) - tonumber(c.downvotes)
-		c.permalink = "/r/" .. c.subreddit .. "/comments/" .. c.post_id .. "/_/" .. c.id
-		c.body_html = render_markdown(c.body)
+	return enrich(rows)
+end
+
+--- A single comment's permalink view: the focused comment plus its full reply
+-- subtree, optionally preceded by up to `context` ancestor comments (a linear
+-- chain above it, for context). Depth-ordered like `thread`, so the existing
+-- comments fragment renders it with the right indentation.
+-- @tparam number comment_id the focused comment
+-- @tparam[opt=0] number context how many ancestor levels to include above it
+-- @treturn table array of comment rows (empty if the comment is unknown)
+function Comments:permalink_thread(comment_id, context)
+	comment_id = tonumber(comment_id)
+	if not comment_id then return {} end
+	context = math.max(0, math.floor(tonumber(context) or 0))
+
+	local focused = self:find(comment_id)
+	if not focused then return {} end
+
+	-- Walk up to `context` ancestors, collecting them topmost-first.
+	local ancestors = {}
+	local pid = focused.parent_comment_id
+	while pid and #ancestors < context do
+		local parent = fetch_one(pid)
+		if not parent then break end
+		table.insert(ancestors, 1, parent)
+		pid = parent.parent_comment_id
 	end
 
-	return rows
+	-- Ancestors form the linear chain above (depths 0..k-1); the focused
+	-- comment and its descendants follow, shifted down by that chain's length.
+	local rows = {}
+	for depth, a in ipairs(ancestors) do
+		a.depth = depth - 1
+		rows[#rows + 1] = a
+	end
+	local base = #ancestors
+	for _, c in ipairs(subtree(comment_id)) do
+		c.depth = tonumber(c.depth) + base
+		rows[#rows + 1] = c
+	end
+
+	return enrich(rows)
 end
 
 return Comments

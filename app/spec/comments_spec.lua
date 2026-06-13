@@ -60,4 +60,47 @@ describe("comment threading", function()
 		assert.same("[deleted]", del.body_html)
 		assert.same("[deleted]", del.author)
 	end)
+
+	describe("permalink_thread", function()
+		local child, grandchild
+
+		setup(function()
+			local u, p = scaffold("permalink")
+			-- comments are UNIQUE on (user_id, post_id, parent_comment_id), so the
+			-- extra root/sibling must come from a different user.
+			local u2 = Users:create({ user_name = "permalink_other", user_pass = "password", user_email = "po@e.com" })
+			local root = Comments:create({ post_id = p.id, user_id = u.id, body = "perma-root" })
+			child = Comments:create({ post_id = p.id, user_id = u.id, body = "perma-child", parent_comment_id = root.id })
+			grandchild = Comments:create({ post_id = p.id, user_id = u.id, body = "perma-gc", parent_comment_id = child.id })
+			Comments:create({ post_id = p.id, user_id = u2.id, body = "perma-root2" }) -- unrelated root
+			Comments:create({ post_id = p.id, user_id = u2.id, body = "perma-sibling", parent_comment_id = root.id }) -- child's sibling
+		end)
+
+		local function bodies(rows)
+			local out = {}
+			for i, r in ipairs(rows) do out[i] = r.body end
+			return out
+		end
+
+		it("returns the focused comment + its subtree, no ancestors or siblings", function()
+			local rows = Comments:permalink_thread(child.id, 0)
+			assert.same({ "perma-child", "perma-gc" }, bodies(rows))
+			assert.same({ 0, 1 }, { rows[1].depth, rows[2].depth })
+		end)
+
+		it("includes one ancestor (shifting depth) with context=1", function()
+			local rows = Comments:permalink_thread(child.id, 1)
+			assert.same({ "perma-root", "perma-child", "perma-gc" }, bodies(rows))
+			assert.same({ 0, 1, 2 }, { rows[1].depth, rows[2].depth, rows[3].depth })
+		end)
+
+		it("walks up multiple ancestors and clamps to the root", function()
+			local rows = Comments:permalink_thread(grandchild.id, 10)
+			assert.same({ "perma-root", "perma-child", "perma-gc" }, bodies(rows))
+		end)
+
+		it("returns an empty list for an unknown comment", function()
+			assert.same({}, Comments:permalink_thread(999999, 0))
+		end)
+	end)
 end)

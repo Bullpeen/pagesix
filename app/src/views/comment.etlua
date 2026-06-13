@@ -1,9 +1,8 @@
 <% render('views.fragments.info_bar') %>
+<% render('views.fragments.menubar') %>
 
-<div class="commentarea">
-    <% render('views.fragments.menubar') %>
+<% --[[ The shared comments fragment provides its own .commentarea wrapper and
+    renders self.comments (focused comment + context + replies) depth-first. ]] %>
+<% render('views.fragments.comments') %>
 
-    <div id="" class="sitetable nestedlisting">
-        <% render('views.fragments.comment') %>
-    </div>
-</div>
+<% render('views.fragments.nav') %>

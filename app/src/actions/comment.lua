@@ -7,52 +7,27 @@ local Posts = require("src.models.posts")
 
 return {
     before = function(self)
-        -- self.params.subreddit
-        -- self.params.post_id
-        -- self.params.title_stub
-        -- self.params.comment_id
-        -- ? self.params.q
-
-        -- Check if subreddit is nil or empty
-        local sub_name = self.params.subreddit or 'ask'
-        if sub_name == nil or sub_name == "" then
-            print("Subreddit is unknown: " .. sub_name)
-            return self:write({ redirect_to = self:url_for("homepage") })
-        end
-
-        -- Get subreddit from sub_name
-        -- local sub = Subreddit:find({name = sub_name})
-
-        -- TODO return table like, sorted by highest score (upvotes - downvotes)
-        -- {
-        -- 		comment_id: { body, user_id, created_at, edited, upvotes, downvotes, (parent_id) },
-        --		comment_id: { ... },
-        -- }
-
         local comment = Comments:find(self.params.comment_id)
         if not comment then
             return self:write({ redirect_to = self:url_for("homepage") })
         end
-        -- The view iterates self.comments, so wrap the single comment in a list.
-        self.comments = { comment }
 
-        -- TODO: walk up `context` (grand)parent comments from the ?q=...N param.
-        -- The previous implementation called Posts:get_comment() (which does not
-        -- exist), indexed self.comment (a typo for self.comments), and compared a
-        -- string to a number -- so it always errored. Disabled until parent
-        -- threading is implemented properly.
-        -- local context = self.params.q and tonumber(string.match(self.params.q, "%d+$"))
+        -- Permalink view: the focused comment + its full reply subtree, plus up
+        -- to `?context=N` ancestor comments above it (depth-ordered, rendered by
+        -- the shared comments fragment). `context` defaults to 0 (no ancestors).
+        self.comments = Comments:permalink_thread(comment.id, self.params.context)
+        self.focused_comment_id = comment.id
 
-        local post_data = Posts:find(self.params.post_id or 1)
+        -- Resolve the parent post for the page header (title/url/author).
+        local post_data = Posts:find(comment.post_id)
         if post_data then
             -- posts has no user_name column; resolve the author via the relation.
             local author = post_data:get_user()
             self.user_name = author and author.user_name
             self.title = post_data["title"]
             self.url = post_data["url"]
-            -- https://leafo.net/lapis/reference/actions.html#request-object-methods/request:url_for
-            -- self.permalink = self:url_for(self.params.comment_id)
             self.created_at = post_data["created_at"]
+            self.post_id = comment.post_id
         end
     end,
 

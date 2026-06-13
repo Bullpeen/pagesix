@@ -8,6 +8,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Comments
+- **Single-comment permalink view finished** — the `/r/:sub/comments/:post/_/:id`
+  page was a static HTML mockup (hardcoded `COMMENT1`/`USER_NAME` placeholders)
+  that ignored the actual comment. It now renders real data: a new
+  `Comments:permalink_thread(id, context)` returns the focused comment plus its
+  full reply subtree, optionally preceded by up to `?context=N` ancestor
+  comments (a linear chain above it, depth-shifted), and `actions/comment.lua`
+  renders it through the shared depth-aware comments fragment. Removed the dead
+  `views/fragments/comment.etlua` mockup. (Refactored the shared row-enrichment
+  and vote-count SQL out of `Comments:thread`/`by_user` so all three stay in
+  sync.) Covered by 4 model specs (subtree/ancestor/clamp/unknown) + an HTTP
+  test exercising `?context`.
+
 ### Pagination
 - **Comment threads paginate** — a post's comment thread now pages off `?page=`
   (`COMMENTS_PER_PAGE = 25`). Paging is by **root comment**: a new
@@ -73,7 +86,7 @@ test-covered Reddit clone. Highlights, newest first:
   ("Username is reserved"). The table existed but was never checked.
 
 ### Quality / CI
-- **Test suite now at 96 specs** (model/SQL + full HTTP integration), all green,
+- **Test suite now at 101 specs** (model/SQL + full HTTP integration), all green,
   with luacov coverage and a clean luacheck (0/0).
 - **luacheck** added to the rockspec, Docker image, and CI (a `luacheck app`
   step gates the build), configured via `.luacheckrc` (luajit + `ngx` global;

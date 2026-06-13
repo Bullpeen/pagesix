@@ -65,6 +65,27 @@ describe("pagesix integration", function()
 			assert.truthy(body:find("first comment", 1, true))
 		end)
 
+		it("renders a single-comment permalink with its replies and ?context", function()
+			local p = Posts:create({ user_id = 1, sub_id = 1, title = "perma post", url = "https://perma.example" })
+			local root = Comments:create({ post_id = p.id, user_id = 1, body = "PERMA_ROOT" })
+			local child = Comments:create({ post_id = p.id, user_id = 1, body = "PERMA_CHILD", parent_comment_id = root.id })
+			Comments:create({ post_id = p.id, user_id = 1, body = "PERMA_REPLY", parent_comment_id = child.id })
+			local base = "/r/programming/comments/" .. p.id .. "/_/" .. child.id
+
+			-- No context: the focused comment + its reply, but not the parent.
+			local s1, b1 = GET(base)
+			assert.same(200, s1)
+			assert.truthy(b1:find("PERMA_CHILD", 1, true))
+			assert.truthy(b1:find("PERMA_REPLY", 1, true)) -- subtree included
+			assert.is_nil(b1:find("PERMA_ROOT", 1, true)) -- ancestor excluded
+
+			-- context=1 pulls in the parent comment above.
+			local s2, b2 = simulate_request(app, base, { method = "GET", get = { context = "1" } })
+			assert.same(200, s2)
+			assert.truthy(b2:find("PERMA_ROOT", 1, true))
+			assert.truthy(b2:find("PERMA_CHILD", 1, true))
+		end)
+
 		it("renders a user profile", function()
 			local status, body = GET("/user/demo")
 			assert.same(200, status)
