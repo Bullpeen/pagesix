@@ -8,6 +8,24 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Spam filtering (lapis-bayes)
+- **Wired up the previously-unused `lapis-bayes` dependency** as a Bayesian spam
+  filter. New `utils/spam`: a pure tokenizer (lowercase alphabetic runs), a small
+  built-in spam/ham corpus + `train_defaults()`, and `is_spam(text)` that blocks
+  only above a 0.95 confidence and **fails open** (untrained / unavailable / too
+  short → never blocks). Hooked into post submission and comment creation.
+- lapis-bayes is Postgres-oriented, so two adaptations were needed for SQLite:
+  its default tokenizer uses `to_tsvector` (replaced by injecting our pure-Lua
+  tokenizer via `opts.tokenize_text`), and its migrations use `serial` /
+  `foreign_key` / a `NOT NULL total_count` with no default (broken on SQLite) —
+  so migration `[12]` creates the `lapis_bayes_*` tables with SQLite-safe types
+  + defaults and trains the corpus.
+- A `MIN_TOKENS` guard skips classifying short text (a 2–3 word link title can't
+  be judged) — this prevents false positives on link posts; the URL itself is
+  not fed to the text classifier. Covered by pure-Lua specs (tokenizer +
+  fail-open) and Docker integration specs (block spam / allow ham on submit +
+  comment).
+
 ### Discoverability (sitemap / robots / well-known)
 - **`GET /sitemap.xml`** — a real sitemaps.org `urlset` of the homepage, every
   (non-deleted) subreddit, and up to 500 recent posts, with `<lastmod>`. Built
@@ -110,7 +128,7 @@ test-covered Reddit clone. Highlights, newest first:
   ("Username is reserved"). The table existed but was never checked.
 
 ### Quality / CI
-- **Test suite now at 112 specs** (model/SQL + full HTTP integration), all green,
+- **Test suite now at 120 specs** (model/SQL + full HTTP integration), all green,
   with luacov coverage and a clean luacheck (0/0).
 - **luacheck** added to the rockspec, Docker image, and CI (a `luacheck app`
   step gates the build), configured via `.luacheckrc` (luajit + `ngx` global;

@@ -5,6 +5,7 @@ local Users = require("models.users")
 local Posts = require("src.models.posts")
 local Comments = require("models.comments")
 local Notifications = require("models.notifications")
+local Spam = require("src.utils.spam")
 
 return {
 	-- POST /post/:post_id/comment  (form: body, optional parent_comment_id)
@@ -31,23 +32,29 @@ return {
 			end
 		end
 
-		-- The Comments model's `body` constraint validates the text; create
-		-- returns nil + error if it fails.
-		local comment, err = Comments:create({
-			post_id = post.id,
-			user_id = user.id,
-			parent_comment_id = parent_id,
-			body = self.params.body,
-			is_submitter = post.user_id == user.id and 1 or 0,
-		})
-		if not comment then
-			self.errors = { err }
+		-- Bayesian spam check (fails open if untrained); drop spam silently like
+		-- the existing redirect-based error path does.
+		if Spam.is_spam(self.params.body) then
+			self.errors = { "Your comment looks like spam." }
 		else
-			-- Notify the parent comment's author (reply) or the post's author
-			-- (top-level comment), unless you're replying to yourself.
-			local recipient = parent and parent.user_id or post.user_id
-			if tonumber(recipient) ~= tonumber(user.id) then
-				Notifications:notify(recipient, comment.id, parent_id and "comment_reply" or "post_reply")
+			-- The Comments model's `body` constraint validates the text; create
+			-- returns nil + error if it fails.
+			local comment, err = Comments:create({
+				post_id = post.id,
+				user_id = user.id,
+				parent_comment_id = parent_id,
+				body = self.params.body,
+				is_submitter = post.user_id == user.id and 1 or 0,
+			})
+			if not comment then
+				self.errors = { err }
+			else
+				-- Notify the parent comment's author (reply) or the post's author
+				-- (top-level comment), unless you're replying to yourself.
+				local recipient = parent and parent.user_id or post.user_id
+				if tonumber(recipient) ~= tonumber(user.id) then
+					Notifications:notify(recipient, comment.id, parent_id and "comment_reply" or "post_reply")
+				end
 			end
 		end
 

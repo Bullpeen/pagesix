@@ -338,6 +338,33 @@ return {
         schema.create_index("moderators", "user_id", { if_not_exists = true })
     end,
 
+    -- lapis-bayes spam-classifier tables + initial training. lapis-bayes ships
+    -- its own migrations, but they're Postgres-shaped (serial / foreign_key /
+    -- NOT NULL total_count with no default) and break on SQLite, so we create
+    -- the tables the models expect here with SQLite-safe types + defaults.
+    [12] = function()
+        schema.create_table("lapis_bayes_categories", {
+            { "id",          types.integer({ unique = true, primary_key = true }) },
+            { "name",        types.text },
+            { "total_count", types.integer({ default = 0 }) },
+            { "created_at",  types.text({ null = true }) },
+            { "updated_at",  types.text({ null = true }) },
+        }, opts)
+        schema.create_index("lapis_bayes_categories", "name", { if_not_exists = true })
+
+        schema.create_table("lapis_bayes_word_classifications", {
+            { "category_id", types.integer },
+            { "word",        types.text },
+            { "count",       types.integer({ default = 0 }) },
+            { "created_at",  types.text({ null = true }) },
+            { "updated_at",  types.text({ null = true }) },
+            "FOREIGN KEY(category_id) REFERENCES lapis_bayes_categories(id)",
+            "PRIMARY KEY(category_id, word)",
+        }, opts)
+
+        require("src.utils.spam").train_defaults()
+    end,
+
     -- create initial subreddits
     [13] = function()
         local path = "/var/data/initial_subs.json"

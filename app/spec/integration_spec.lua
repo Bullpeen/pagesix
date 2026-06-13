@@ -288,6 +288,35 @@ describe("pagesix integration", function()
 		end)
 	end)
 
+	describe("spam filtering (lapis-bayes)", function()
+		local Spam = require("src.utils.spam")
+		-- The classifier is trained by migration [12] (run via schema_helper).
+		local SPAM = "free money click here to win a prize claim your free gift card now"
+		local HAM = "i was reading about recursive ctes in sqlite for my lua project today"
+
+		it("classifies obvious spam vs ham", function()
+			assert.is_true(Spam.is_spam(SPAM))
+			assert.is_false(Spam.is_spam(HAM))
+		end)
+
+		it("blocks a spammy post submission", function()
+			local status = POST("/submit", { title = "WINNER", body = SPAM, subreddit = "programming" }, "demo")
+			assert.same(200, status) -- re-rendered with an error, not a 302 redirect
+			assert.is_nil(Posts:find({ title = "WINNER" }))
+		end)
+
+		it("allows a non-spam post submission", function()
+			local status = POST("/submit", { title = "Lua CTE question", body = HAM, subreddit = "programming" }, "demo")
+			assert.same(302, status)
+			assert.is_not_nil(Posts:find({ title = "Lua CTE question" }))
+		end)
+
+		it("drops a spammy comment", function()
+			POST("/post/1/comment", { body = SPAM }, "demo")
+			assert.is_nil(Comments:find({ body = SPAM }))
+		end)
+	end)
+
 	describe("subreddit creation", function()
 		it("creates a subreddit", function()
 			local status = POST("/subreddit/create", { name = "newcommunity", description = "x" }, "demo")

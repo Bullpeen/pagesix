@@ -4,6 +4,7 @@
 local Posts = require("src.models.posts")
 local Forum = require("src.models.forum")
 local Users = require("models.users")
+local Spam = require("src.utils.spam")
 
 return {
     before = function(self) end,
@@ -38,6 +39,13 @@ return {
             return { render = "submit" }
         end
         local is_self = (url == nil or url == "") and body ~= nil and body ~= ""
+
+        -- Bayesian spam check on the prose (title + self-post body; the URL is
+        -- not tokenized as text). Fails open if untrained / too short.
+        if Spam.is_spam((self.params.title or "") .. " " .. (body or "")) then
+            self.errors = { "Your post looks like spam and was not submitted." }
+            return { render = "submit" }
+        end
 
         local post, err = Posts:create({
             user_id = user.id,
