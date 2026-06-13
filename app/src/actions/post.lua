@@ -63,6 +63,7 @@ return {
         else
             self.title = post_data["title"]
             self.url = post_data["url"]
+            self.thumbnail = post_data["thumbnail"]
             if tonumber(post_data["is_self"]) == 1 then
                 self.is_self = true
                 self.body_html = require("src.utils.markdown")(post_data["body"])
@@ -70,6 +71,19 @@ return {
             end
             local u = post_data:get_user()
             self.user_name = u["user_name"]
+
+            -- Crosspost attribution: link back to the source post/subreddit.
+            if post_data["crosspost_parent_id"] then
+                local src = Posts:find(tonumber(post_data["crosspost_parent_id"]))
+                if src then
+                    local src_sub = src.sub_id and Forum:find(src.sub_id)
+                    self.crosspost_from = {
+                        subreddit = src_sub and src_sub.name,
+                        permalink = "/r/" .. (src_sub and src_sub.name or "all")
+                            .. "/comments/" .. src.id,
+                    }
+                end
+            end
         end
     end,
 

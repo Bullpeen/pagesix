@@ -12,11 +12,11 @@
                     <button class="arrow down" type="submit" aria-label="downvote"></button>
                 </form>
             </div>
-            <% --[[
-            <a class="thumbnail invisible-when-pinned may-blank loggedin " href="URL">
-                <img src="THUMBNAIL" alt width="70" height="39">
+            <% if post.thumbnail then %>
+            <a class="thumbnail may-blank" href="<%= post.url %>">
+                <img src="<%= post.thumbnail %>" alt="<%= post.title %>" width="70" height="70" loading="lazy">
             </a>
-            ]] %>
+            <% end %>
             <div class="entry unvoted">
                 <div class="top-matter">
                     <p class="title">

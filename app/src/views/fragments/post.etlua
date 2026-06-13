@@ -6,6 +6,18 @@
     <% end %>
 </h1>
 
+<% if crosspost_from then %>
+    <p class="crosspost-tagline">crossposted from
+        <a href="<%= crosspost_from.permalink %>">/r/<%= crosspost_from.subreddit %></a>
+    </p>
+<% end %>
+
+<% if thumbnail then %>
+    <a class="thumbnail image-preview" href="<%= url %>">
+        <img src="<%= thumbnail %>" alt="<%= title %>" loading="lazy">
+    </a>
+<% end %>
+
 <% if is_self and body_html then %>
     <div class="usertext-body md self-text">
         <%- body_html %>
@@ -18,6 +30,13 @@
     <% if removed then %><span class="removed">[removed by a moderator]</span><% end %>
     <a href="/r/<%= subreddit %>/comments/<%= post_id %>" alt="permalink">Permalink</a>
 </p>
+
+<% if current_user and not deleted then %>
+    <form class="crosspost-form" method="POST" action="/post/<%= post_id %>/crosspost">
+        <input name="subreddit" placeholder="subreddit" required="required" autocapitalize="none">
+        <button class="button" type="submit">crosspost</button>
+    </form>
+<% end %>
 
 <% if can_moderate then %>
     <form class="mod-form" method="POST" action="/post/<%= post_id %>/remove">

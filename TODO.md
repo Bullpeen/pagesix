@@ -9,7 +9,7 @@ full-text search (FTS5); open a post; vote on posts & comments; submit
 link/self posts; post threaded comments/replies with Markdown; edit/delete own
 posts & comments; subscribe/unsubscribe; saved/hidden posts; user profiles +
 karma; reply notifications (`/inbox`); basic moderation (remove); RSS output
-feeds; bcrypt + CSRF auth. The Docker image boots and serves; **120-spec Busted
+feeds; bcrypt + CSRF auth. The Docker image boots and serves; **127-spec Busted
 suite + luacheck pass**.
 
 ## Next up
@@ -51,7 +51,11 @@ suite + luacheck pass**.
       pure-Lua tokenizer, built-in corpus trained in migration `[12]`, and a
       fail-open `is_spam` check on post + comment submission. (lapis-bayes is
       Postgres-shaped; we supply our own tokenizer + SQLite tables.)
-- Crossposts, image/video posts, post previews/thumbnails.
+- [x] Crossposts + image posts + thumbnails — `utils/media` detects image links
+      (-> `posts.thumbnail`, rendered on listings + post page); `POST
+      /post/:id/crosspost` re-shares into another sub via
+      `posts.crosspost_parent_id` with source attribution. (Video embeds still
+      out of scope.)
 - **API — deferred to a future phase.** `src/api.lua` is ~150 stub endpoints,
   disabled in `app.lua`. Intentionally on hold until the web browsing
   experience is locked in.
@@ -155,7 +159,7 @@ suite + luacheck pass**.
     `-- TODO rename` marker.
 
 ## Test & quality
-- **120 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
+- **127 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
   coverage, and **luacheck** (0 warnings / 0 errors).
 - CI per push: super-linter, **luacheck** (`luacheck app`), **busted +
   luacov**, and a Docker **build + `lapis migrate`** smoke test.

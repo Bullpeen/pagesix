@@ -151,8 +151,15 @@ return {
             { "over_18",    types.integer({ default = false }) },
             { "body",       types.text({ null = true }) },
 
+            -- Image link thumbnail (the image URL itself); null for non-image
+            -- posts. `crosspost_parent_id` points at the original post a
+            -- crosspost was made from.
+            { "thumbnail",  types.text({ null = true }) },
+            { "crosspost_parent_id", types.integer({ null = true }) },
+
             "FOREIGN KEY(sub_id) REFERENCES forum(id)",
             "FOREIGN KEY(user_id) REFERENCES users(id)",
+            "FOREIGN KEY(crosspost_parent_id) REFERENCES posts(id)",
         }, opts)
 
         -- create subreddit's table containing Comments by Users

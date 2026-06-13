@@ -317,6 +317,64 @@ describe("pagesix integration", function()
 		end)
 	end)
 
+	describe("image posts + thumbnails", function()
+		it("sets a thumbnail for an image link and renders a preview", function()
+			local status = POST("/submit",
+				{ title = "a cat pic", url = "https://i.example/cat.jpg", subreddit = "programming" }, "demo")
+			assert.same(302, status)
+			local p = Posts:find({ title = "a cat pic" })
+			assert.same("https://i.example/cat.jpg", p.thumbnail)
+
+			local s2, body = GET("/r/programming/comments/" .. p.id .. "/a_cat_pic")
+			assert.same(200, s2)
+			assert.truthy(body:find('src="https://i.example/cat.jpg"', 1, true))
+		end)
+
+		it("leaves no thumbnail for a non-image link", function()
+			POST("/submit",
+				{ title = "an article", url = "https://news.example/story", subreddit = "programming" }, "demo")
+			local p = Posts:find({ title = "an article" })
+			assert.is_nil(p.thumbnail)
+		end)
+	end)
+
+	describe("crossposts", function()
+		it("reposts into another subreddit with attribution back to the source", function()
+			local orig = Posts:create({
+				user_id = 1, sub_id = 1, title = "xpost me",
+				url = "https://x.example/img.png", thumbnail = "https://x.example/img.png",
+			})
+			local target = Forum:create({ name = "xpost_target", creator_id = 1 })
+
+			local status = POST("/post/" .. orig.id .. "/crosspost", { subreddit = "xpost_target" }, "demo")
+			assert.same(302, status)
+
+			local xp = Posts:find({ sub_id = target.id, crosspost_parent_id = orig.id })
+			assert.is_not_nil(xp)
+			assert.same("xpost me", xp.title)
+
+			local s2, body = GET("/r/xpost_target/comments/" .. xp.id .. "/xpost_me")
+			assert.same(200, s2)
+			assert.truthy(body:find("crossposted from", 1, true))
+			assert.truthy(body:find("/r/programming", 1, true)) -- source sub (sub_id 1)
+		end)
+
+		it("keeps crosspost chains one level deep", function()
+			local orig = Posts:create({ user_id = 1, sub_id = 1, title = "chain root", url = "https://x.example/y" })
+			local t1 = Forum:create({ name = "chain_a", creator_id = 1 })
+			local t2 = Forum:create({ name = "chain_b", creator_id = 1 })
+
+			POST("/post/" .. orig.id .. "/crosspost", { subreddit = "chain_a" }, "demo")
+			local xp1 = Posts:find({ sub_id = t1.id, crosspost_parent_id = orig.id })
+			assert.is_not_nil(xp1)
+
+			-- Crossposting the crosspost should still point at the original root.
+			POST("/post/" .. xp1.id .. "/crosspost", { subreddit = "chain_b" }, "demo")
+			local xp2 = Posts:find({ sub_id = t2.id })
+			assert.same(orig.id, tonumber(xp2.crosspost_parent_id))
+		end)
+	end)
+
 	describe("subreddit creation", function()
 		it("creates a subreddit", function()
 			local status = POST("/subreddit/create", { name = "newcommunity", description = "x" }, "demo")

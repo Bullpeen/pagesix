@@ -1,0 +1,26 @@
+-- Pure-Lua spec for the media (image/thumbnail) helpers. Runs in the fast loop.
+local media = require("src.utils.media")
+
+describe("media.is_image", function()
+	it("recognizes common image extensions (case-insensitive)", function()
+		assert.is_true(media.is_image("https://i.example/cat.jpg"))
+		assert.is_true(media.is_image("https://i.example/cat.PNG"))
+		assert.is_true(media.is_image("http://x/a/b/pic.webp"))
+		assert.is_true(media.is_image("https://i.example/dog.gif?width=200"))
+	end)
+
+	it("rejects non-image and malformed links", function()
+		assert.is_false(media.is_image("https://example.com/article"))
+		assert.is_false(media.is_image("https://example.com/file.pdf"))
+		assert.is_false(media.is_image(""))
+		assert.is_false(media.is_image(nil))
+	end)
+end)
+
+describe("media.thumbnail_for", function()
+	it("returns the url for an image link, nil otherwise", function()
+		assert.same("https://i.example/cat.jpg", media.thumbnail_for("https://i.example/cat.jpg"))
+		assert.is_nil(media.thumbnail_for("https://example.com/article"))
+		assert.is_nil(media.thumbnail_for(nil))
+	end)
+end)

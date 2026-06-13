@@ -5,6 +5,7 @@ local Posts = require("src.models.posts")
 local Forum = require("src.models.forum")
 local Users = require("models.users")
 local Spam = require("src.utils.spam")
+local media = require("src.utils.media")
 
 return {
     before = function(self) end,
@@ -47,13 +48,15 @@ return {
             return { render = "submit" }
         end
 
+        local link = (url ~= "") and url or nil
         local post, err = Posts:create({
             user_id = user.id,
             sub_id = sub.id,
             title = self.params.title,
-            url = (url ~= "") and url or nil,
+            url = link,
             body = (body ~= "") and body or nil,
             is_self = is_self and 1 or 0,
+            thumbnail = media.thumbnail_for(link),
         })
 
         if not post then

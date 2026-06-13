@@ -8,6 +8,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Crossposts, image posts & thumbnails
+- **Image thumbnails** — a new pure `utils/media` classifies a link as an image
+  by extension (jpg/png/gif/webp/svg/avif/…, query-string tolerant). `submit`
+  stores the image URL as `posts.thumbnail`; listings and the post page render
+  an `<img>` preview. (`posts.thumbnail` added to migration `[4]` and the
+  `get_listing`/`search` SELECTs.)
+- **Crossposts** — `POST /post/:id/crosspost` (form: subreddit) re-shares a post
+  into another subreddit, copying title/url/body/thumbnail and linking back via
+  the new `posts.crosspost_parent_id` (self-FK). The post page shows a
+  "crossposted from /r/…" tagline and a crosspost form for logged-in users.
+  Chains are kept one level deep (a crosspost-of-a-crosspost points at the root).
+- Pure-Lua specs for `media`; Docker integration specs for image thumbnails
+  (set + rendered, non-image → none) and crossposts (attribution + chain depth).
+
 ### Spam filtering (lapis-bayes)
 - **Wired up the previously-unused `lapis-bayes` dependency** as a Bayesian spam
   filter. New `utils/spam`: a pure tokenizer (lowercase alphabetic runs), a small
@@ -128,7 +142,7 @@ test-covered Reddit clone. Highlights, newest first:
   ("Username is reserved"). The table existed but was never checked.
 
 ### Quality / CI
-- **Test suite now at 120 specs** (model/SQL + full HTTP integration), all green,
+- **Test suite now at 127 specs** (model/SQL + full HTTP integration), all green,
   with luacov coverage and a clean luacheck (0/0).
 - **luacheck** added to the rockspec, Docker image, and CI (a `luacheck app`
   step gates the build), configured via `.luacheckrc` (luajit + `ngx` global;

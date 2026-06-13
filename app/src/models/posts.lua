@@ -91,7 +91,7 @@ function Posts:get_listing(filters)
 	filters = filters or {}
 
 	local query = [[
-		a.id, a.title, a.url, a.body, a.is_self, a.over_18, a.locked, a.sub_id,
+		a.id, a.title, a.url, a.body, a.is_self, a.over_18, a.locked, a.sub_id, a.thumbnail,
 			a.created_at AS age, a.created_at,
 			c.user_name AS author,
 			s.name AS subreddit,
@@ -148,7 +148,7 @@ function Posts:search(query)
 	local phrase = '"' .. tostring(query):gsub('"', '""') .. '"'
 
 	local rows = db.select([[
-		a.id, a.title, a.url, a.body, a.is_self, a.over_18, a.locked, a.sub_id,
+		a.id, a.title, a.url, a.body, a.is_self, a.over_18, a.locked, a.sub_id, a.thumbnail,
 			a.created_at AS age, a.created_at,
 			c.user_name AS author,
 			s.name AS subreddit,
