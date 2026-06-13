@@ -28,9 +28,15 @@ describe("pagesix integration", function()
 
 	setup(function()
 		require("spec.schema_helper")()
-		local u = Users:create({ user_name = "demo", user_pass = "password", user_email = "d@e.com" })
+		local u =
+			Users:create({ user_name = "demo", user_pass = "password", user_email = "d@e.com" })
 		local s = Forum:create({ name = "programming", creator_id = u.id, description = "Coding" })
-		local p = Posts:create({ user_id = u.id, sub_id = s.id, title = "Hello World", url = "https://example.com/x" })
+		local p = Posts:create({
+			user_id = u.id,
+			sub_id = s.id,
+			title = "Hello World",
+			url = "https://example.com/x",
+		})
 		Comments:create({ post_id = p.id, user_id = u.id, body = "first comment" })
 	end)
 
@@ -66,10 +72,25 @@ describe("pagesix integration", function()
 		end)
 
 		it("renders a single-comment permalink with its replies and ?context", function()
-			local p = Posts:create({ user_id = 1, sub_id = 1, title = "perma post", url = "https://perma.example" })
+			local p = Posts:create({
+				user_id = 1,
+				sub_id = 1,
+				title = "perma post",
+				url = "https://perma.example",
+			})
 			local root = Comments:create({ post_id = p.id, user_id = 1, body = "PERMA_ROOT" })
-			local child = Comments:create({ post_id = p.id, user_id = 1, body = "PERMA_CHILD", parent_comment_id = root.id })
-			Comments:create({ post_id = p.id, user_id = 1, body = "PERMA_REPLY", parent_comment_id = child.id })
+			local child = Comments:create({
+				post_id = p.id,
+				user_id = 1,
+				body = "PERMA_CHILD",
+				parent_comment_id = root.id,
+			})
+			Comments:create({
+				post_id = p.id,
+				user_id = 1,
+				body = "PERMA_REPLY",
+				parent_comment_id = child.id,
+			})
 			local base = "/r/programming/comments/" .. p.id .. "/_/" .. child.id
 
 			-- No context: the focused comment + its reply, but not the parent.
@@ -117,21 +138,31 @@ describe("pagesix integration", function()
 		end)
 
 		it("logs in with valid credentials and a CSRF token", function()
-			Users:create({ user_name = "authuser", user_pass = Password.hash("secret123"), user_email = "au@e.com" })
+			Users:create({
+				user_name = "authuser",
+				user_pass = Password.hash("secret123"),
+				user_email = "au@e.com",
+			})
 			local token, headers = csrf_for("/login")
 			assert.is_true(token ~= nil and #token > 0)
 			local status = simulate_request(app, "/login", {
-				method = "POST", prev = headers,
+				method = "POST",
+				prev = headers,
 				post = { username = "authuser", password = "secret123", csrf_token = token },
 			})
 			assert.same(302, status)
 		end)
 
 		it("rejects a wrong password (re-renders, no redirect)", function()
-			Users:create({ user_name = "authuser2", user_pass = Password.hash("secret123"), user_email = "au2@e.com" })
+			Users:create({
+				user_name = "authuser2",
+				user_pass = Password.hash("secret123"),
+				user_email = "au2@e.com",
+			})
 			local token, headers = csrf_for("/login")
 			local status, body = simulate_request(app, "/login", {
-				method = "POST", prev = headers,
+				method = "POST",
+				prev = headers,
 				post = { username = "authuser2", password = "WRONG", csrf_token = token },
 			})
 			assert.same(200, status)
@@ -139,7 +170,11 @@ describe("pagesix integration", function()
 		end)
 
 		it("rejects a login POST without a CSRF token", function()
-			Users:create({ user_name = "authuser3", user_pass = Password.hash("secret123"), user_email = "au3@e.com" })
+			Users:create({
+				user_name = "authuser3",
+				user_pass = Password.hash("secret123"),
+				user_email = "au3@e.com",
+			})
 			local status, body = simulate_request(app, "/login", {
 				method = "POST",
 				post = { username = "authuser3", password = "secret123" },
@@ -151,8 +186,15 @@ describe("pagesix integration", function()
 		it("registers a new user with a hashed password", function()
 			local token, headers = csrf_for("/register")
 			local status = simulate_request(app, "/register", {
-				method = "POST", prev = headers,
-				post = { name = "newbie", passwd = "secret123", passwd2 = "secret123", email = "n@e.com", csrf_token = token },
+				method = "POST",
+				prev = headers,
+				post = {
+					name = "newbie",
+					passwd = "secret123",
+					passwd2 = "secret123",
+					email = "n@e.com",
+					csrf_token = token,
+				},
 			})
 			assert.same(302, status)
 			local u = Users:find({ user_name = "newbie" })
@@ -196,7 +238,8 @@ describe("pagesix integration", function()
 		end)
 
 		it("threads a reply under its parent", function()
-			local status = POST("/post/1/comment", { body = "a reply", parent_comment_id = "1" }, "demo")
+			local status =
+				POST("/post/1/comment", { body = "a reply", parent_comment_id = "1" }, "demo")
 			assert.same(302, status)
 			local replies = Comments:select("where parent_comment_id = 1")
 			assert.truthy(#replies >= 1)
@@ -230,7 +273,13 @@ describe("pagesix integration", function()
 
 	describe("editing & deleting posts", function()
 		it("lets the author edit a self post", function()
-			local p = Posts:create({ user_id = 1, sub_id = 1, title = "editable", body = "orig", is_self = 1 })
+			local p = Posts:create({
+				user_id = 1,
+				sub_id = 1,
+				title = "editable",
+				body = "orig",
+				is_self = 1,
+			})
 			local status = POST("/post/" .. p.id .. "/edit", { body = "new body" }, "demo")
 			assert.same(302, status)
 			local up = Posts:find(p.id)
@@ -239,19 +288,31 @@ describe("pagesix integration", function()
 		end)
 
 		it("soft-deletes the author's post and drops it from listings", function()
-			local p = Posts:create({ user_id = 1, sub_id = 1, title = "deleteme", url = "https://d.example" })
+			local p = Posts:create({
+				user_id = 1,
+				sub_id = 1,
+				title = "deleteme",
+				url = "https://d.example",
+			})
 			POST("/post/" .. p.id .. "/delete", {}, "demo")
 			assert.same(1, tonumber(Posts:find(p.id).deleted))
 			local found = false
 			for _, row in ipairs(Posts:get_listing(1)) do
-				if row.id == p.id then found = true end
+				if row.id == p.id then
+					found = true
+				end
 			end
 			assert.is_false(found)
 		end)
 
 		it("won't let a non-author delete", function()
-			Users:create({ user_name = "post_intruder", user_pass = "password", user_email = "pi@e.com" })
-			local p = Posts:create({ user_id = 1, sub_id = 1, title = "safe", url = "https://s.example" })
+			Users:create({
+				user_name = "post_intruder",
+				user_pass = "password",
+				user_email = "pi@e.com",
+			})
+			local p =
+				Posts:create({ user_id = 1, sub_id = 1, title = "safe", url = "https://s.example" })
 			POST("/post/" .. p.id .. "/delete", {}, "post_intruder")
 			assert.same(0, tonumber(Posts:find(p.id).deleted))
 		end)
@@ -259,8 +320,11 @@ describe("pagesix integration", function()
 
 	describe("submitting posts", function()
 		it("creates a self/text post and renders its Markdown body", function()
-			local status, _, headers = POST("/submit",
-				{ title = "My text post", body = "hello **world**", subreddit = "programming" }, "demo")
+			local status, _, headers = POST(
+				"/submit",
+				{ title = "My text post", body = "hello **world**", subreddit = "programming" },
+				"demo"
+			)
 			assert.same(302, status)
 
 			local p = Posts:find({ title = "My text post" })
@@ -274,8 +338,11 @@ describe("pagesix integration", function()
 		end)
 
 		it("creates a link post", function()
-			local status = POST("/submit",
-				{ title = "A link post", url = "https://link.example", subreddit = "programming" }, "demo")
+			local status = POST(
+				"/submit",
+				{ title = "A link post", url = "https://link.example", subreddit = "programming" },
+				"demo"
+			)
 			assert.same(302, status)
 			local p = Posts:find({ title = "A link post" })
 			assert.is_not_nil(p)
@@ -300,13 +367,21 @@ describe("pagesix integration", function()
 		end)
 
 		it("blocks a spammy post submission", function()
-			local status = POST("/submit", { title = "WINNER", body = SPAM, subreddit = "programming" }, "demo")
+			local status = POST(
+				"/submit",
+				{ title = "WINNER", body = SPAM, subreddit = "programming" },
+				"demo"
+			)
 			assert.same(200, status) -- re-rendered with an error, not a 302 redirect
 			assert.is_nil(Posts:find({ title = "WINNER" }))
 		end)
 
 		it("allows a non-spam post submission", function()
-			local status = POST("/submit", { title = "Lua CTE question", body = HAM, subreddit = "programming" }, "demo")
+			local status = POST(
+				"/submit",
+				{ title = "Lua CTE question", body = HAM, subreddit = "programming" },
+				"demo"
+			)
 			assert.same(302, status)
 			assert.is_not_nil(Posts:find({ title = "Lua CTE question" }))
 		end)
@@ -319,8 +394,11 @@ describe("pagesix integration", function()
 
 	describe("image posts + thumbnails", function()
 		it("sets a thumbnail for an image link and renders a preview", function()
-			local status = POST("/submit",
-				{ title = "a cat pic", url = "https://i.example/cat.jpg", subreddit = "programming" }, "demo")
+			local status = POST("/submit", {
+				title = "a cat pic",
+				url = "https://i.example/cat.jpg",
+				subreddit = "programming",
+			}, "demo")
 			assert.same(302, status)
 			local p = Posts:find({ title = "a cat pic" })
 			assert.same("https://i.example/cat.jpg", p.thumbnail)
@@ -331,8 +409,11 @@ describe("pagesix integration", function()
 		end)
 
 		it("leaves no thumbnail for a non-image link", function()
-			POST("/submit",
-				{ title = "an article", url = "https://news.example/story", subreddit = "programming" }, "demo")
+			POST("/submit", {
+				title = "an article",
+				url = "https://news.example/story",
+				subreddit = "programming",
+			}, "demo")
 			local p = Posts:find({ title = "an article" })
 			assert.is_nil(p.thumbnail)
 		end)
@@ -341,12 +422,16 @@ describe("pagesix integration", function()
 	describe("crossposts", function()
 		it("reposts into another subreddit with attribution back to the source", function()
 			local orig = Posts:create({
-				user_id = 1, sub_id = 1, title = "xpost me",
-				url = "https://x.example/img.png", thumbnail = "https://x.example/img.png",
+				user_id = 1,
+				sub_id = 1,
+				title = "xpost me",
+				url = "https://x.example/img.png",
+				thumbnail = "https://x.example/img.png",
 			})
 			local target = Forum:create({ name = "xpost_target", creator_id = 1 })
 
-			local status = POST("/post/" .. orig.id .. "/crosspost", { subreddit = "xpost_target" }, "demo")
+			local status =
+				POST("/post/" .. orig.id .. "/crosspost", { subreddit = "xpost_target" }, "demo")
 			assert.same(302, status)
 
 			local xp = Posts:find({ sub_id = target.id, crosspost_parent_id = orig.id })
@@ -360,7 +445,12 @@ describe("pagesix integration", function()
 		end)
 
 		it("keeps crosspost chains one level deep", function()
-			local orig = Posts:create({ user_id = 1, sub_id = 1, title = "chain root", url = "https://x.example/y" })
+			local orig = Posts:create({
+				user_id = 1,
+				sub_id = 1,
+				title = "chain root",
+				url = "https://x.example/y",
+			})
 			local t1 = Forum:create({ name = "chain_a", creator_id = 1 })
 			local t2 = Forum:create({ name = "chain_b", creator_id = 1 })
 
@@ -377,7 +467,8 @@ describe("pagesix integration", function()
 
 	describe("subreddit creation", function()
 		it("creates a subreddit", function()
-			local status = POST("/subreddit/create", { name = "newcommunity", description = "x" }, "demo")
+			local status =
+				POST("/subreddit/create", { name = "newcommunity", description = "x" }, "demo")
 			assert.same(302, status)
 			assert.is_not_nil(Forum:find({ name = "newcommunity" }))
 		end)
@@ -399,9 +490,18 @@ describe("pagesix integration", function()
 		end)
 
 		it("serves a subreddit feed and XML-escapes content", function()
-			local u = Users:create({ user_name = "rss_user", user_pass = "password", user_email = "rss@e.com" })
+			local u = Users:create({
+				user_name = "rss_user",
+				user_pass = "password",
+				user_email = "rss@e.com",
+			})
 			local f = Forum:create({ name = "rsssub", creator_id = u.id })
-			Posts:create({ user_id = u.id, sub_id = f.id, title = "A & B <tag>", url = "https://ab.example" })
+			Posts:create({
+				user_id = u.id,
+				sub_id = f.id,
+				title = "A & B <tag>",
+				url = "https://ab.example",
+			})
 
 			local status, body = simulate_request(app, "/r/rsssub/.rss", { method = "GET" })
 			assert.same(200, status)
@@ -446,10 +546,23 @@ describe("pagesix integration", function()
 		local Notifications = require("models.notifications")
 
 		it("notifies the post author when someone comments", function()
-			local op = Users:create({ user_name = "notif_op", user_pass = "password", user_email = "no@e.com" })
-			Users:create({ user_name = "notif_replier", user_pass = "password", user_email = "nr@e.com" })
+			local op = Users:create({
+				user_name = "notif_op",
+				user_pass = "password",
+				user_email = "no@e.com",
+			})
+			Users:create({
+				user_name = "notif_replier",
+				user_pass = "password",
+				user_email = "nr@e.com",
+			})
 			local f = Forum:create({ name = "notifsub", creator_id = op.id })
-			local p = Posts:create({ user_id = op.id, sub_id = f.id, title = "notif post", url = "https://n.example" })
+			local p = Posts:create({
+				user_id = op.id,
+				sub_id = f.id,
+				title = "notif post",
+				url = "https://n.example",
+			})
 
 			assert.same(0, Notifications:unread_count(op.id))
 			POST("/post/" .. p.id .. "/comment", { body = "nice post" }, "notif_replier")
@@ -461,35 +574,74 @@ describe("pagesix integration", function()
 		end)
 
 		it("notifies the parent comment's author on a reply", function()
-			local a = Users:create({ user_name = "notif_a", user_pass = "password", user_email = "na@e.com" })
+			local a = Users:create({
+				user_name = "notif_a",
+				user_pass = "password",
+				user_email = "na@e.com",
+			})
 			Users:create({ user_name = "notif_b", user_pass = "password", user_email = "nb@e.com" })
 			local f = Forum:create({ name = "notifsub2", creator_id = a.id })
-			local p = Posts:create({ user_id = a.id, sub_id = f.id, title = "np2", url = "https://n2.example" })
+			local p = Posts:create({
+				user_id = a.id,
+				sub_id = f.id,
+				title = "np2",
+				url = "https://n2.example",
+			})
 			local c = Comments:create({ post_id = p.id, user_id = a.id, body = "parent" })
 
-			POST("/post/" .. p.id .. "/comment", { body = "a reply", parent_comment_id = tostring(c.id) }, "notif_b")
+			POST(
+				"/post/" .. p.id .. "/comment",
+				{ body = "a reply", parent_comment_id = tostring(c.id) },
+				"notif_b"
+			)
 			assert.same(1, Notifications:unread_count(a.id))
 			assert.same("comment_reply", Notifications:for_user(a.id)[1].kind)
 		end)
 
 		it("does not notify on a self-reply", function()
-			local u = Users:create({ user_name = "notif_self", user_pass = "password", user_email = "ns@e.com" })
+			local u = Users:create({
+				user_name = "notif_self",
+				user_pass = "password",
+				user_email = "ns@e.com",
+			})
 			local f = Forum:create({ name = "notifsub3", creator_id = u.id })
-			local p = Posts:create({ user_id = u.id, sub_id = f.id, title = "np3", url = "https://n3.example" })
+			local p = Posts:create({
+				user_id = u.id,
+				sub_id = f.id,
+				title = "np3",
+				url = "https://n3.example",
+			})
 
 			POST("/post/" .. p.id .. "/comment", { body = "my own comment" }, "notif_self")
 			assert.same(0, Notifications:unread_count(u.id))
 		end)
 
 		it("marks the inbox read when viewed", function()
-			local op = Users:create({ user_name = "notif_read", user_pass = "password", user_email = "nrd@e.com" })
-			Users:create({ user_name = "notif_reader2", user_pass = "password", user_email = "nr2@e.com" })
+			local op = Users:create({
+				user_name = "notif_read",
+				user_pass = "password",
+				user_email = "nrd@e.com",
+			})
+			Users:create({
+				user_name = "notif_reader2",
+				user_pass = "password",
+				user_email = "nr2@e.com",
+			})
 			local f = Forum:create({ name = "notifsub4", creator_id = op.id })
-			local p = Posts:create({ user_id = op.id, sub_id = f.id, title = "np4", url = "https://n4.example" })
+			local p = Posts:create({
+				user_id = op.id,
+				sub_id = f.id,
+				title = "np4",
+				url = "https://n4.example",
+			})
 			POST("/post/" .. p.id .. "/comment", { body = "hi there" }, "notif_reader2")
 			assert.same(1, Notifications:unread_count(op.id))
 
-			local s, body = simulate_request(app, "/inbox", { method = "GET", session = { current_user = "notif_read" } })
+			local s, body = simulate_request(
+				app,
+				"/inbox",
+				{ method = "GET", session = { current_user = "notif_read" } }
+			)
 			assert.same(200, s)
 			assert.truthy(body:find("hi there", 1, true))
 			assert.same(0, Notifications:unread_count(op.id))
@@ -500,9 +652,21 @@ describe("pagesix integration", function()
 		local Modlog = require("src.models.modlog")
 
 		it("recognizes the creator and moderators (join table)", function()
-			local creator = Users:create({ user_name = "mod_creator", user_pass = "password", user_email = "mc@e.com" })
-			local modu = Users:create({ user_name = "mod_user", user_pass = "password", user_email = "mu@e.com" })
-			local other = Users:create({ user_name = "mod_other", user_pass = "password", user_email = "mo@e.com" })
+			local creator = Users:create({
+				user_name = "mod_creator",
+				user_pass = "password",
+				user_email = "mc@e.com",
+			})
+			local modu = Users:create({
+				user_name = "mod_user",
+				user_pass = "password",
+				user_email = "mu@e.com",
+			})
+			local other = Users:create({
+				user_name = "mod_other",
+				user_pass = "password",
+				user_email = "mo@e.com",
+			})
 			local f = Forum:create({ name = "modsub", creator_id = creator.id })
 			Forum:add_moderator(f.id, modu.id)
 
@@ -521,9 +685,18 @@ describe("pagesix integration", function()
 		end)
 
 		it("lets a moderator remove a post (logged), hiding it from listings", function()
-			local creator = Users:create({ user_name = "mod_creator2", user_pass = "password", user_email = "mc2@e.com" })
+			local creator = Users:create({
+				user_name = "mod_creator2",
+				user_pass = "password",
+				user_email = "mc2@e.com",
+			})
 			local f = Forum:create({ name = "modsub2", creator_id = creator.id })
-			local p = Posts:create({ user_id = creator.id, sub_id = f.id, title = "bad post", url = "https://b.example" })
+			local p = Posts:create({
+				user_id = creator.id,
+				sub_id = f.id,
+				title = "bad post",
+				url = "https://b.example",
+			})
 
 			assert.same(302, (POST("/post/" .. p.id .. "/remove", {}, "mod_creator2")))
 			assert.same(1, tonumber(Posts:find(p.id).locked))
@@ -533,9 +706,18 @@ describe("pagesix integration", function()
 
 		it("won't let a non-moderator remove", function()
 			Users:create({ user_name = "not_mod", user_pass = "password", user_email = "nm@e.com" })
-			local creator = Users:create({ user_name = "mod_creator3", user_pass = "password", user_email = "mc3@e.com" })
+			local creator = Users:create({
+				user_name = "mod_creator3",
+				user_pass = "password",
+				user_email = "mc3@e.com",
+			})
 			local f = Forum:create({ name = "modsub3", creator_id = creator.id })
-			local p = Posts:create({ user_id = creator.id, sub_id = f.id, title = "ok post", url = "https://o.example" })
+			local p = Posts:create({
+				user_id = creator.id,
+				sub_id = f.id,
+				title = "ok post",
+				url = "https://o.example",
+			})
 
 			POST("/post/" .. p.id .. "/remove", {}, "not_mod")
 			assert.same(0, tonumber(Posts:find(p.id).locked))
@@ -547,11 +729,20 @@ describe("pagesix integration", function()
 		local HiddenPosts = require("models.hidden_posts")
 
 		it("saves/unsaves a post and lists it on /saved", function()
-			local p = Posts:create({ user_id = 1, sub_id = 1, title = "save me please", url = "https://sv.example" })
+			local p = Posts:create({
+				user_id = 1,
+				sub_id = 1,
+				title = "save me please",
+				url = "https://sv.example",
+			})
 			assert.same(302, (POST("/post/" .. p.id .. "/save", {}, "demo")))
 			assert.is_true(SavedPosts:is_saved(1, p.id))
 
-			local s, body = simulate_request(app, "/saved", { method = "GET", session = { current_user = "demo" } })
+			local s, body = simulate_request(
+				app,
+				"/saved",
+				{ method = "GET", session = { current_user = "demo" } }
+			)
 			assert.same(200, s)
 			assert.truthy(body:find("save me please", 1, true))
 
@@ -560,16 +751,25 @@ describe("pagesix integration", function()
 		end)
 
 		it("hides a post so it drops from a user's listing", function()
-			local p = Posts:create({ user_id = 1, sub_id = 1, title = "hide me", url = "https://hd.example" })
+			local p = Posts:create({
+				user_id = 1,
+				sub_id = 1,
+				title = "hide me",
+				url = "https://hd.example",
+			})
 			POST("/post/" .. p.id .. "/hide", {}, "demo")
 			assert.is_true(HiddenPosts:is_hidden(1, p.id))
 
 			local hidden_filtered = {}
-			for _, r in ipairs(Posts:get_listing({ exclude_hidden_for = 1 })) do hidden_filtered[r.id] = true end
+			for _, r in ipairs(Posts:get_listing({ exclude_hidden_for = 1 })) do
+				hidden_filtered[r.id] = true
+			end
 			assert.is_nil(hidden_filtered[p.id])
 
 			local unfiltered = {}
-			for _, r in ipairs(Posts:get_listing({})) do unfiltered[r.id] = true end
+			for _, r in ipairs(Posts:get_listing({})) do
+				unfiltered[r.id] = true
+			end
 			assert.is_true(unfiltered[p.id])
 		end)
 	end)
@@ -589,9 +789,19 @@ describe("pagesix integration", function()
 		end)
 
 		it("filters a listing to a time window", function()
-			local old = Posts:create({ user_id = 1, sub_id = 1, title = "ancient", url = "https://o.example" })
+			local old = Posts:create({
+				user_id = 1,
+				sub_id = 1,
+				title = "ancient",
+				url = "https://o.example",
+			})
 			old:update({ created_at = "2000-01-01 00:00:00" })
-			local recent = Posts:create({ user_id = 1, sub_id = 1, title = "fresh window", url = "https://f.example" })
+			local recent = Posts:create({
+				user_id = 1,
+				sub_id = 1,
+				title = "fresh window",
+				url = "https://f.example",
+			})
 
 			local since = require("src.utils.timewindow")("day")
 			local ids = {}
@@ -603,7 +813,11 @@ describe("pagesix integration", function()
 		end)
 
 		it("renders /r/:sub/top?t=week", function()
-			local s = simulate_request(app, "/r/programming/top", { method = "GET", get = { t = "week" } })
+			local s = simulate_request(
+				app,
+				"/r/programming/top",
+				{ method = "GET", get = { t = "week" } }
+			)
 			assert.same(200, s)
 		end)
 	end)
@@ -613,7 +827,12 @@ describe("pagesix integration", function()
 		-- drive it through real requests.
 		it("paginates the frontpage over HTTP", function()
 			for i = 1, 30 do
-				Posts:create({ user_id = 1, sub_id = 1, title = "page post " .. i, url = "https://p" .. i .. ".example" })
+				Posts:create({
+					user_id = 1,
+					sub_id = 1,
+					title = "page post " .. i,
+					url = "https://p" .. i .. ".example",
+				})
 			end
 			local function PAGE(n)
 				return simulate_request(app, "/", { method = "GET", get = { page = tostring(n) } })
@@ -630,18 +849,25 @@ describe("pagesix integration", function()
 
 		it("paginates a post's comment thread by root over HTTP", function()
 			local post = Posts:create({
-				user_id = 1, sub_id = 1, title = "thread paging", url = "https://thread.example",
+				user_id = 1,
+				sub_id = 1,
+				title = "thread paging",
+				url = "https://thread.example",
 			})
 			-- 27 root comments -> 25 on page 1, 2 on page 2 (COMMENTS_PER_PAGE=25).
 			for i = 1, 27 do
 				Comments:create({
-					post_id = post.id, user_id = 1,
+					post_id = post.id,
+					user_id = 1,
 					body = string.format("rootcomment_%03d", i),
 				})
 			end
 			local function PAGE(n)
-				return simulate_request(app, "/r/programming/comments/" .. post.id .. "/_",
-					{ method = "GET", get = { page = tostring(n) } })
+				return simulate_request(
+					app,
+					"/r/programming/comments/" .. post.id .. "/_",
+					{ method = "GET", get = { page = tostring(n) } }
+				)
 			end
 
 			local s1, b1 = PAGE(1)
@@ -658,12 +884,25 @@ describe("pagesix integration", function()
 		end)
 
 		it("paginates a user's profile over HTTP", function()
-			local u = Users:create({ user_name = "prolific", user_pass = "password", user_email = "p@e.com" })
+			local u = Users:create({
+				user_name = "prolific",
+				user_pass = "password",
+				user_email = "p@e.com",
+			})
 			for i = 1, 27 do
-				Posts:create({ user_id = u.id, sub_id = 1, title = "prof post " .. i, url = "https://pp" .. i .. ".example" })
+				Posts:create({
+					user_id = u.id,
+					sub_id = 1,
+					title = "prof post " .. i,
+					url = "https://pp" .. i .. ".example",
+				})
 			end
 			local function PAGE(n)
-				return simulate_request(app, "/user/prolific", { method = "GET", get = { page = tostring(n) } })
+				return simulate_request(
+					app,
+					"/user/prolific",
+					{ method = "GET", get = { page = tostring(n) } }
+				)
 			end
 
 			local s1, b1 = PAGE(1)
@@ -680,10 +919,27 @@ describe("pagesix integration", function()
 
 	describe("karma", function()
 		it("sums votes on a user's posts and comments", function()
-			local author = Users:create({ user_name = "karma_author", user_pass = "password", user_email = "k@e.com" })
-			local v1 = Users:create({ user_name = "karma_v1", user_pass = "password", user_email = "k1@e.com" })
-			local v2 = Users:create({ user_name = "karma_v2", user_pass = "password", user_email = "k2@e.com" })
-			local p = Posts:create({ user_id = author.id, sub_id = 1, title = "karma post", url = "https://k.example" })
+			local author = Users:create({
+				user_name = "karma_author",
+				user_pass = "password",
+				user_email = "k@e.com",
+			})
+			local v1 = Users:create({
+				user_name = "karma_v1",
+				user_pass = "password",
+				user_email = "k1@e.com",
+			})
+			local v2 = Users:create({
+				user_name = "karma_v2",
+				user_pass = "password",
+				user_email = "k2@e.com",
+			})
+			local p = Posts:create({
+				user_id = author.id,
+				sub_id = 1,
+				title = "karma post",
+				url = "https://k.example",
+			})
 			Votes:cast(v1.id, p.id, nil, 1) -- +1
 			Votes:cast(v2.id, p.id, nil, 0) -- -1
 			Votes:cast(author.id, p.id, nil, 1) -- +1  => post net +1
@@ -700,8 +956,19 @@ describe("pagesix integration", function()
 		end
 
 		it("finds posts by title and body, ranked, excluding non-matches", function()
-			Posts:create({ user_id = 1, sub_id = 1, title = "Unique Zebra Headline", url = "https://z.example" })
-			Posts:create({ user_id = 1, sub_id = 1, title = "plain title", body = "contains quokka here", is_self = 1 })
+			Posts:create({
+				user_id = 1,
+				sub_id = 1,
+				title = "Unique Zebra Headline",
+				url = "https://z.example",
+			})
+			Posts:create({
+				user_id = 1,
+				sub_id = 1,
+				title = "plain title",
+				body = "contains quokka here",
+				is_self = 1,
+			})
 
 			local s1, body = SEARCH("Zebra")
 			assert.same(200, s1)
@@ -715,7 +982,12 @@ describe("pagesix integration", function()
 		end)
 
 		it("excludes deleted posts from search", function()
-			local p = Posts:create({ user_id = 1, sub_id = 1, title = "Searchable Platypus", url = "https://p.example" })
+			local p = Posts:create({
+				user_id = 1,
+				sub_id = 1,
+				title = "Searchable Platypus",
+				url = "https://p.example",
+			})
 			assert.same(1, #Posts:search("Platypus"))
 			p:update({ deleted = 1 })
 			assert.same(0, #Posts:search("Platypus"))
@@ -733,14 +1005,17 @@ describe("pagesix integration", function()
 		it("lists subscriptions on /subscribed and in the header nav", function()
 			POST("/subscribe/programming", {}, "demo")
 
-			local s1, sub_body = simulate_request(app, "/subscribed",
-				{ method = "GET", session = { current_user = "demo" } })
+			local s1, sub_body = simulate_request(
+				app,
+				"/subscribed",
+				{ method = "GET", session = { current_user = "demo" } }
+			)
 			assert.same(200, s1)
 			assert.truthy(sub_body:find("/r/programming", 1, true))
 
 			-- the layout header shows "my subs" on any page when signed in
-			local _, home = simulate_request(app, "/",
-				{ method = "GET", session = { current_user = "demo" } })
+			local _, home =
+				simulate_request(app, "/", { method = "GET", session = { current_user = "demo" } })
 			assert.truthy(home:find("/r/programming", 1, true))
 
 			POST("/subscribe/programming", {}, "demo") -- cleanup

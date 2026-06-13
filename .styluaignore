@@ -1,0 +1,6 @@
+# Vendored / generated — not ours to format.
+libs/
+static/
+tmp/
+logs/
+*.compiled

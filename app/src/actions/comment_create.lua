@@ -53,7 +53,11 @@ return {
 				-- (top-level comment), unless you're replying to yourself.
 				local recipient = parent and parent.user_id or post.user_id
 				if tonumber(recipient) ~= tonumber(user.id) then
-					Notifications:notify(recipient, comment.id, parent_id and "comment_reply" or "post_reply")
+					Notifications:notify(
+						recipient,
+						comment.id,
+						parent_id and "comment_reply" or "post_reply"
+					)
 				end
 			end
 		end

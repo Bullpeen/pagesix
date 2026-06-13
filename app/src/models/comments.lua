@@ -171,18 +171,24 @@ end
 -- @treturn table array of comment rows (empty if the comment is unknown)
 function Comments:permalink_thread(comment_id, context)
 	comment_id = tonumber(comment_id)
-	if not comment_id then return {} end
+	if not comment_id then
+		return {}
+	end
 	context = math.max(0, math.floor(tonumber(context) or 0))
 
 	local focused = self:find(comment_id)
-	if not focused then return {} end
+	if not focused then
+		return {}
+	end
 
 	-- Walk up to `context` ancestors, collecting them topmost-first.
 	local ancestors = {}
 	local pid = focused.parent_comment_id
 	while pid and #ancestors < context do
 		local parent = fetch_one(pid)
-		if not parent then break end
+		if not parent then
+			break
+		end
 		table.insert(ancestors, 1, parent)
 		pid = parent.parent_comment_id
 	end

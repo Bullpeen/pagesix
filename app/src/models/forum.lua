@@ -24,9 +24,16 @@ local Forum = Model:extend("forum", {
 			-- A SET keyed by name (the previous array, indexed by string, never
 			-- matched, so reserved names slipped through).
 			local reserved = {
-				admin = true, all = true, controversial = true, mods = true,
-				new = true, pagesix = true, popular = true, random = true,
-				subscribed = true, unsubscribed = true,
+				admin = true,
+				all = true,
+				controversial = true,
+				mods = true,
+				new = true,
+				pagesix = true,
+				popular = true,
+				random = true,
+				subscribed = true,
+				unsubscribed = true,
 			}
 			if reserved[value] then
 				return "Subreddit name is reserved"
@@ -49,7 +56,6 @@ local Forum = Model:extend("forum", {
 		{ "posts", has_many = "Posts" },
 	},
 })
-
 
 --- Whether a user may moderate this subreddit: its creator, or a member of the
 -- moderators join table.

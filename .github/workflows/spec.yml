@@ -3,6 +3,17 @@ name: "spec"
 on: [push, pull_request]
 
 jobs:
+  # stylua formatting check (config in .stylua.toml, ignores in .styluaignore)
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: JohnnyMorganz/stylua-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          version: latest
+          args: --check app
+
   # this runs the tests in the docker image against live sqlite and openresty
   docker:
     runs-on: ubuntu-latest
@@ -54,3 +65,12 @@ jobs:
           luacov
           echo "===== coverage summary ====="
           awk '/^Summary/{f=1} f' luacov.report.out | tail -n 40
+
+      - name: coverage threshold
+        run: |
+          pct=$(awk '/^Total/{gsub("%","",$NF); print $NF}' luacov.report.out)
+          echo "Total coverage: ${pct}% (threshold ${COVERAGE_MIN}%)"
+          awk -v p="$pct" -v t="$COVERAGE_MIN" 'BEGIN { exit (p+0 < t+0) ? 1 : 0 }' \
+            || { echo "::error::coverage ${pct}% is below the ${COVERAGE_MIN}% threshold"; exit 1; }
+        env:
+          COVERAGE_MIN: "80"

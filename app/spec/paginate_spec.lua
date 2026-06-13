@@ -5,7 +5,9 @@ local paginate_thread = require("src.utils.paginate_thread")
 
 describe("paginate (flat list)", function()
 	local items = {}
-	for i = 1, 7 do items[i] = i end
+	for i = 1, 7 do
+		items[i] = i
+	end
 
 	it("slices a page and reports metadata", function()
 		local page, info = paginate(items, 2, 3)
@@ -49,7 +51,9 @@ describe("paginate_thread (by root comment)", function()
 
 	local function ids(t)
 		local out = {}
-		for i, r in ipairs(t) do out[i] = r.id end
+		for i, r in ipairs(t) do
+			out[i] = r.id
+		end
 		return out
 	end
 

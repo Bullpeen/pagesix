@@ -17,7 +17,9 @@ local app = lapis.Application()
 -- already set persistently in migration [1].
 local db_tuned = false
 local function tune_sqlite()
-	if db_tuned then return end
+	if db_tuned then
+		return
+	end
 	db_tuned = true
 	local db = require("lapis.db")
 	pcall(db.query, "PRAGMA foreign_keys = ON") -- enforce the FK constraints
@@ -80,7 +82,7 @@ app:match("homepage", "/(:sort)", r2(require("actions.index")))
 
 -- app:match("comments", "/comments", r2(require("actions.index")))
 app:match("domains", "/domain/:domain", r2(require("actions.domain")))
-app:match("subreddits_search", "/subreddits/search", r2(require "actions.subreddits"))
+app:match("subreddits_search", "/subreddits/search", r2(require("actions.subreddits")))
 -- An exact `/subreddits` route (like /login) takes precedence over the
 -- `/(:sort)` homepage catch-all; the optional-group form did not.
 app:match("subreddits", "/subreddits", r2(require("actions.subreddits")))
@@ -96,28 +98,22 @@ app:match("search", "/search", r2(require("actions.search")))
 app:match("r_random", "/r/random", r2(require("actions.r_random")))
 app:match("subreddit", "/r/:subreddit(/:sort)", r2(require("actions.r_subreddit")))
 
-app:match(
-	"post",
-	"/r/:subreddit/comments/:post_id[%d](/:title_stub)",
-	r2(require("actions.post"))
-)
+app:match("post", "/r/:subreddit/comments/:post_id[%d](/:title_stub)", r2(require("actions.post")))
 app:match(
 	"comment",
 	"/r/:subreddit/comments/:post_id[%d]/:title_stub/:comment_id[%d]",
 	r2(require("actions.comment"))
 )
 
-app:match(
-	"/test/:comment_id[%d]",
-	r2(require("actions.comment"))
-)
-
+app:match("/test/:comment_id[%d]", r2(require("actions.comment")))
 
 -- app:match("about", "/about", function(self) end) -- stub
 -- app:match("contact", "/contact", function(self) end) -- stub
 -- app:match("help", "/help", function(self) end) -- stub
 
-app:get("/admin", function(self) return "Go away" end)
+app:get("/admin", function(self)
+	return "Go away"
+end)
 app:match("/console", console.make()) -- only available in Development builds
 
 -- require("src.api")(app) -- API endpoints

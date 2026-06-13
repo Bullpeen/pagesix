@@ -161,8 +161,11 @@ suite + luacheck pass**.
 ## Test & quality
 - **127 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
   coverage, and **luacheck** (0 warnings / 0 errors).
-- CI per push: super-linter, **luacheck** (`luacheck app`), **busted +
-  luacov**, and a Docker **build + `lapis migrate`** smoke test.
+- CI per push: super-linter, **stylua** (`--check app`), **luacheck**
+  (`luacheck app`), **busted + luacov** (with an 80% coverage gate), and a
+  Docker **build + `lapis migrate`** smoke test.
 - [x] Model/SQL layer, HTTP integration for every feature, luacov + luacheck.
-- [ ] Optional: **stylua** formatting check (one-time reformat) and a coverage
-      threshold gate.
+- [x] **stylua** — one-time repo reformat (`.stylua.toml` tabs/100-col,
+      `.styluaignore` for vendored/generated), with a `stylua --check app` CI
+      job. **Coverage gate** — `.luacov` excludes the disabled `api.lua` stubs
+      (active-code coverage ~89%); CI fails under an 80% threshold.

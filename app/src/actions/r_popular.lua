@@ -10,10 +10,13 @@ return {
 		-- "popular" is the cross-subreddit frontpage (same data as /), so it
 		-- needs posts; previously it rendered the index template with no posts.
 		local since = require("src.utils.timewindow")(self.params.t)
-		local sorted = Sort:sort(Posts:get_listing({
-			since = since,
-			exclude_hidden_for = self.current_user and self.current_user.id,
-		}), sort)
+		local sorted = Sort:sort(
+			Posts:get_listing({
+				since = since,
+				exclude_hidden_for = self.current_user and self.current_user.id,
+			}),
+			sort
+		)
 		self.posts, self.pagination = require("src.utils.paginate")(sorted, self.params.page)
 	end,
 

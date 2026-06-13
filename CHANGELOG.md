@@ -148,8 +148,14 @@ test-covered Reddit clone. Highlights, newest first:
   step gates the build), configured via `.luacheckrc` (luajit + `ngx` global;
   busted std for specs). Fixed all findings — **0 warnings / 0 errors** across
   64 files (removed dead `require`s and unused locals).
-- CI now runs, per push: super-linter, **luacheck**, the **busted** suite with
-  **luacov coverage**, and a Docker **build + `lapis migrate`** smoke test.
+- CI now runs, per push: super-linter, **stylua --check**, **luacheck**, the
+  **busted** suite with **luacov coverage** (gated at 80%), and a Docker
+  **build + `lapis migrate`** smoke test.
+- **stylua** — a one-time repo-wide format (`.stylua.toml`: tabs, 100 columns;
+  `.styluaignore` for vendored/generated files) standardizes the previously
+  mixed tabs/4-space indentation, plus a `stylua --check app` CI job.
+- **Coverage gate** — `.luacov` now excludes the disabled `api.lua` stubs, so
+  the number reflects active code (~89%); CI fails if it drops below 80%.
 
 ### Performance (SQLite)
 - **Partial index** `posts(sub_id, created_at) WHERE deleted = 0 AND locked = 0`

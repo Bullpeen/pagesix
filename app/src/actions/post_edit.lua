@@ -14,8 +14,12 @@ return {
 		end
 
 		local post = Posts:find(tonumber(self.params.post_id))
-		if post and post.user_id == user.id and tonumber(post.is_self) == 1
-			and tonumber(post.deleted) ~= 1 then
+		if
+			post
+			and post.user_id == user.id
+			and tonumber(post.is_self) == 1
+			and tonumber(post.deleted) ~= 1
+		then
 			post:update({ body = self.params.body, edited = 1 })
 		end
 

@@ -32,11 +32,13 @@ local Posts = Model:extend("posts", {
 		stub = stub:gsub("^_+", "")
 		stub = stub:gsub("_+$", "")
 
-		return "post", {
-			subreddit = sub and sub.name or "all",
-			post_id = self.id,
-			title_stub = stub ~= "" and stub or nil,
-		}, ...
+		return "post",
+			{
+				subreddit = sub and sub.name or "all",
+				post_id = self.id,
+				title_stub = stub ~= "" and stub or nil,
+			},
+			...
 	end,
 
 	relations = {
@@ -113,12 +115,16 @@ function Posts:get_listing(filters)
 		query = query .. " AND a.created_at >= " .. db.escape_literal(filters.since)
 	end
 	if filters.exclude_hidden_for then
-		query = query .. " AND a.id NOT IN (SELECT post_id FROM hidden_posts WHERE user_id = "
-			.. tonumber(filters.exclude_hidden_for) .. ")"
+		query = query
+			.. " AND a.id NOT IN (SELECT post_id FROM hidden_posts WHERE user_id = "
+			.. tonumber(filters.exclude_hidden_for)
+			.. ")"
 	end
 	if filters.saved_for then
-		query = query .. " AND a.id IN (SELECT post_id FROM saved_posts WHERE user_id = "
-			.. tonumber(filters.saved_for) .. ")"
+		query = query
+			.. " AND a.id IN (SELECT post_id FROM saved_posts WHERE user_id = "
+			.. tonumber(filters.saved_for)
+			.. ")"
 	end
 	if filters.domain then
 		query = query .. " AND a.url LIKE " .. db.escape_literal("%" .. filters.domain .. "%")
@@ -147,7 +153,8 @@ function Posts:search(query)
 	-- MATCH syntax (double-quotes are escaped by doubling).
 	local phrase = '"' .. tostring(query):gsub('"', '""') .. '"'
 
-	local rows = db.select([[
+	local rows = db.select(
+		[[
 		a.id, a.title, a.url, a.body, a.is_self, a.over_18, a.locked, a.sub_id, a.thumbnail,
 			a.created_at AS age, a.created_at,
 			c.user_name AS author,
@@ -161,7 +168,9 @@ function Posts:search(query)
 		INNER JOIN forum s ON a.sub_id = s.id
 		WHERE posts_fts MATCH ? AND a.deleted = 0
 		ORDER BY rank
-		LIMIT 50]], phrase)
+		LIMIT 50]],
+		phrase
+	)
 
 	for _, post in ipairs(rows) do
 		post.permalink = "/r/" .. post.subreddit .. "/comments/" .. post.id

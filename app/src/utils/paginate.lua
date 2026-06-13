@@ -19,11 +19,12 @@ return function(items, page, per_page)
 		out[#out + 1] = items[i]
 	end
 
-	return out, {
-		page = page,
-		per_page = per_page,
-		total = total,
-		has_prev = page > 1,
-		has_next = page * per_page < total,
-	}
+	return out,
+		{
+			page = page,
+			per_page = per_page,
+			total = total,
+			has_prev = page > 1,
+			has_next = page * per_page < total,
+		}
 end

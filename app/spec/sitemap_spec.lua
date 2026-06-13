@@ -16,7 +16,10 @@ describe("sitemap builder", function()
 	end)
 
 	it("omits lastmod when absent or malformed", function()
-		local xml = sitemap({ { loc = "https://x.example/a" }, { loc = "https://x.example/b", lastmod = "n/a" } })
+		local xml = sitemap({
+			{ loc = "https://x.example/a" },
+			{ loc = "https://x.example/b", lastmod = "n/a" },
+		})
 		assert.is_nil(xml:find("<lastmod>", 1, true))
 	end)
 

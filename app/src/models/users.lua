@@ -36,7 +36,8 @@ local Users = Model:extend("users", {
 			end
 			-- Reserved usernames live in the reserved_usernames table (seeded in
 			-- migration [2]); block registration of any of them.
-			local taken = db.select("1 FROM reserved_usernames WHERE user_name = ? LIMIT 1", value:lower())
+			local taken =
+				db.select("1 FROM reserved_usernames WHERE user_name = ? LIMIT 1", value:lower())
 			if taken[1] then
 				return "Username is reserved"
 			end
@@ -48,10 +49,16 @@ local Users = Model:extend("users", {
 			local password_maximum_length = 64 -- 4096
 			if value then
 				if string.len(value) < password_minimum_length then
-					return string.format("Password must be at least %s characters", password_minimum_length)
+					return string.format(
+						"Password must be at least %s characters",
+						password_minimum_length
+					)
 				end
 				if string.len(value) > password_maximum_length then
-					return string.format("Password must no more than %s characters", password_maximum_length)
+					return string.format(
+						"Password must no more than %s characters",
+						password_maximum_length
+					)
 				end
 			else
 				print("ERROR, value is empty")

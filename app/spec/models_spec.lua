@@ -127,8 +127,18 @@ describe("pagesix models", function()
 		local user = make_user("frank")
 		local a = Forum:create({ name = "gaming", creator_id = user.id })
 		local b = Forum:create({ name = "history", creator_id = user.id })
-		Posts:create({ user_id = user.id, sub_id = a.id, title = "no votes yet", url = "https://x.example" })
-		Posts:create({ user_id = user.id, sub_id = b.id, title = "other sub", url = "https://y.example" })
+		Posts:create({
+			user_id = user.id,
+			sub_id = a.id,
+			title = "no votes yet",
+			url = "https://x.example",
+		})
+		Posts:create({
+			user_id = user.id,
+			sub_id = b.id,
+			title = "other sub",
+			url = "https://y.example",
+		})
 
 		local only_a = Posts:get_listing(a.id)
 		assert.same(1, #only_a)
@@ -154,10 +164,18 @@ describe("pagesix models", function()
 	it("get_listing filters by link domain", function()
 		local user = make_user("heidi")
 		local sub = Forum:create({ name = "technology", creator_id = user.id })
-		Posts:create({ user_id = user.id, sub_id = sub.id, title = "on github",
-			url = "https://github.com/a/b" })
-		Posts:create({ user_id = user.id, sub_id = sub.id, title = "elsewhere",
-			url = "https://example.org/x" })
+		Posts:create({
+			user_id = user.id,
+			sub_id = sub.id,
+			title = "on github",
+			url = "https://github.com/a/b",
+		})
+		Posts:create({
+			user_id = user.id,
+			sub_id = sub.id,
+			title = "elsewhere",
+			url = "https://example.org/x",
+		})
 
 		local gh = Posts:get_listing({ domain = "github.com" })
 		assert.same(1, #gh)

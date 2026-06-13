@@ -5,7 +5,10 @@ local Spam = require("src.utils.spam")
 
 describe("spam.tokenize", function()
 	it("lowercases and keeps alphabetic runs of >= 2 chars", function()
-		assert.same({ "hello", "world", "lua", "lang" }, Spam.tokenize("Hello, WORLD! Lua-lang 4 u"))
+		assert.same(
+			{ "hello", "world", "lua", "lang" },
+			Spam.tokenize("Hello, WORLD! Lua-lang 4 u")
+		)
 	end)
 
 	it("returns an empty list for nil / empty / wordless input", function()

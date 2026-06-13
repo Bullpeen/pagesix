@@ -4,8 +4,14 @@
 local M = {}
 
 local IMAGE_EXT = {
-	jpg = true, jpeg = true, png = true, gif = true,
-	webp = true, bmp = true, svg = true, avif = true,
+	jpg = true,
+	jpeg = true,
+	png = true,
+	gif = true,
+	webp = true,
+	bmp = true,
+	svg = true,
+	avif = true,
 }
 
 --- Is this URL a direct image link (by file extension)?

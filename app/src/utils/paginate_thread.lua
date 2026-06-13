@@ -39,11 +39,12 @@ return function(rows, page, per_page)
 		end
 	end
 
-	return out, {
-		page = page,
-		per_page = per_page,
-		total = total,
-		has_prev = page > 1,
-		has_next = page * per_page < total,
-	}
+	return out,
+		{
+			page = page,
+			per_page = per_page,
+			total = total,
+			has_prev = page > 1,
+			has_next = page * per_page < total,
+		}
 end

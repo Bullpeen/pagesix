@@ -44,17 +44,34 @@ describe("subreddit + user-profile polish", function()
 	end)
 
 	it("creates a valid subreddit", function()
-		local u = Users:create({ user_name = "sub_creator", user_pass = "password", user_email = "s@e.com" })
+		local u = Users:create({
+			user_name = "sub_creator",
+			user_pass = "password",
+			user_email = "s@e.com",
+		})
 		local s = Forum:create({ name = "lua_lang", description = "Lua", creator_id = u.id })
 		assert.same("lua_lang", s.name)
 	end)
 
 	it("filters posts and comments by user (with markdown bodies)", function()
-		local u1 = Users:create({ user_name = "profile_a", user_pass = "password", user_email = "pa@e.com" })
-		local u2 = Users:create({ user_name = "profile_b", user_pass = "password", user_email = "pb@e.com" })
+		local u1 = Users:create({
+			user_name = "profile_a",
+			user_pass = "password",
+			user_email = "pa@e.com",
+		})
+		local u2 = Users:create({
+			user_name = "profile_b",
+			user_pass = "password",
+			user_email = "pb@e.com",
+		})
 		local f = Forum:create({ name = "profiles_sub", creator_id = u1.id })
 		Posts:create({ user_id = u1.id, sub_id = f.id, title = "by a", url = "https://a.example" })
-		local p2 = Posts:create({ user_id = u2.id, sub_id = f.id, title = "by b", url = "https://b.example" })
+		local p2 = Posts:create({
+			user_id = u2.id,
+			sub_id = f.id,
+			title = "by b",
+			url = "https://b.example",
+		})
 		Comments:create({ post_id = p2.id, user_id = u1.id, body = "a comment **here**" })
 
 		local a_posts = Posts:get_listing({ user_id = u1.id })
@@ -68,7 +85,8 @@ describe("subreddit + user-profile polish", function()
 
 	it("uses an index for the vote-count aggregate (migration [5])", function()
 		local plan = db.query(
-			"EXPLAIN QUERY PLAN SELECT COUNT(*) FROM votes v WHERE v.post_id = 1 AND v.comment_id IS NULL")
+			"EXPLAIN QUERY PLAN SELECT COUNT(*) FROM votes v WHERE v.post_id = 1 AND v.comment_id IS NULL"
+		)
 		local text = ""
 		for _, row in ipairs(plan) do
 			text = text .. " " .. tostring(row.detail)
@@ -78,11 +96,15 @@ describe("subreddit + user-profile polish", function()
 
 	it("uses a covering index for the full vote-count subquery", function()
 		local plan = db.query(
-			"EXPLAIN QUERY PLAN SELECT COUNT(*) FROM votes WHERE post_id = 1 AND comment_id IS NULL AND upvote = 1")
+			"EXPLAIN QUERY PLAN SELECT COUNT(*) FROM votes WHERE post_id = 1 AND comment_id IS NULL AND upvote = 1"
+		)
 		local text = ""
 		for _, row in ipairs(plan) do
 			text = text .. " " .. tostring(row.detail)
 		end
-		assert.truthy(text:upper():find("COVERING INDEX", 1, true), "expected covering index, got:" .. text)
+		assert.truthy(
+			text:upper():find("COVERING INDEX", 1, true),
+			"expected covering index, got:" .. text
+		)
 	end)
 end)
