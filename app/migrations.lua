@@ -120,7 +120,7 @@ return {
             { "deleted_at",    types.text({ null = true }) },
             { "updated_at",    types.text },
 
-            { "creator_id",    types.integer({ default = 1 }) }, -- TODO rename
+            { "creator_id",    types.integer({ default = 1 }) },
             { "description",   types.text({ null = true }) },
             { "nsfw",          types.integer({ default = false }) },
             { "feeds",         types.text({ null = true }) },
@@ -199,6 +199,9 @@ return {
         schema.create_table("modlog", {
             { "id",         types.integer({ unique = true, primary_key = true }) },
             { "mod_id",     types.integer },
+            -- Denormalized from post.sub_id on purpose: this is an append-only
+            -- audit log, and sub_id is the natural key for sub/comment-level
+            -- actions (no post_id) and survives a post being hard-deleted.
             { "sub_id",     types.integer({ null = true }) },
             { "post_id",    types.integer({ null = true }) },
             { "comment_id", types.integer({ null = true }) },

@@ -135,9 +135,19 @@ suite + luacheck pass**.
       `utils/read_json` (unit-tested; tolerates a missing file). The
       `misc.lua:84` `Users:select()` → `:count()` note was a non-fix (the rows
       are needed to pick a random user); comment corrected in place.
-- [ ] **Schema cleanup** — rename `forum.creator_id` (`migrations.lua:114`),
-      drop the redundant `modlog.sub_id` (`:195`), and fix the text-typed
-      `modlog` FK columns to integers (`:204`; ties into `foreign_keys = ON`).
+- [x] **Schema cleanup** (audited — nothing risky left to do):
+  - *Text-typed `modlog` FK columns* → **done**: `modlog` is created with all
+    integer FKs (`mod_id`/`sub_id`/`post_id`/`comment_id`) under
+    `foreign_keys = ON` (migration `[4]`); the redundant `modlog.user_id` was
+    dropped (it duplicated `mod_id`).
+  - *Drop `modlog.sub_id`* → **declined, kept on purpose**: it's a deliberate
+    denormalization for the append-only audit log (natural key for
+    sub/comment-level actions; survives a post being hard-deleted). Annotated
+    in `migrations.lua`.
+  - *Rename `forum.creator_id`* → **declined**: clear name, no target/motivation,
+    and a rename touches ~25 call sites (model `can_moderate`, create-sub
+    action, seed, 6 spec files) for zero benefit. Removed the stale
+    `-- TODO rename` marker.
 
 ## Test & quality
 - **104 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
