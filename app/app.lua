@@ -69,6 +69,13 @@ app.layout = require("views.layout")
 app:match("feed", "/.rss", r2(require("actions.feed")))
 app:match("subreddit_feed", "/r/:subreddit/.rss", r2(require("actions.feed")))
 
+-- Discoverability / well-known URLs (literal paths; registered before the
+-- `/(:sort)` homepage catch-all so they win).
+app:match("sitemap", "/sitemap.xml", r2(require("actions.sitemap")))
+app:match("robots", "/robots.txt", r2(require("actions.robots")))
+app:match("security_txt", "/.well-known/security.txt", r2(require("actions.security_txt")))
+app:match("security_txt_root", "/security.txt", r2(require("actions.security_txt")))
+
 app:match("homepage", "/(:sort)", r2(require("actions.index")))
 
 -- app:match("comments", "/comments", r2(require("actions.index")))

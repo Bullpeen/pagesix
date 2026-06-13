@@ -8,6 +8,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Discoverability (sitemap / robots / well-known)
+- **`GET /sitemap.xml`** — a real sitemaps.org `urlset` of the homepage, every
+  (non-deleted) subreddit, and up to 500 recent posts, with `<lastmod>`. Built
+  by a new pure `utils/sitemap` (5 unit specs) and served by `actions/sitemap`
+  with host-absolute `loc`s via `self:build_url`.
+- **`GET /robots.txt`** is now app-served (`actions/robots`) instead of a static
+  file: it allows content, disallows the auth/action/non-content paths
+  (`/login`, `/submit`, `/vote/`, `/search`, `/admin`, …) and emits an absolute
+  `Sitemap:` line. Dropped the nginx `location /robots.txt` static block (and the
+  static file) so the dynamic route wins.
+- **`GET /.well-known/security.txt`** (and `/security.txt`) — RFC 9116 with
+  `Contact` + a rolling future `Expires`.
+- HTTP integration tests cover all three routes.
+
 ### Seed / migrations
 - **`utils/read_json`** — migration `[13]` (seed initial subreddits) inlined an
   `io.open` + `cjson.decode` (with a `-- TODO figure out utils module` note);
@@ -96,7 +110,7 @@ test-covered Reddit clone. Highlights, newest first:
   ("Username is reserved"). The table existed but was never checked.
 
 ### Quality / CI
-- **Test suite now at 104 specs** (model/SQL + full HTTP integration), all green,
+- **Test suite now at 112 specs** (model/SQL + full HTTP integration), all green,
   with luacov coverage and a clean luacheck (0/0).
 - **luacheck** added to the rockspec, Docker image, and CI (a `luacheck app`
   step gates the build), configured via `.luacheckrc` (luajit + `ngx` global;

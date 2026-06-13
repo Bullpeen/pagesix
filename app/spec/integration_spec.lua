@@ -327,6 +327,34 @@ describe("pagesix integration", function()
 		end)
 	end)
 
+	describe("discoverability (sitemap / robots / well-known)", function()
+		it("serves an XML sitemap of subreddits and posts", function()
+			local status, body = simulate_request(app, "/sitemap.xml", { method = "GET" })
+			assert.same(200, status)
+			assert.truthy(body:find("<urlset", 1, true))
+			assert.truthy(body:find("/r/programming", 1, true)) -- seeded subreddit
+			assert.truthy(body:find("/comments/", 1, true)) -- a post permalink
+		end)
+
+		it("serves robots.txt pointing at the sitemap", function()
+			local status, body = simulate_request(app, "/robots.txt", { method = "GET" })
+			assert.same(200, status)
+			assert.truthy(body:find("User%-agent: %*"))
+			assert.truthy(body:find("Disallow: /login", 1, true))
+			assert.truthy(body:find("Sitemap:", 1, true))
+			assert.truthy(body:find("/sitemap.xml", 1, true))
+		end)
+
+		it("serves security.txt at the well-known location and root", function()
+			for _, path in ipairs({ "/.well-known/security.txt", "/security.txt" }) do
+				local status, body = simulate_request(app, path, { method = "GET" })
+				assert.same(200, status)
+				assert.truthy(body:find("Contact:", 1, true))
+				assert.truthy(body:find("Expires:", 1, true))
+			end
+		end)
+	end)
+
 	describe("reply notifications", function()
 		local Notifications = require("models.notifications")
 

@@ -9,7 +9,7 @@ full-text search (FTS5); open a post; vote on posts & comments; submit
 link/self posts; post threaded comments/replies with Markdown; edit/delete own
 posts & comments; subscribe/unsubscribe; saved/hidden posts; user profiles +
 karma; reply notifications (`/inbox`); basic moderation (remove); RSS output
-feeds; bcrypt + CSRF auth. The Docker image boots and serves; **104-spec Busted
+feeds; bcrypt + CSRF auth. The Docker image boots and serves; **112-spec Busted
 suite + luacheck pass**.
 
 ## Next up
@@ -52,7 +52,9 @@ suite + luacheck pass**.
 - **API — deferred to a future phase.** `src/api.lua` is ~150 stub endpoints,
   disabled in `app.lua`. Intentionally on hold until the web browsing
   experience is locked in.
-- robots.txt / sitemap / output RSS feeds.
+- [x] **robots.txt / sitemap / well-known** — app-served `/robots.txt`,
+      `/sitemap.xml` (subreddits + recent posts), and `/.well-known/security.txt`
+      (RFC 9116). Output RSS feeds already done above.
 
 ## SQLite performance notes
 - [x] Indexes on the FK/sort columns the hot queries use (migration `[5]`);
@@ -150,7 +152,7 @@ suite + luacheck pass**.
     `-- TODO rename` marker.
 
 ## Test & quality
-- **104 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
+- **112 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
   coverage, and **luacheck** (0 warnings / 0 errors).
 - CI per push: super-linter, **luacheck** (`luacheck app`), **busted +
   luacov**, and a Docker **build + `lapis migrate`** smoke test.
