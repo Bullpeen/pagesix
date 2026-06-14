@@ -14,7 +14,8 @@ jobs:
           version: latest
           args: --check app
 
-  # this runs the tests in the docker image against live sqlite and openresty
+  # this runs the test suite inside the production docker image (the
+  # lapis-archlinux-itchio base with the rockspec deps + live lsqlite3)
   docker:
     runs-on: ubuntu-latest
 
@@ -24,15 +25,24 @@ jobs:
       - name: build
         run: docker build -t pagesix-test .
 
+      # The image's default entrypoint boots `lapis server` against the app
+      # mounted at /var/www; here we mount the checkout and override the
+      # entrypoint to run busted from the repo root (where .busted lives).
       - name: test
-        run: docker run pagesix-test
+        run: >
+          docker run --rm
+          -v "${{ github.workspace }}:/src" -w /src
+          --entrypoint busted pagesix-test -o utfTerminal
 
   # this runs all generic lua tests
   test:
     strategy:
       fail-fast: false
       matrix:
-        luaVersion: ["5.1", "5.4", "luajit", "luajit-openresty"]
+        # The app targets the Lua 5.1 ABI (OpenResty/LuaJIT in production); the
+        # rockspec pins `lua ~> 5.1` and deps like luabitop/luajit-geoip are
+        # 5.1-only, so plain 5.4 cannot resolve dependencies.
+        luaVersion: ["5.1", "luajit", "luajit-openresty"]
 
     runs-on: ubuntu-latest
 
