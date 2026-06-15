@@ -22,6 +22,20 @@ if os.getenv("LUA_CPATH") then
 	lua_cpath = lua_cpath .. ";" .. os.getenv("LUA_CPATH")
 end
 
+-- Usernames allowed into the Admin Control Panel on first visit (one-time
+-- bootstrap; thereafter admins grant each other the role from /admin/users).
+-- Set ADMIN_USERNAMES to a comma-separated list, e.g. "alice,bob".
+local function admin_usernames()
+	local names = {}
+	local raw = os.getenv("ADMIN_USERNAMES")
+	if raw then
+		for n in raw:gmatch("[^,]+") do
+			names[#names + 1] = n:match("^%s*(.-)%s*$")
+		end
+	end
+	return names
+end
+
 -- https://github.com/snap-cloud/snapCloud/blob/master/config.lua
 -- config({'development', 'test'}, {
 --     use_daemon = 'off',
@@ -51,6 +65,7 @@ config("development", {
 	name = "[DEVEL] Page Six",
 	session_name = "dev_app_session",
 	secret = os.getenv("SESSION_SECRET") or "dev-insecure-secret-change-me",
+	admin_usernames = admin_usernames(),
 	measure_performance = true,
 	sqlite = {
 		database = "/var/data/dev.sqlite",
@@ -72,6 +87,7 @@ config("test", {
 	num_workers = "1",
 	session_name = "test_app_session",
 	secret = "test-secret",
+	admin_usernames = {},
 	-- In-memory database so the test suite never touches dev/prod data.
 	sqlite = {
 		database = ":memory:",
@@ -89,6 +105,7 @@ config("production", {
 	name = "Page Six",
 	session_name = "prod_app_session",
 	secret = os.getenv("LAPIS_SECRET"),
+	admin_usernames = admin_usernames(),
 	logging = {
 		requests = true,
 		queries = false,

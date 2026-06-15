@@ -48,8 +48,11 @@ dependency-driven (foundations first); full plan in
       `models/roles`/`models/site_roles`. The `lock`/`sticky`/`mod_remove`/
       `refresh_feeds` actions request their specific privilege;
       `Forum:can_moderate` stays as a back-compat shim. (`privileges_spec`.)
-- [ ] **Admin Control Panel** — replace the `/admin` stub; `site_settings` table;
-      user / forum / queue / feeds management, gated by the site `admin` role.
+- [x] **Admin Control Panel** — `/admin` dashboard (counts), `/admin/users`
+      (grant/revoke admin, self-lockout guard), `/admin/settings` (runtime
+      key/value, `site_settings` table, migration `[101]`), gated by the site
+      `admin` role (`utils/admin_guard`). First admin bootstraps from the
+      `ADMIN_USERNAMES` config/env via `Privileges.ensure_admin`. (`admin_spec`.)
 - [ ] **User reputation** — persist `Users:karma()` into `users.reputation`;
       trust levels + profile badges.
 - [ ] **Post queue + new-user rate limit** — `approved` flag on posts/comments,

@@ -56,6 +56,29 @@ function Privileges.is_admin(user_id)
 	return user_id ~= nil and SiteRoles:is_admin(user_id)
 end
 
+--- Resolve admin access for a user row, bootstrapping from config on first use.
+-- A user already holding the `admin` site role passes. Otherwise, if their
+-- username appears in the `admin_usernames` config list, they are granted the
+-- role now (one-time bootstrap so a fresh install has a way in) and pass.
+-- @tparam table user a users row (needs `.id` and `.user_name`)
+-- @treturn boolean
+function Privileges.ensure_admin(user)
+	if not user then
+		return false
+	end
+	if SiteRoles:is_admin(user.id) then
+		return true
+	end
+	local config = require("lapis.config").get()
+	for _, name in ipairs(config.admin_usernames or {}) do
+		if name == user.user_name then
+			SiteRoles:grant(user.id, "admin")
+			return true
+		end
+	end
+	return false
+end
+
 --- The role a user holds in a forum: "owner", "moderator", or "member".
 -- The forum creator is always treated as the owner (a safety net even if no
 -- explicit owner role row exists), otherwise the roles table is consulted.

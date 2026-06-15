@@ -687,6 +687,19 @@ return {
 		end
 	end,
 
+	-- Admin Control Panel: runtime key/value site settings (see
+	-- src/models/site_settings.lua), editable from /admin/settings.
+	[101] = function()
+		schema.create_table("site_settings", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "key", types.text({ unique = true }) },
+			{ "value", types.text({ null = true }) },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"UNIQUE(key)",
+		}, opts)
+	end,
+
 	-- classify text : https://github.com/leafo/lapis-bayes
 	[1439944992] = require("lapis.bayes.schema").run_migrations,
 }

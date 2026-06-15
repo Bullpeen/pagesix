@@ -8,6 +8,24 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Forum generalization: Admin Control Panel
+- **Authed `/admin` panel** replaces the `"Go away"` stub, gated by the site
+  `admin` role (`utils/admin_guard` → 302 to login for anon, 403 for non-admins).
+  Routes live in `src/admin.lua`: `/admin` (dashboard with user/forum/post/
+  comment/admin counts), `/admin/users` (list users with karma + admin flag;
+  grant/revoke the admin role — self-revoke blocked to avoid lockout), and
+  `/admin/settings` (a runtime key/value editor backed by a new `site_settings`
+  table, migration `[101]`, model `models/site_settings`).
+- **Admin bootstrap** — `Privileges.ensure_admin(user)` grants the role on first
+  visit to any username listed in the `admin_usernames` config (from the
+  `ADMIN_USERNAMES` env var), so a fresh install has a way in; thereafter admins
+  manage each other from `/admin/users`.
+- The header shows an **admin** link for site admins (`self.is_admin` set in the
+  app before-filter).
+- Specs: anon/non-admin/admin access, grant/revoke + self-lockout guard,
+  non-admin POSTs ignored, settings upsert + default fallback, and the config
+  bootstrap path. (176 specs.)
+
 ### Forum generalization: RBAC privilege matrix
 First step of generalizing the link-aggregator into a community forum (full
 roadmap in `.context/forum-features-plan.md`).

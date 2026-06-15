@@ -1,0 +1,19 @@
+<div class="admin">
+    <h1>Admin Control Panel</h1>
+    <ul class="admin-nav">
+        <li><a href="/admin">dashboard</a></li>
+        <li><a href="/admin/users">users</a></li>
+        <li><a href="/admin/settings">settings</a></li>
+    </ul>
+
+    <h2>Site overview</h2>
+    <table class="admin-stats">
+        <tbody>
+            <tr><th>Users</th><td><%= stats.users %></td></tr>
+            <tr><th>Admins</th><td><%= stats.admins %></td></tr>
+            <tr><th>Subreddits</th><td><%= stats.forums %></td></tr>
+            <tr><th>Posts</th><td><%= stats.posts %></td></tr>
+            <tr><th>Comments</th><td><%= stats.comments %></td></tr>
+        </tbody>
+    </table>
+</div>

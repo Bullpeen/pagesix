@@ -64,6 +64,8 @@ app:before_filter(function(self)
 			self.current_user = user
 			self.subs = require("models.subscriptions"):subscribed_forums(user.id)
 			self.unread_count = require("models.notifications"):unread_count(user.id)
+			-- Surface admin status so the header can show the Admin link.
+			self.is_admin = require("src.utils.privileges").is_admin(user.id)
 		end
 	end
 end)
@@ -139,12 +141,10 @@ app:match("/test/:comment_id[%d]", r2(require("actions.comment")))
 -- app:match("contact", "/contact", function(self) end) -- stub
 -- app:match("help", "/help", function(self) end) -- stub
 
-app:get("/admin", function(self)
-	return "Go away"
-end)
 app:match("/console", console.make()) -- only available in Development builds
 
 -- require("src.api")(app) -- API endpoints
 require("src.auth")(app) -- User-authenticated endpoints
+require("src.admin")(app) -- Admin Control Panel (site-admin only)
 
 return app

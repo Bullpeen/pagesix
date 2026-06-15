@@ -79,6 +79,10 @@
 		<% if current_user then %>
         <span class="user">
             <a href="/user/<%= current_user.user_name %>"><%= current_user.user_name %></a>
+            <% if is_admin then %>
+            <span class="separator">-</span>
+            <a href="/admin" class="choice">admin</a>
+            <% end %>
             <form class="logout-form" method="POST" action="/logout" style="display:inline">
                 <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
                 <button class="button-link" type="submit">log out</button>
