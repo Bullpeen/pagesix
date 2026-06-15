@@ -1,0 +1,4 @@
+ignored:
+  # The base image intentionally tracks the upstream `:latest` build of
+  # lapis-archlinux-itchio; dependabot watches it for digest updates.
+  - DL3007

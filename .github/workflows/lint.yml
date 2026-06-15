@@ -1,29 +1,36 @@
-# This workflow executes several linters on changed files based on languages used in your code base whenever
-# you push a code or open a pull request.
-#
-# You can adjust the behavior by modifying this file.
-# For more information, see:
-# https://github.com/github/super-linter
-name: Lint Code Base
+# Focused linters for the parts of the repo the `spec` workflow does not
+# already cover. Lua formatting (stylua) and linting (luacheck) are enforced in
+# spec.yml; here we lint the GitHub Actions workflows, shell scripts, and the
+# Dockerfile. (Replaces the old super-linter run, which linted vendored CSS and
+# ignored the repo's own .luacheckrc/.stylua.toml.)
+name: lint
 
-on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
 jobs:
-  run-lint:
+  # Validate the GitHub Actions workflows themselves.
+  actionlint:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          # Full git history is needed to get a proper list of changed files within `super-linter`
-          fetch-depth: 0
+      - uses: actions/checkout@v4
+      - uses: raven-actions/actionlint@v2
 
-      - name: Lint Code Base
-        uses: github/super-linter@v4
-        env:
-          VALIDATE_ALL_CODEBASE: false
-          DEFAULT_BRANCH: "main"
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # ShellCheck is preinstalled on the ubuntu runners.
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: git ls-files '*.sh' | xargs -r shellcheck
+
+  # Lint the runtime Dockerfile (Dockerfile.prod is a commented-out placeholder).
+  hadolint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hadolint/hadolint-action@v3.3.0
+        with:
+          dockerfile: Dockerfile
