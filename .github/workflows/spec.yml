@@ -57,7 +57,10 @@ jobs:
 
       - name: build
         run: |
-          [[ "${{ matrix.luaVersion }}" =~ ^5\.[12]$ ]] && luarocks install luabitop || true
+          # luabitop is only needed (and only builds) on Lua 5.1/5.2.
+          if [[ "${{ matrix.luaVersion }}" =~ ^5\.[12]$ ]]; then
+            luarocks install luabitop
+          fi
           luarocks install busted
           luarocks install moonscript
           luarocks install tableshape
