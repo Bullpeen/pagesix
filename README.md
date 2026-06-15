@@ -21,7 +21,7 @@ A better social link-sharing site.
   - [ ] `/r/.../submit` (per-subreddit)
   - [ ] `/login`, `/logout`, `/password`
   - [ ] `prefs`, `settings`
-- [ ] RSS feed import/sync (per-subreddit?)
+- [x] RSS feed import/sync (per-subreddit; live importer + in-process scheduler)
 - [ ] API (https://reddit.com/dev/api/)
 
 ## Development

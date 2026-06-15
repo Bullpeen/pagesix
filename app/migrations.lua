@@ -17,6 +17,31 @@ local Users = require("src.models.users")
 
 math.randomseed(os.clock() * 100000000000)
 
+-- Locate a seed-data file (e.g. initial_subs.json) across the layouts we run in.
+-- The file ships under the app tree at `app/data/`, but `lapis migrate` runs
+-- from the app dir in dev/prod and from the repo root in CI, and an operator may
+-- also drop a custom copy into the Fly persistent volume at /var/data. Try, in
+-- order: an explicit override, the operator volume, then the shipped copy
+-- relative to either cwd. Returns the first path that exists, or nil.
+local function seed_path(name)
+	local candidates = {}
+	local override = os.getenv("PAGESIX_SEED_DIR")
+	if override then
+		candidates[#candidates + 1] = override .. "/" .. name
+	end
+	candidates[#candidates + 1] = "/var/data/" .. name -- operator volume
+	candidates[#candidates + 1] = "data/" .. name -- cwd = app dir (lapis migrate)
+	candidates[#candidates + 1] = "app/data/" .. name -- cwd = repo root (CI)
+	for _, path in ipairs(candidates) do
+		local f = io.open(path, "rb")
+		if f then
+			f:close()
+			return path
+		end
+	end
+	return nil
+end
+
 local opts = {}
 opts["strict"] = true
 opts["if_not_exists"] = true
@@ -391,10 +416,14 @@ return {
 
 	-- create initial subreddits
 	[13] = function()
-		local path = "/var/data/initial_subs.json"
-		local data = read_json(path) or {}
+		local path = seed_path("initial_subs.json")
+		local data = (path and read_json(path)) or {}
 		if #data > 0 then
 			print("Read in " .. #data .. " subreddits from " .. path)
+		else
+			print(
+				"No initial_subs.json found (checked $PAGESIX_SEED_DIR, /var/data, ./data, app/data); skipping subreddit seed"
+			)
 		end
 
 		for _, sub in ipairs(data) do
@@ -542,6 +571,14 @@ return {
 		-- native (user-submitted) posts.
 		schema.add_column("posts", "external_guid", types.text({ null = true }))
 		schema.create_index("posts", "external_guid", { if_not_exists = true })
+	end,
+
+	-- Conditional-GET validators for the in-process scheduler: cache the last
+	-- response's ETag / Last-Modified so the next fetch can send
+	-- If-None-Match / If-Modified-Since and skip unchanged feeds (304).
+	[21] = function()
+		schema.add_column("feeds", "etag", types.text({ null = true }))
+		schema.add_column("feeds", "last_modified", types.text({ null = true }))
 	end,
 
 	-- cast Votes on posts in each subreddit

@@ -30,7 +30,21 @@ local function auth(app)
 	app:match("mod_remove", "/post/:post_id[%d]/remove", r2(require("actions.mod_remove")))
 	app:match("post_lock", "/post/:post_id[%d]/lock", r2(require("actions.lock")))
 	app:match("post_sticky", "/post/:post_id[%d]/sticky", r2(require("actions.sticky")))
+	-- RSS feed management (mod-only). Literal `feeds` / `feeds/...` segments take
+	-- precedence over the `/r/:subreddit(/:sort)` catch-all.
+	app:match("feeds_manage", "/r/:subreddit/feeds", r2(require("actions.feeds_manage")))
+	app:match("feed_add", "/r/:subreddit/feeds/add", r2(require("actions.feed_add")))
 	app:match("refresh_feeds", "/r/:subreddit/feeds/refresh", r2(require("actions.refresh_feeds")))
+	app:match(
+		"feed_remove",
+		"/r/:subreddit/feeds/:feed_id[%d]/remove",
+		r2(require("actions.feed_remove"))
+	)
+	app:match(
+		"feed_toggle",
+		"/r/:subreddit/feeds/:feed_id[%d]/toggle",
+		r2(require("actions.feed_toggle"))
+	)
 	app:match("crosspost", "/post/:post_id[%d]/crosspost", r2(require("actions.crosspost")))
 	app:match("inbox", "/inbox", r2(require("actions.inbox")))
 

@@ -55,6 +55,14 @@ config("development", {
 	sqlite = {
 		database = "/var/data/dev.sqlite",
 	},
+	-- In-process RSS/Atom feed scheduler (src/utils/feed_scheduler.lua).
+	-- `interval` = seconds between ticks; `base_interval` = min seconds between
+	-- fetches of one healthy feed (failures back off exponentially).
+	feed_scheduler = {
+		enabled = true,
+		interval = 900,
+		base_interval = 900,
+	},
 })
 
 config("test", {
@@ -88,5 +96,11 @@ config("production", {
 	},
 	sqlite = {
 		database = "/var/data/production.sqlite",
+	},
+	-- In-process RSS/Atom feed scheduler (src/utils/feed_scheduler.lua).
+	feed_scheduler = {
+		enabled = true,
+		interval = 900,
+		base_interval = 900,
 	},
 })

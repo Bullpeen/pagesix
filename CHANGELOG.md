@@ -12,24 +12,42 @@ test-covered Reddit clone. Highlights, newest first:
 - **On-demand feed import** — replaces the dead one-shot seed path (which needed
   the uninstalled `feedparser`). `utils/feed_parse` parses RSS 2.0 and Atom using
   luaexpat (`lxp.lom`) only — no network, fully unit-tested against fixtures;
-  `utils/feed_import` fetches a feed (blocking luasocket/luasec, injectable for
-  tests), parses it, and creates posts for entries not already imported.
+  `utils/feed_import` fetches a feed (non-blocking `resty.http` under OpenResty,
+  blocking luasocket/luasec otherwise; injectable for tests), parses it, and
+  creates posts for entries not already imported.
 - **Dedup** — imported posts carry the feed entry's guid/link in a new
   `posts.external_guid` column (migration `[19]`); re-running an import creates
   nothing new.
 - **Feeds table** — feeds moved out of the `forum.feeds` CSV into a `feeds` table
   (`sub_id`, `url`, `enabled`, `last_fetched_at`, `last_status`, `failure_count`;
   migration `[19]`), seeded from the legacy CSV in `[60]`. Fetch outcomes are
-  recorded so a future scheduler can back off dead feeds.
+  recorded so the scheduler can back off dead feeds.
 - **Attribution + trigger** — imported posts belong to an on-demand `rss_bot`
   system user (unusable password). Moderators refresh a sub's feeds via
   `POST /r/:sub/feeds/refresh` (mod-only, CSRF), with a "refresh feeds" button on
   the subreddit header.
-- **Deliberately not yet** — the in-process `ngx.timer` scheduler (non-blocking
-  `lua-resty-http`, per-worker lock, conditional GET) and feed add/remove UI are
-  follow-ups; this lands the tested importer core + manual/cron trigger.
+- **In-process scheduler** (`utils/feed_scheduler`) — an `ngx.timer.every` loop
+  started in `init_worker_by_lua` refreshes due feeds automatically, so imports
+  no longer wait on a manual trigger. A cross-worker lock in the `feed_scheduler`
+  shared dict (`:add` with a TTL) means exactly one worker refreshes per tick;
+  the timer uses the non-blocking `resty.http` client. Each pass refreshes only
+  feeds that are **due** (`Feeds:due`): a healthy feed every `base_interval`
+  seconds, a failing one backing off exponentially (`base * min(2^failures, 64)`).
+  **Conditional GET** caches each response's ETag / Last-Modified
+  (`feeds.etag` / `last_modified`, migration `[21]`) and replays them as
+  If-None-Match / If-Modified-Since; a `304` counts as an unchanged success.
+  Enabled per environment via the `feed_scheduler` config block.
+- **Feed management UI** — a mod-only page at `/r/:sub/feeds` (linked from the
+  subreddit header) lists every feed with its enabled/disabled state, last fetch
+  time, last result, and failure count, and offers add / remove / enable-disable
+  controls (`Feeds:list` / `add` / `remove` / `set_enabled`; routes
+  `feeds/add`, `feeds/:id/remove`, `feeds/:id/toggle`). Each mutation is
+  CSRF-guarded, scoped so a mod only touches their own sub's feeds, and recorded
+  in the modlog. The legacy `forum.feeds` CSV is now just the initial seed.
 - Specs: parser (RSS/Atom/malformed/long-title), import + dedup, fetch-failure
-  bookkeeping, and the mod-only endpoint (non-mods ignored). (149 specs.)
+  bookkeeping, the mod-only endpoint (non-mods ignored), due/backoff selection,
+  conditional-GET + 304 handling, `refresh_all`, the scheduler's lock/dispatch
+  logic, and the feed-management page + add/toggle/remove (mod-gated). (159 specs.)
 
 ### Moderation: sticky, lock-comments, public modlog
 - **Sticky posts** — mods can pin a post to the top of its subreddit listing

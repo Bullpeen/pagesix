@@ -3,10 +3,7 @@
     <a class="rss-link" href="/r/<%= subreddit %>/.rss">RSS</a>
     <a class="modlog-link" href="/r/<%= subreddit %>/modlog">modlog</a>
     <% if can_moderate then %>
-        <form class="refresh-feeds-form" method="POST" action="/r/<%= subreddit %>/feeds/refresh" style="display:inline">
-            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-            <button class="button-link" type="submit">refresh feeds</button>
-        </form>
+        <a class="feeds-link" href="/r/<%= subreddit %>/feeds">manage feeds</a>
     <% end %>
     <% if current_user then %>
         <form class="subscribe-form" method="POST" action="/subscribe/<%= subreddit %>">

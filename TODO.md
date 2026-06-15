@@ -60,10 +60,17 @@ suite + luacheck pass**.
       new entries deduped on `posts.external_guid`. Feeds live in their own
       `feeds` table (migration `[19]`, seeded from the legacy `forum.feeds` CSV in
       `[60]`); imported posts are attributed to an `rss_bot` system user. Mods
-      trigger a refresh via `POST /r/:sub/feeds/refresh` (CSRF). **Follow-up:** an
-      in-process `ngx.timer.every` scheduler (non-blocking `lua-resty-http`, a
-      per-worker lock, ETag/Last-Modified conditional GET) so it runs on a timer
-      rather than only on demand; plus feed add/remove UI.
+      trigger a refresh via `POST /r/:sub/feeds/refresh` (CSRF). The in-process
+      `ngx.timer.every` **scheduler** (`utils/feed_scheduler`) now refreshes due
+      feeds automatically: non-blocking `lua-resty-http` fetches inside the
+      timer, a cross-worker shared-dict lock (`feed_scheduler`) so only one
+      worker refreshes per tick, ETag/Last-Modified **conditional GET** (cached
+      in `feeds.etag`/`last_modified`, migration `[21]`, 304 ⇒ unchanged), and
+      exponential backoff on consecutive failures (`Feeds:due`). Enabled per
+      environment via the `feed_scheduler` config block. A mod-only **feed
+      management UI** (`/r/:sub/feeds`) lists each feed with its fetch state and
+      can add / remove / enable-disable feeds (CSRF-guarded, logged to the
+      modlog); the seed CSV is now just the initial population.
 - [x] Spam/quality filtering — `lapis-bayes` is now wired up (`utils/spam`):
       pure-Lua tokenizer, built-in corpus trained in migration `[12]`, and a
       fail-open `is_spam` check on post + comment submission. (lapis-bayes is

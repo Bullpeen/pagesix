@@ -748,6 +748,130 @@ describe("pagesix integration", function()
 
 			feed_import.fetch = orig
 		end)
+
+		it("Feeds:due honors last_fetched_at and exponential backoff", function()
+			local f = Feeds:add(1, "https://due.example/feed.xml")
+			local function due_has(base, id)
+				for _, d in ipairs(Feeds:due(base)) do
+					if tonumber(d.id) == tonumber(id) then
+						return true
+					end
+				end
+				return false
+			end
+
+			-- never fetched -> always due
+			assert.is_true(due_has(900, f.id))
+
+			-- after a success it's not due within the base interval...
+			Feeds:record_result(f, true, 200)
+			assert.is_false(due_has(900, f.id))
+			-- ...but due again once the interval is treated as elapsed (base 0).
+			assert.is_true(due_has(0, f.id))
+
+			-- two failures -> backs off (waits base * min(2^2,64) = 4x), so a
+			-- just-fetched failing feed is skipped at the normal interval.
+			Feeds:record_result(Feeds:find(f.id), false, 500)
+			Feeds:record_result(Feeds:find(f.id), false, 500)
+			assert.same(2, tonumber(Feeds:find(f.id).failure_count))
+			assert.is_false(due_has(900, f.id))
+		end)
+
+		it("sends conditional-GET validators and treats 304 as an unchanged success", function()
+			local f = Feeds:add(1, "https://cond.example/feed.xml")
+
+			-- First fetch: no validators cached yet; response carries them.
+			feed_import.refresh_feed(f, function(_, headers)
+				assert.is_nil(headers["If-None-Match"])
+				return [[<rss version="2.0"><channel><item><title>C</title>
+					<link>https://cond.example/p</link><guid>condg</guid></item></channel></rss>]],
+					200,
+					{ etag = '"abc"', ["last-modified"] = "Wed, 21 Oct 2015 07:28:00 GMT" }
+			end)
+			assert.is_not_nil(Posts:find({ external_guid = "condg" }))
+			local saved = Feeds:find(f.id)
+			assert.same('"abc"', saved.etag)
+			assert.same("Wed, 21 Oct 2015 07:28:00 GMT", saved.last_modified)
+
+			-- Next fetch: the cached validators are sent; a 304 imports nothing
+			-- but still counts as a success (failure_count stays 0).
+			local imported = feed_import.refresh_feed(saved, function(_, headers)
+				assert.same('"abc"', headers["If-None-Match"])
+				assert.same("Wed, 21 Oct 2015 07:28:00 GMT", headers["If-Modified-Since"])
+				return nil, 304
+			end)
+			assert.same(0, imported)
+			assert.same(0, tonumber(Feeds:find(f.id).failure_count))
+		end)
+
+		it("refresh_all imports from every due feed (scheduler entry point)", function()
+			Feeds:add(1, "https://all.example/feed.xml") -- fresh -> due
+			local orig = feed_import.fetch
+			feed_import.fetch = function()
+				return [[<rss version="2.0"><channel><item><title>All</title>
+					<link>https://all.example/p</link><guid>allg</guid></item></channel></rss>]],
+					200
+			end
+
+			local total, checked = feed_import.refresh_all(900)
+			assert.is_true(checked >= 1)
+			assert.is_true(total >= 1)
+			assert.is_not_nil(Posts:find({ external_guid = "allg" }))
+
+			feed_import.fetch = orig
+		end)
+
+		it("shows the feed-management page to a mod and redirects others", function()
+			local mod_status, mod_body = simulate_request(app, "/r/programming/feeds", {
+				method = "GET",
+				session = { current_user = "demo" }, -- demo created /r/programming
+			})
+			assert.same(200, mod_status)
+			assert.truthy(mod_body:find("add feed", 1, true))
+
+			Users:create({
+				user_name = "ui_viewer",
+				user_pass = "password",
+				user_email = "uv@e.com",
+			})
+			local nm_status = simulate_request(app, "/r/programming/feeds", {
+				method = "GET",
+				session = { current_user = "ui_viewer" },
+			})
+			assert.same(302, nm_status) -- non-mod redirected away
+		end)
+
+		it("lets a mod add / toggle / remove a feed; ignores non-mods and bad URLs", function()
+			Users:create({
+				user_name = "ui_nonmod",
+				user_pass = "password",
+				user_email = "un@e.com",
+			})
+
+			-- a non-moderator can't add a feed
+			POST("/r/programming/feeds/add", { url = "https://nm.example/feed.xml" }, "ui_nonmod")
+			assert.is_nil(Feeds:find({ sub_id = 1, url = "https://nm.example/feed.xml" }))
+
+			-- only http(s) URLs are accepted
+			POST("/r/programming/feeds/add", { url = "not-a-url" }, "demo")
+			assert.is_nil(Feeds:find({ sub_id = 1, url = "not-a-url" }))
+
+			-- mod add succeeds (enabled by default)
+			local s =
+				POST("/r/programming/feeds/add", { url = "https://ui.example/feed.xml" }, "demo")
+			assert.same(302, s)
+			local f = Feeds:find({ sub_id = 1, url = "https://ui.example/feed.xml" })
+			assert.is_not_nil(f)
+			assert.same(1, tonumber(f.enabled))
+
+			-- toggle disables it (the scheduler then skips it)
+			POST("/r/programming/feeds/" .. f.id .. "/toggle", {}, "demo")
+			assert.same(0, tonumber(Feeds:find(f.id).enabled))
+
+			-- remove deletes the row
+			POST("/r/programming/feeds/" .. f.id .. "/remove", {}, "demo")
+			assert.is_nil(Feeds:find(f.id))
+		end)
 	end)
 
 	describe("RSS output feeds", function()
