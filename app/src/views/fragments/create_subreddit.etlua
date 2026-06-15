@@ -1,4 +1,5 @@
 <form class="create-subreddit primary_form" method="POST" action="/subreddit/create">
+    <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
     <div class="input_row">
         <label>
             <div class="label">Name</div>

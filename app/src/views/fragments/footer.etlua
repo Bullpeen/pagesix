@@ -5,7 +5,7 @@
                 class="flat-vert hover">
 				<li class="flat-vert title">about</li>
 				<li>
-					<a href=""
+					<a href="/about"
                         class="choice">What is Page Six?</a>
 				</li>
 				<li>
@@ -25,7 +25,7 @@
                 class="flat-vert hover">
 				<li class="flat-vert title">help</li>
 				<li>
-					<a href="" class="choice">report spam and site abuse</a>
+					<a href="/contact" class="choice">report spam and site abuse</a>
 				</li>
 				<li>
 					<span class="separator"></span>
@@ -33,7 +33,7 @@
 				</li>
 				<li>
 					<span class="separator"></span>
-					<a href="/help/" class="choice">contact</a>
+					<a href="/contact" class="choice">contact</a>
 				</li>
 				<li>
 					<span

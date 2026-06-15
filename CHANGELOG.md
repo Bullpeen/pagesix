@@ -8,6 +8,36 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Auth follow-ups: site-wide CSRF, password reset, seed re-hash, submit preview
+- **CSRF on every state-changing form** — promoted CSRF from just login/register
+  to a single global `before_filter` (`app.lua`) that validates any non-GET
+  request (403 on failure; the dev `/console` REPL is exempt) and exposes a
+  `csrf_token` to every view. Added the hidden token field to all real POST forms
+  (vote, save/hide, comment create/reply/edit/delete, post edit/delete, crosspost,
+  mod remove, subscribe, create-subreddit, submit, logout). The login/register
+  actions dropped their now-redundant inline CSRF handling.
+- **Password reset** — `GET/POST /password` issues a one-shot, 1-hour token
+  (`password_resets` table, migration `[17]`; CSPRNG via `openssl.rand`); a
+  matching `models/password_resets`. `GET/POST /password/reset?token=…` validates
+  the token and sets a new bcrypt password, then signs the user in. No mail server
+  in dev, so the link is surfaced on the page (would be emailed in prod) and the
+  "no such account" response is generic.
+- **Re-hashed seeded demo users** — old seeds stored the demo password (`hunter2`)
+  in plaintext, which bcrypt rejected, so seeded users could never log in. Seed
+  migration `[14]` now bcrypt-hashes at creation, and idempotent migration `[50]`
+  re-hashes any leftover plaintext passwords in an existing DB (skips bcrypt
+  hashes and the blank anonymous_coward password).
+- **Submit preview** — the submit form gained a *Preview* button that renders the
+  self-post Markdown (and keeps the entered fields) without creating the post.
+  Submit errors are now shown on the page.
+- **Simple pages for all routes** — added `/about`, `/faq`, `/help`, `/contact`
+  (one `actions/static` over the shared `page` view), a logged-in **log out**
+  control + username in the header, and fixed dead header/footer links
+  (`/comments`, `/subs/mine/`, `/help/`, the empty `about`/`contact` hrefs).
+- Specs: full password-reset flow (issue → reset → login, mismatch keeps token,
+  invalid token, no account-existence leak), the re-hash migration, submit
+  preview, site-wide CSRF rejection, the static pages, and logout. (137 specs.)
+
 ### Crossposts, image posts & thumbnails
 - **Image thumbnails** — a new pure `utils/media` classifies a link as an image
   by extension (jpg/png/gif/webp/svg/avif/…, query-string tolerant). `submit`

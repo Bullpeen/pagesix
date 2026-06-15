@@ -6,10 +6,12 @@
                 <div class="thing comment" style="margin-left: <%= comment.depth * 24 %>px">
                     <div class="midcol">
                         <form class="arrow-form" method="POST" action="/vote/comment/<%= comment.id %>/up">
+                            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
                             <button class="arrow up" type="submit" aria-label="upvote"></button>
                         </form>
                         <span class="score"><%= comment.score %></span>
                         <form class="arrow-form" method="POST" action="/vote/comment/<%= comment.id %>/down">
+                            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
                             <button class="arrow down" type="submit" aria-label="downvote"></button>
                         </form>
                     </div>
@@ -31,6 +33,7 @@
                         <details class="reply">
                             <summary>reply</summary>
                             <form method="POST" action="/post/<%= comment.post_id %>/comment">
+                                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
                                 <input type="hidden" name="parent_comment_id" value="<%= comment.id %>">
                                 <textarea name="body" rows="3" required></textarea>
                                 <button class="button" type="submit">reply</button>
@@ -41,11 +44,13 @@
                         <details class="edit">
                             <summary>edit</summary>
                             <form method="POST" action="/comment/<%= comment.id %>/edit">
+                                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
                                 <textarea name="body" rows="3" required><%= comment.body %></textarea>
                                 <button class="button" type="submit">save</button>
                             </form>
                         </details>
                         <form class="delete-form" method="POST" action="/comment/<%= comment.id %>/delete">
+                            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
                             <button class="button" type="submit">delete</button>
                         </form>
                         <% end %>

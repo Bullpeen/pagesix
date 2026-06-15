@@ -1,29 +1,37 @@
+<% if preview_html and preview_html ~= "" then %>
+    <div class="submit-preview">
+        <div class="label">Preview</div>
+        <div class="usertext-body md self-text"><%- preview_html %></div>
+    </div>
+<% end %>
 <form class="form primary_form" method="POST" action="/submit">
+    <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
     <div class="input_row">
         <label>
             <div class="label">Title</div>
-            <input name="title" required="required" type="text" autocapitalize="words" autocorrect="off">
+            <input name="title" required="required" type="text" autocapitalize="words" autocorrect="off" value="<%= params and params.title or '' %>">
         </label>
     </div>
     <div class="input_row">
         <label>
             <div class="label">URL <span class="optional">(for a link post)</span></div>
-            <input autocomplete="url" name="url" type="text" autocapitalize="none" autocorrect="off">
+            <input autocomplete="url" name="url" type="text" autocapitalize="none" autocorrect="off" value="<%= params and params.url or '' %>">
         </label>
     </div>
     <div class="input_row">
         <label>
             <div class="label">Text <span class="optional">(for a self post; Markdown supported)</span></div>
-            <textarea name="body" rows="6"></textarea>
+            <textarea name="body" rows="6"><%= params and params.body or '' %></textarea>
         </label>
     </div>
     <div class="input_row">
         <label>
             <div class="label">Subreddit</div>
-            <input name="subreddit" required="required" type="text" autocapitalize="none" autocorrect="off">
+            <input name="subreddit" required="required" type="text" autocapitalize="none" autocorrect="off" value="<%= params and params.subreddit or '' %>">
         </label>
     </div>
     <div class="button_row">
+        <button class="button" name="preview" value="1" type="submit" formnovalidate>Preview</button>
         <input class="button" value="Submit" type="submit">
     </div>
 </form>

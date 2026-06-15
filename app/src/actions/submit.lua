@@ -6,6 +6,7 @@ local Forum = require("src.models.forum")
 local Users = require("models.users")
 local Spam = require("src.utils.spam")
 local media = require("src.utils.media")
+local markdown = require("src.utils.markdown")
 
 return {
 	before = function(self) end,
@@ -21,6 +22,13 @@ return {
 			and Users:find({ user_name = self.session.current_user })
 		if not user then
 			return self:write({ redirect_to = self:url_for("login") })
+		end
+
+		-- Preview: render the self-post body as Markdown and re-show the form
+		-- (with the entered values) without creating anything.
+		if self.params.preview then
+			self.preview_html = markdown(self.params.body or "")
+			return { render = "submit" }
 		end
 
 		-- Subreddits live in the `forum` table, keyed by name.

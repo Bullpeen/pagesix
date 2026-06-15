@@ -33,6 +33,7 @@
 
 <% if current_user and not deleted then %>
     <form class="crosspost-form" method="POST" action="/post/<%= post_id %>/crosspost">
+        <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
         <input name="subreddit" placeholder="subreddit" required="required" autocapitalize="none">
         <button class="button" type="submit">crosspost</button>
     </form>
@@ -40,6 +41,7 @@
 
 <% if can_moderate then %>
     <form class="mod-form" method="POST" action="/post/<%= post_id %>/remove">
+        <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
         <button class="button" type="submit"><%= removed and "approve" or "remove" %></button>
     </form>
 <% end %>
@@ -50,12 +52,14 @@
         <details class="edit">
             <summary>edit</summary>
             <form method="POST" action="/post/<%= post_id %>/edit">
+                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
                 <textarea name="body" rows="6" required><%= body %></textarea>
                 <button class="button" type="submit">save</button>
             </form>
         </details>
         <% end %>
         <form class="delete-form" method="POST" action="/post/<%= post_id %>/delete">
+            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
             <button class="button" type="submit">delete</button>
         </form>
     </div>

@@ -15,14 +15,29 @@ describe("pagesix integration", function()
 	local Subscriptions = require("models.subscriptions")
 	local app = require("app")
 
+	-- CSRF: the global before_filter validates a `csrf_token` param against a
+	-- `<session_name>_token` cookie. The key inside the token only has to match
+	-- the cookie, so we mint one matching (cookie, token) pair and reuse it for
+	-- every POST helper call (see app.lua / lapis.csrf).
+	local encoding = require("lapis.util.encoding")
+	local config = require("lapis.config").get()
+	local CSRF_COOKIE = config.session_name .. "_token"
+	local CSRF_KEY = "spec-csrf-key"
+	local CSRF_TOKEN = encoding.encode_with_secret({ k = CSRF_KEY })
+
 	local function GET(url)
 		return simulate_request(app, url, { method = "GET" })
 	end
 	local function POST(url, params, user)
+		params = params or {}
+		if params.csrf_token == nil then
+			params.csrf_token = CSRF_TOKEN
+		end
 		return simulate_request(app, url, {
 			method = "POST",
-			post = params or {},
+			post = params,
 			session = user and { current_user = user } or nil,
+			cookies = { [CSRF_COOKIE] = CSRF_KEY },
 		})
 	end
 
@@ -169,7 +184,7 @@ describe("pagesix integration", function()
 			assert.truthy(body:find("Invalid username or password", 1, true))
 		end)
 
-		it("rejects a login POST without a CSRF token", function()
+		it("rejects a login POST without a CSRF token (403, global filter)", function()
 			Users:create({
 				user_name = "authuser3",
 				user_pass = Password.hash("secret123"),
@@ -179,8 +194,19 @@ describe("pagesix integration", function()
 				method = "POST",
 				post = { username = "authuser3", password = "secret123" },
 			})
-			assert.same(200, status) -- not a 302: not logged in
-			assert.truthy(body:find("Invalid session", 1, true))
+			assert.same(403, status) -- blocked before the action runs; not logged in
+			assert.truthy(body:find("session expired", 1, true))
+			assert.is_nil(Users:find({ user_name = "authuser3", user_pass = "secret123" }))
+		end)
+
+		it("blocks a state-changing form POST with no CSRF token", function()
+			-- A signed-in vote is still rejected without a token: CSRF now covers
+			-- every state-changing form, not just login/register.
+			local status = simulate_request(app, "/subscribe/programming", {
+				method = "POST",
+				session = { current_user = "demo" },
+			})
+			assert.same(403, status)
 		end)
 
 		it("registers a new user with a hashed password", function()
@@ -206,6 +232,85 @@ describe("pagesix integration", function()
 			local status, _, headers = POST("/vote/post/1/up", {})
 			assert.same(302, status)
 			assert.truthy((headers.location or ""):find("/login", 1, true))
+		end)
+
+		it("re-hashes legacy plaintext passwords (migration [50])", function()
+			-- An old seed stored the password verbatim; bcrypt can't verify it.
+			local u = Users:create({
+				user_name = "legacyplain",
+				user_pass = "hunter2",
+				user_email = "lp@e.com",
+			})
+			assert.is_false(Password.verify("hunter2", u.user_pass))
+
+			require("migrations")[50]()
+
+			local migrated = Users:find(u.id)
+			assert.is_true(Password.verify("hunter2", migrated.user_pass))
+		end)
+	end)
+
+	describe("password reset", function()
+		local Password = require("src.utils.password")
+		local PasswordResets = require("models.password_resets")
+
+		it("issues a token, sets a new password, and signs the user in", function()
+			local u = Users:create({
+				user_name = "resetme",
+				user_pass = Password.hash("oldpass1"),
+				user_email = "reset@e.com",
+			})
+
+			-- Request a reset; dev surfaces the link (with token) in the page.
+			local status, body = POST("/password", { username = "resetme" })
+			assert.same(200, status)
+			local token = body:match("token=([a-f0-9]+)")
+			assert.is_true(token ~= nil and #token > 0)
+
+			assert.same(200, (GET("/password/reset?token=" .. token)))
+
+			local s2 = POST("/password/reset", {
+				token = token,
+				passwd = "brandnew1",
+				passwd2 = "brandnew1",
+			})
+			assert.same(302, s2) -- success: redirected and signed in
+
+			local updated = Users:find(u.id)
+			assert.is_true(Password.verify("brandnew1", updated.user_pass))
+			assert.is_false(Password.verify("oldpass1", updated.user_pass))
+			assert.is_nil(PasswordResets:valid(token)) -- token consumed
+		end)
+
+		it("rejects mismatched passwords and keeps the token", function()
+			local u = Users:create({
+				user_name = "resetmismatch",
+				user_pass = Password.hash("oldpass1"),
+				user_email = "rm@e.com",
+			})
+			local token = PasswordResets:issue(u.id)
+
+			local status, body = POST("/password/reset", {
+				token = token,
+				passwd = "brandnew1",
+				passwd2 = "different1",
+			})
+			assert.same(200, status)
+			assert.truthy(body:find("do not match", 1, true))
+			assert.is_not_nil(PasswordResets:valid(token)) -- not consumed
+			assert.is_true(Password.verify("oldpass1", Users:find(u.id).user_pass))
+		end)
+
+		it("rejects an invalid token", function()
+			local status, body = GET("/password/reset?token=deadbeef")
+			assert.same(200, status)
+			assert.truthy(body:find("invalid or has expired", 1, true))
+		end)
+
+		it("does not reveal whether an account exists", function()
+			local status, body = POST("/password", { username = "nobody-here-at-all" })
+			assert.same(200, status)
+			assert.truthy(body:find("If an account matches", 1, true))
 		end)
 	end)
 
@@ -352,6 +457,18 @@ describe("pagesix integration", function()
 		it("rejects a post with neither url nor body", function()
 			POST("/submit", { title = "empty post", subreddit = "programming" }, "demo")
 			assert.is_nil(Posts:find({ title = "empty post" }))
+		end)
+
+		it("previews a self-post's Markdown without creating it", function()
+			local status, body = POST("/submit", {
+				title = "preview me",
+				body = "hello **bold**",
+				subreddit = "programming",
+				preview = "1",
+			}, "demo")
+			assert.same(200, status)
+			assert.truthy(body:find("<strong>bold</strong>", 1, true))
+			assert.is_nil(Posts:find({ title = "preview me" }))
 		end)
 	end)
 
@@ -1019,6 +1136,29 @@ describe("pagesix integration", function()
 			assert.truthy(home:find("/r/programming", 1, true))
 
 			POST("/subscribe/programming", {}, "demo") -- cleanup
+		end)
+	end)
+
+	describe("navigation & static pages", function()
+		it("renders the about/faq/help/contact pages", function()
+			for _, path in ipairs({ "/about", "/faq", "/help", "/contact" }) do
+				local status, body = GET(path)
+				assert.same(200, status)
+				assert.truthy(#body > 0)
+			end
+		end)
+
+		it("shows a CSRF-protected logout control in the header when signed in", function()
+			local _, body =
+				simulate_request(app, "/", { method = "GET", session = { current_user = "demo" } })
+			assert.truthy(body:find('action="/logout"', 1, true))
+			assert.truthy(body:find("log out", 1, true))
+		end)
+
+		it("logs out via a CSRF-protected POST", function()
+			local status, _, headers = POST("/logout", {}, "demo")
+			assert.same(302, status)
+			assert.is_not_nil(headers.location)
 		end)
 	end)
 end)

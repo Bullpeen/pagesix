@@ -16,9 +16,13 @@ suite + luacheck pass**.
 - [x] **Auth/password hardening** (issue #6): bcrypt password hashing
       (`src/utils/password`), CSRF on the login/register forms, uncached auth
       routes, login/register error feedback, dev secret from `$SESSION_SECRET`.
-      Follow-ups: extend CSRF to all state-changing forms; password reset;
-      re-hash/seed the demo users (their seeded passwords are plaintext and
-      can't log in).
+      Follow-ups **(done)**: CSRF now covers *every* state-changing form via a
+      global `before_filter` (403 on bad/missing token); **password reset**
+      (`/password` issues a one-shot token → `/password/reset` sets a new bcrypt
+      password; `password_resets` table, migration `[17]`); and the seeded demo
+      users are **re-hashed** — seed migration `[14]` bcrypts at creation and
+      idempotent migration `[50]` re-hashes any leftover plaintext (demo login is
+      username + `hunter2`).
 - [x] **Subscribe / unsubscribe** — toggle action + the header's "my subs" and
       the `/subscribed` page now populate for the logged-in user.
 - [x] **Pagination** — frontpage / `/r/:sub` / `/r/all` / `/r/popular` paginate
@@ -28,7 +32,8 @@ suite + luacheck pass**.
       `[deleted]` (replies kept); deleted posts drop from listings and show
       `[deleted]` on their page.
 - [x] **Submit self-posts** — the submit form takes a title + (url OR Markdown
-      body); self posts render their body on the post page. (Preview still TODO.)
+      body); self posts render their body on the post page. A *Preview* button
+      renders the Markdown without posting (and submit errors now show on-page).
 
 ## Missing Reddit / HN features (backlog)
 - [x] Search — **SQLite FTS5** virtual table over post title/body, kept in sync

@@ -427,6 +427,7 @@ return {
 
 	-- create Users with random user_names
 	[14] = function()
+		local Password = require("src.utils.password")
 		local subreddits = Forum:select()
 
 		for i = 1, math.random(10, 100) do
@@ -434,7 +435,9 @@ return {
 			local s, e = Users:create({
 				user_name = name,
 				user_email = name .. "@localhost",
-				user_pass = "hunter2",
+				-- Demo login: username + "hunter2". Hash it like a real signup so
+				-- the seeded users can actually log in (bcrypt, never plaintext).
+				user_pass = Password.hash("hunter2"),
 			})
 			if not s then
 				print("error creating " .. name)
@@ -492,6 +495,22 @@ return {
 		end
 	end,
 
+	-- password reset tokens (one-shot, time-limited). A row is created when a
+	-- user requests a reset and deleted once consumed or expired.
+	[17] = function()
+		schema.create_table("password_resets", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer },
+			{ "token", types.text({ unique = true }) },
+			{ "expires_at", types.text },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+		}, opts)
+		schema.create_index("password_resets", "token", { unique = true, if_not_exists = true })
+		schema.create_index("password_resets", "user_id", { if_not_exists = true })
+	end,
+
 	-- cast Votes on posts in each subreddit
 	[20] = function()
 		local posts = Posts:select()
@@ -517,6 +536,21 @@ return {
 		for _, post in ipairs(posts) do
 			misc:generate_comment_votes(post.id, math.random(10))
 		end
+	end,
+
+	-- Re-hash any plaintext passwords left by earlier seed runs. Old seeds
+	-- stored "hunter2" verbatim, which bcrypt verify rejects, so those demo
+	-- users could never log in. bcrypt digests start with "$2"; anything else
+	-- (and non-empty -- anonymous_coward keeps its blank, unusable password) is
+	-- a legacy plaintext value we re-hash in place. Idempotent: a second run
+	-- finds only "$2..." hashes and does nothing.
+	[50] = function()
+		local Password = require("src.utils.password")
+		local users = Users:select("WHERE user_pass != '' AND user_pass NOT LIKE '$2%'")
+		for _, user in ipairs(users) do
+			user:update({ user_pass = Password.hash(user.user_pass) })
+		end
+		print("re-hashed " .. #users .. " legacy plaintext password(s)")
 	end,
 
 	[99] = function()

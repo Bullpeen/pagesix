@@ -49,7 +49,7 @@
 					<% end %>
 
 				</ul>
-				<a href="/subs/mine/" id="sr-more-link">- edit subs »</a>
+				<a href="/subreddits/mine/" id="sr-more-link">- edit subs »</a>
 			</div>
 		</div>
 	</div>
@@ -70,14 +70,22 @@
 				<a href="/controversial" class="new choice">controversial</a>
 			</li>
 			<li>
-				<a href="/comments" class="sr-comments choice">comments</a>
+				<a href="/r/all" class="sr-comments choice">all</a>
 			</li>
 		</ul>
 	</div>
 
     <div id="header-bottom-right">
-		<% if not session then %>
-        <span class="user">Want to join? 
+		<% if current_user then %>
+        <span class="user">
+            <a href="/user/<%= current_user.user_name %>"><%= current_user.user_name %></a>
+            <form class="logout-form" method="POST" action="/logout" style="display:inline">
+                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+                <button class="button-link" type="submit">log out</button>
+            </form>
+        </span>
+		<% else %>
+        <span class="user">Want to join?
             <a href="/login" class="login-required">Log in or sign up</a> in seconds.
         </span>
 		<% end %>

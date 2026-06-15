@@ -3,10 +3,9 @@
 
 local Users = require("models.users")
 local Password = require("src.utils.password")
-local csrf = require("lapis.csrf")
 
+-- CSRF is generated/validated globally in app.lua's before_filter.
 local function fail(self, message)
-	self.csrf_token = csrf.generate_token(self)
 	self.error = message
 	return { render = "register" }
 end
@@ -19,15 +18,10 @@ return {
 	end,
 
 	GET = function(self)
-		self.csrf_token = csrf.generate_token(self)
 		return { render = "register" }
 	end,
 
 	POST = function(self)
-		if not csrf.validate_token(self) then
-			return fail(self, "Invalid session. Please try again.")
-		end
-
 		local passwd = self.params.passwd or ""
 		if passwd ~= (self.params.passwd2 or "") then
 			return fail(self, "Passwords do not match.")

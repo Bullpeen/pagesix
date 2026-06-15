@@ -5,10 +5,12 @@
             <span class="rank"><%= n %></span>
             <div class="midcol unvoted">
                 <form class="arrow-form" method="POST" action="/vote/post/<%= post.id %>/up">
+                    <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
                     <button class="arrow up" type="submit" aria-label="upvote"></button>
                 </form>
                 <div class="score unvoted" title=""><%= post.upvotes - post.downvotes %></div>
                 <form class="arrow-form" method="POST" action="/vote/post/<%= post.id %>/down">
+                    <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
                     <button class="arrow down" type="submit" aria-label="downvote"></button>
                 </form>
             </div>
@@ -41,11 +43,13 @@
                         <% if current_user then %>
                         <li class="link-save-button">
                             <form method="POST" action="/post/<%= post.id %>/save">
+                                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
                                 <button class="button-link" type="submit">save</button>
                             </form>
                         </li>
                         <li class="hide-button">
                             <form method="POST" action="/post/<%= post.id %>/hide">
+                                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
                                 <button class="button-link" type="submit">hide</button>
                             </form>
                         </li>

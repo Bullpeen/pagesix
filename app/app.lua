@@ -8,6 +8,7 @@ local r2 = require("lapis.application").respond_to
 local after_dispatch = require("lapis.nginx.context").after_dispatch
 -- local to_json = require("lapis.util").to_json
 local console = require("lapis.console")
+local csrf = require("lapis.csrf")
 
 local app = lapis.Application()
 
@@ -35,6 +36,25 @@ app:before_filter(function(self)
 		-- https://leafo.net/lapis/reference/configuration.html#performance-measurement
 		-- print(to_json(ngx.ctx.performance))
 	end)
+
+	-- CSRF protection for every state-changing request. Lapis keys the token to
+	-- a per-browser `<session_name>_token` cookie, so one token is valid for all
+	-- of a session's forms. We validate any non-GET request up front (the dev
+	-- `/console` REPL is exempt -- it posts its own eval form without a token)
+	-- and expose `csrf_token` to every view so all forms can embed it.
+	local method = self.req.method
+	local path = self.req.parsed_url.path or ""
+	if method ~= "GET" and method ~= "HEAD" and not path:match("^/console") then
+		if not csrf.validate_token(self) then
+			return self:write({
+				status = 403,
+				layout = false,
+				"Your session expired or this form is stale. Go back, reload the "
+					.. "page, and try again.",
+			})
+		end
+	end
+	self.csrf_token = csrf.generate_token(self)
 
 	-- Make the logged-in user and their subscriptions available to every view
 	-- (the layout header renders `subs` as the "my subs" nav).
@@ -77,6 +97,12 @@ app:match("sitemap", "/sitemap.xml", r2(require("actions.sitemap")))
 app:match("robots", "/robots.txt", r2(require("actions.robots")))
 app:match("security_txt", "/.well-known/security.txt", r2(require("actions.security_txt")))
 app:match("security_txt_root", "/security.txt", r2(require("actions.security_txt")))
+
+-- Simple static info pages (literal paths win over the /(:sort) catch-all).
+app:match("about", "/about", r2(require("actions.static")))
+app:match("faq", "/faq", r2(require("actions.static")))
+app:match("help", "/help", r2(require("actions.static")))
+app:match("contact", "/contact", r2(require("actions.static")))
 
 app:match("homepage", "/(:sort)", r2(require("actions.index")))
 

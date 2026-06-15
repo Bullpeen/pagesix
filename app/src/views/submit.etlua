@@ -1,3 +1,8 @@
 <div class="split-panel">
+    <% if errors and #errors > 0 then %>
+        <div class="error c-alert c-alert-danger">
+            <% for _, err in ipairs(errors) do %><p><%= err %></p><% end %>
+        </div>
+    <% end %>
     <% render('views.fragments.form_submit') %>
 </div>

@@ -36,8 +36,11 @@ local function auth(app)
 	-- NB: not cached -- auth pages embed a per-session CSRF token and must not
 	-- be shared across users.
 	app:match("login", "/login", r2(require("actions.login")))
-	app:match("password", "/password", r2(require("actions.register")))
 	app:match("register", "/register", r2(require("actions.register")))
+	-- Password reset: request a token (/password), then set a new password with
+	-- it (/password/reset?token=...).
+	app:match("password", "/password", r2(require("actions.password")))
+	app:match("password_reset", "/password/reset", r2(require("actions.password_reset")))
 
 	app:match("logout", "/logout", function(self)
 		-- Logout
