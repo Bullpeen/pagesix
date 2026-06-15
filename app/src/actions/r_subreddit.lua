@@ -49,6 +49,7 @@ return {
 		if self.current_user then
 			self.subscribed =
 				require("models.subscriptions"):is_subscribed(self.current_user.id, sub.id)
+			self.can_moderate = Forum:can_moderate(self.current_user.id, sub)
 		end
 	end,
 

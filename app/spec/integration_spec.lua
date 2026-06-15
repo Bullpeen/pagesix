@@ -672,6 +672,84 @@ describe("pagesix integration", function()
 		end)
 	end)
 
+	describe("RSS import (live)", function()
+		local feed_import = require("src.utils.feed_import")
+		local Feeds = require("models.feeds")
+
+		local RSS = [[<?xml version="1.0"?><rss version="2.0"><channel>
+			<title>Imp</title>
+			<item><title>Imported A</title><link>https://imp.example/a</link><guid>impA</guid></item>
+			<item><title>Imported B</title><link>https://imp.example/b</link><guid>impB</guid></item>
+		</channel></rss>]]
+
+		it("imports new entries and dedups on re-run", function()
+			local bot = Feeds:bot()
+			local n1 = feed_import.import_entries(1, bot.id, {
+				{ title = "X", link = "https://d.example/x", guid = "gx" },
+				{ title = "Y", link = "https://d.example/y", guid = "gy" },
+			})
+			assert.same(2, n1)
+			assert.is_not_nil(Posts:find({ external_guid = "gx" }))
+
+			-- Re-importing the same guids creates nothing.
+			local n2 = feed_import.import_entries(1, bot.id, {
+				{ title = "X", link = "https://d.example/x", guid = "gx" },
+			})
+			assert.same(0, n2)
+		end)
+
+		it("refreshes a subreddit's feeds via a stubbed fetch", function()
+			Feeds:add(1, "https://imp.example/feed.xml")
+			local orig = feed_import.fetch
+			feed_import.fetch = function()
+				return RSS, 200
+			end
+
+			assert.same(2, feed_import.refresh_subreddit(1))
+			assert.is_not_nil(Posts:find({ external_guid = "impA" }))
+			-- A second refresh of the same feed imports nothing new.
+			assert.same(0, feed_import.refresh_subreddit(1))
+
+			feed_import.fetch = orig
+		end)
+
+		it("records a fetch failure without importing", function()
+			local f = Feeds:add(1, "https://dead.example/feed.xml")
+			local imported = feed_import.refresh_feed(f, function()
+				return nil, 500
+			end)
+			assert.same(0, imported)
+			assert.same(1, tonumber(Feeds:find(f.id).failure_count))
+		end)
+
+		it("lets a moderator trigger a refresh; ignores non-mods", function()
+			Feeds:add(1, "https://imp2.example/feed.xml")
+			local RSS2 = [[<?xml version="1.0"?><rss version="2.0"><channel>
+				<item><title>ModFetched</title><link>https://imp2.example/p</link><guid>mod1</guid></item>
+			</channel></rss>]]
+			local orig = feed_import.fetch
+			feed_import.fetch = function()
+				return RSS2, 200
+			end
+
+			-- A non-moderator can't trigger an import.
+			Users:create({
+				user_name = "feed_nonmod",
+				user_pass = "password",
+				user_email = "fn@e.com",
+			})
+			POST("/r/programming/feeds/refresh", {}, "feed_nonmod")
+			assert.is_nil(Posts:find({ external_guid = "mod1" }))
+
+			-- "demo" created /r/programming, so it can.
+			local status = POST("/r/programming/feeds/refresh", {}, "demo")
+			assert.same(302, status)
+			assert.is_not_nil(Posts:find({ external_guid = "mod1" }))
+
+			feed_import.fetch = orig
+		end)
+	end)
+
 	describe("RSS output feeds", function()
 		it("serves the frontpage feed as RSS XML", function()
 			local status, body, headers = simulate_request(app, "/.rss", { method = "GET" })

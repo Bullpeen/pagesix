@@ -520,6 +520,30 @@ return {
 		schema.create_index("posts", "sub_id", "stickied", { if_not_exists = true })
 	end,
 
+	-- live RSS import: per-feed rows (with fetch state) + a dedup key on posts.
+	-- Promotes the legacy forum.feeds CSV into a real table the importer drives.
+	[19] = function()
+		schema.create_table("feeds", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "sub_id", types.integer },
+			{ "url", types.text },
+			{ "enabled", types.integer({ default = true }) },
+			{ "last_fetched_at", types.text({ null = true }) },
+			{ "last_status", types.text({ null = true }) },
+			{ "failure_count", types.integer({ default = 0 }) },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(sub_id) REFERENCES forum(id)",
+			"UNIQUE(sub_id, url)",
+		}, opts)
+		schema.create_index("feeds", "sub_id", { if_not_exists = true })
+
+		-- Dedup key for imported posts: the feed entry's guid/link. Null for
+		-- native (user-submitted) posts.
+		schema.add_column("posts", "external_guid", types.text({ null = true }))
+		schema.create_index("posts", "external_guid", { if_not_exists = true })
+	end,
+
 	-- cast Votes on posts in each subreddit
 	[20] = function()
 		local posts = Posts:select()
@@ -560,6 +584,22 @@ return {
 			user:update({ user_pass = Password.hash(user.user_pass) })
 		end
 		print("re-hashed " .. #users .. " legacy plaintext password(s)")
+	end,
+
+	-- Promote the legacy forum.feeds CSV into the feeds table so the live
+	-- importer has per-feed rows to work from. Idempotent (Feeds:add dedups).
+	[60] = function()
+		local Feeds = require("src.models.feeds")
+		for _, sub in ipairs(Forum:select()) do
+			if sub.feeds and sub.feeds ~= "" then
+				for url in string.gmatch(sub.feeds, "([^,]+)") do
+					url = url:match("^%s*(.-)%s*$")
+					if url ~= "" then
+						Feeds:add(sub.id, url)
+					end
+				end
+			end
+		end
 	end,
 
 	[99] = function()

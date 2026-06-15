@@ -54,8 +54,16 @@ suite + luacheck pass**.
       (not self); `/inbox` lists them + marks read; header shows an unread count.
       (Direct messages between users intentionally out of scope.)
 - Flair, awards/gold (currently static placeholders).
-- [x] RSS **out**: `/.rss` and `/r/:sub/.rss` output feeds. RSS **in** (live
-      import of `forum.feeds`) still only runs as a one-shot seed migration.
+- [x] RSS **out**: `/.rss` and `/r/:sub/.rss` output feeds. RSS **in**: a live
+      importer (`utils/feed_import` + `utils/feed_parse`, luaexpat-based, no
+      `feedparser` dep) fetches each feed, parses RSS/Atom, and creates posts for
+      new entries deduped on `posts.external_guid`. Feeds live in their own
+      `feeds` table (migration `[19]`, seeded from the legacy `forum.feeds` CSV in
+      `[60]`); imported posts are attributed to an `rss_bot` system user. Mods
+      trigger a refresh via `POST /r/:sub/feeds/refresh` (CSRF). **Follow-up:** an
+      in-process `ngx.timer.every` scheduler (non-blocking `lua-resty-http`, a
+      per-worker lock, ETag/Last-Modified conditional GET) so it runs on a timer
+      rather than only on demand; plus feed add/remove UI.
 - [x] Spam/quality filtering — `lapis-bayes` is now wired up (`utils/spam`):
       pure-Lua tokenizer, built-in corpus trained in migration `[12]`, and a
       fail-open `is_spam` check on post + comment submission. (lapis-bayes is

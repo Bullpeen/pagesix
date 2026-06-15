@@ -30,6 +30,7 @@ local function auth(app)
 	app:match("mod_remove", "/post/:post_id[%d]/remove", r2(require("actions.mod_remove")))
 	app:match("post_lock", "/post/:post_id[%d]/lock", r2(require("actions.lock")))
 	app:match("post_sticky", "/post/:post_id[%d]/sticky", r2(require("actions.sticky")))
+	app:match("refresh_feeds", "/r/:subreddit/feeds/refresh", r2(require("actions.refresh_feeds")))
 	app:match("crosspost", "/post/:post_id[%d]/crosspost", r2(require("actions.crosspost")))
 	app:match("inbox", "/inbox", r2(require("actions.inbox")))
 

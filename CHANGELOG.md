@@ -8,6 +8,29 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Live RSS/Atom import
+- **On-demand feed import** — replaces the dead one-shot seed path (which needed
+  the uninstalled `feedparser`). `utils/feed_parse` parses RSS 2.0 and Atom using
+  luaexpat (`lxp.lom`) only — no network, fully unit-tested against fixtures;
+  `utils/feed_import` fetches a feed (blocking luasocket/luasec, injectable for
+  tests), parses it, and creates posts for entries not already imported.
+- **Dedup** — imported posts carry the feed entry's guid/link in a new
+  `posts.external_guid` column (migration `[19]`); re-running an import creates
+  nothing new.
+- **Feeds table** — feeds moved out of the `forum.feeds` CSV into a `feeds` table
+  (`sub_id`, `url`, `enabled`, `last_fetched_at`, `last_status`, `failure_count`;
+  migration `[19]`), seeded from the legacy CSV in `[60]`. Fetch outcomes are
+  recorded so a future scheduler can back off dead feeds.
+- **Attribution + trigger** — imported posts belong to an on-demand `rss_bot`
+  system user (unusable password). Moderators refresh a sub's feeds via
+  `POST /r/:sub/feeds/refresh` (mod-only, CSRF), with a "refresh feeds" button on
+  the subreddit header.
+- **Deliberately not yet** — the in-process `ngx.timer` scheduler (non-blocking
+  `lua-resty-http`, per-worker lock, conditional GET) and feed add/remove UI are
+  follow-ups; this lands the tested importer core + manual/cron trigger.
+- Specs: parser (RSS/Atom/malformed/long-title), import + dedup, fetch-failure
+  bookkeeping, and the mod-only endpoint (non-mods ignored). (149 specs.)
+
 ### Moderation: sticky, lock-comments, public modlog
 - **Sticky posts** — mods can pin a post to the top of its subreddit listing
   (`POST /post/:id/sticky`, toggle). New `posts.stickied` column (migration
