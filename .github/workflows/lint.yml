@@ -26,7 +26,7 @@ jobs:
       - name: shellcheck
         run: git ls-files '*.sh' | xargs -r shellcheck
 
-  # Lint the runtime Dockerfile (Dockerfile.prod is a commented-out placeholder).
+  # Lint the runtime Dockerfile.
   hadolint:
     runs-on: ubuntu-latest
     steps:
