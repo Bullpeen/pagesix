@@ -35,6 +35,33 @@ suite + luacheck pass**.
       body); self posts render their body on the post page. A *Preview* button
       renders the Markdown without posting (and submit errors now show on-page).
 
+## Forum generalization (community-forum / NodeBB direction)
+Extending the link-aggregator into a community forum. Build order is
+dependency-driven (foundations first); full plan in
+`.context/forum-features-plan.md`.
+- [x] **RBAC privilege matrix** — generalized the binary `Forum:can_moderate`
+      into a named-privilege system (`utils/privileges.lua`):
+      `Privileges.can(user, forum, privilege)` resolves a forum role
+      (`owner` > `moderator` > `member`) against a matrix, and a global site
+      `admin` overrides every check. New `roles` + `site_roles` tables (migration
+      `[100]`, backfilled from creators + the `moderators` table) and
+      `models/roles`/`models/site_roles`. The `lock`/`sticky`/`mod_remove`/
+      `refresh_feeds` actions request their specific privilege;
+      `Forum:can_moderate` stays as a back-compat shim. (`privileges_spec`.)
+- [ ] **Admin Control Panel** — replace the `/admin` stub; `site_settings` table;
+      user / forum / queue / feeds management, gated by the site `admin` role.
+- [ ] **User reputation** — persist `Users:karma()` into `users.reputation`;
+      trust levels + profile badges.
+- [ ] **Post queue + new-user rate limit** — `approved` flag on posts/comments,
+      mod approval queue (privilege `approve`), rate-limit window.
+- [ ] **Tags** — `tags` + `post_tags` tables, tag chips, `/t/:tag` listing.
+- [ ] **@mentions** — `utils/mentions`, `mention` notifications (nullable
+      `notifications.post_id`), linkified in Markdown.
+- [ ] **Accept-answer mode** — `posts.is_question` + `accepted_comment_id`,
+      OP/mod accept (privilege `accept_answer`), pinned answer.
+- [ ] **OAuth login** — `oauth_identities` table, authorization-code flow,
+      provider buttons on login/register.
+
 ## Missing Reddit / HN features (backlog)
 - [x] Search — **SQLite FTS5** virtual table over post title/body, kept in sync
       by triggers; `GET /search?q=` ranks by relevance and excludes deleted.

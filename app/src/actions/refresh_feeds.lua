@@ -4,6 +4,7 @@
 local Users = require("models.users")
 local Forum = require("src.models.forum")
 local feed_import = require("src.utils.feed_import")
+local Privileges = require("src.utils.privileges")
 
 return {
 	-- POST /r/:subreddit/feeds/refresh  -- subreddit moderators only
@@ -19,7 +20,7 @@ return {
 			return { redirect_to = self:url_for("homepage") }
 		end
 
-		if Forum:can_moderate(user.id, sub) then
+		if Privileges.can(user.id, sub, "manage_feeds") then
 			feed_import.refresh_subreddit(sub.id)
 		end
 

@@ -57,31 +57,27 @@ local Forum = Model:extend("forum", {
 	},
 })
 
---- Whether a user may moderate this subreddit: its creator, or a member of the
--- moderators join table.
+--- Whether a user may moderate this subreddit.
+-- Back-compat shim over the privilege matrix (src/utils/privileges.lua): gates
+-- the generic mod-tools UI. "remove" is the canonical moderation power held by
+-- both owners and moderators. New code should call Privileges.can(...) with the
+-- specific privilege it needs instead.
 -- @tparam number user_id
 -- @tparam table forum a forum row
 -- @treturn boolean
 function Forum:can_moderate(user_id, forum)
-	if not forum or not user_id then
-		return false
-	end
-	-- The creator is always a moderator.
-	if tonumber(forum.creator_id) == tonumber(user_id) then
-		return true
-	end
-	-- Otherwise check the moderators join table (replaces the legacy
-	-- forum.moderator_ids CSV).
-	local Moderators = require("src.models.moderators")
-	return Moderators:find({ subreddit_id = forum.id, user_id = user_id }) ~= nil
+	local Privileges = require("src.utils.privileges")
+	return Privileges.can(user_id, forum, "remove")
+end
+
+--- Make a user the owner of a subreddit (idempotent).
+function Forum:add_owner(subreddit_id, user_id)
+	require("src.models.roles"):assign(subreddit_id, user_id, "owner")
 end
 
 --- Add a user as a moderator of a subreddit (idempotent).
 function Forum:add_moderator(subreddit_id, user_id)
-	local Moderators = require("src.models.moderators")
-	if not Moderators:find({ subreddit_id = subreddit_id, user_id = user_id }) then
-		Moderators:create({ subreddit_id = subreddit_id, user_id = user_id })
-	end
+	require("src.models.roles"):assign(subreddit_id, user_id, "moderator")
 end
 
 return Forum

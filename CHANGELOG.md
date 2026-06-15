@@ -8,6 +8,30 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Forum generalization: RBAC privilege matrix
+First step of generalizing the link-aggregator into a community forum (full
+roadmap in `.context/forum-features-plan.md`).
+- **Named privileges replace binary mod checks** — generalized the single
+  `Forum:can_moderate` chokepoint into a privilege matrix (`utils/privileges.lua`).
+  `Privileges.can(user_id, forum, privilege)` resolves a user's forum role
+  (`owner` > `moderator` > `member`) and looks up the privilege; a global site
+  `admin` overrides every forum-level check. Owners hold all privileges;
+  moderators hold the day-to-day content powers (`remove`, `lock`, `sticky`,
+  `approve`, `manage_feeds`, `accept_answer`) but not the owner-only governance
+  powers (`manage_mods`, `edit_forum`, `ban`).
+- **Roles tables** — new `roles` table (per-forum role per user) and `site_roles`
+  table (global admin), created and backfilled by migration `[100]` from existing
+  forum creators (→ `owner`) and `moderators` rows (→ `moderator`). New models
+  `models/roles` and `models/site_roles`; the legacy `moderators` table is left
+  intact. `Forum:add_owner`/`add_moderator` now write role rows.
+- **Action call sites** — `lock`, `sticky`, `mod_remove`, and `refresh_feeds` now
+  request their specific privilege instead of a blanket mod check;
+  `Forum:can_moderate` stays as a back-compat shim over the matrix (still used for
+  the generic mod-tools UI flags). No behavior change for existing mods/creators.
+- Specs: role resolution, the full matrix (owner/moderator/member), site-admin
+  override, the `can_moderate` shim, `Roles:assign` idempotency, and the migration
+  `[100]` backfill. (167 specs.)
+
 ### Live RSS/Atom import
 - **On-demand feed import** — replaces the dead one-shot seed path (which needed
   the uninstalled `feedparser`). `utils/feed_parse` parses RSS 2.0 and Atom using

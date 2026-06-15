@@ -645,6 +645,48 @@ return {
 		db.query("ANALYZE")
 	end,
 
+	-- RBAC: generalized per-forum roles (owner/moderator/member) plus global
+	-- site roles (admin). Supersedes the binary `moderators` join table for
+	-- permission checks -- see src/utils/privileges.lua. The `moderators` table
+	-- is left intact; its rows are backfilled here so nothing is lost.
+	[100] = function()
+		schema.create_table("roles", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "subreddit_id", types.integer },
+			{ "user_id", types.integer },
+			{ "role", types.text },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(subreddit_id) REFERENCES forum(id)",
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+			-- One role per user per forum (owner > moderator > member).
+			"UNIQUE(subreddit_id, user_id)",
+		}, opts)
+		schema.create_index("roles", "subreddit_id", "user_id", { if_not_exists = true })
+
+		schema.create_table("site_roles", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer },
+			{ "role", types.text },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+			"UNIQUE(user_id, role)",
+		}, opts)
+		schema.create_index("site_roles", "user_id", { if_not_exists = true })
+
+		-- Backfill: every forum creator is an owner; every moderators row is a
+		-- moderator. Owners are assigned first so a creator who also sits in the
+		-- moderators table keeps the higher role (Roles:assign is create-if-absent).
+		local Roles = require("src.models.roles")
+		for _, forum in ipairs(Forum:select()) do
+			Roles:assign(forum.id, forum.creator_id, "owner")
+		end
+		for _, m in ipairs(db.select("subreddit_id, user_id FROM moderators")) do
+			Roles:assign(m.subreddit_id, m.user_id, "moderator")
+		end
+	end,
+
 	-- classify text : https://github.com/leafo/lapis-bayes
 	[1439944992] = require("lapis.bayes.schema").run_migrations,
 }

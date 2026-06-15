@@ -24,6 +24,9 @@ A better social link-sharing site.
 - [x] RSS feed import/sync (per-subreddit; live importer + in-process scheduler)
 - [ ] API (https://reddit.com/dev/api/)
 
+See [`TODO.md`](TODO.md) for the living roadmap, including the forum-generalization
+work (RBAC, admin panel, tags, @mentions, reputation, …).
+
 ## Development
 
 From the root directory:

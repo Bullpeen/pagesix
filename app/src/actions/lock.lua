@@ -7,6 +7,7 @@ local Users = require("models.users")
 local Forum = require("src.models.forum")
 local Posts = require("src.models.posts")
 local Modlog = require("src.models.modlog")
+local Privileges = require("src.utils.privileges")
 
 return {
 	-- POST /post/:post_id/lock  -- subreddit moderators only
@@ -23,7 +24,7 @@ return {
 		end
 
 		local forum = Forum:find(post.sub_id)
-		if Forum:can_moderate(user.id, forum) then
+		if Privileges.can(user.id, forum, "lock") then
 			local locking = tonumber(post.comments_locked) ~= 1
 			post:update({ comments_locked = locking and 1 or 0 })
 			Modlog:create({

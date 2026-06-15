@@ -31,8 +31,8 @@ return {
 			return { redirect_to = self:url_for("subreddits") }
 		end
 
-		-- The creator moderates their subreddit (recorded in the join table).
-		Forum:add_moderator(sub.id, user.id)
+		-- The creator owns their subreddit (full privileges; see utils.privileges).
+		Forum:add_owner(sub.id, user.id)
 
 		return { redirect_to = self:url_for("subreddit", { subreddit = sub.name }) }
 	end,
