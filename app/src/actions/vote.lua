@@ -2,6 +2,7 @@
 -- @module action.vote
 
 local Users = require("models.users")
+local Posts = require("src.models.posts")
 local Comments = require("models.comments")
 local Votes = require("src.models.votes")
 
@@ -28,9 +29,15 @@ return {
 			local comment = Comments:find(tonumber(self.params.comment_id))
 			if comment then
 				Votes:cast(user.id, comment.post_id, comment.id, upvote)
+				-- Keep the content author's cached reputation current.
+				Users:recompute_reputation(comment.user_id)
 			end
 		elseif self.params.post_id then
-			Votes:cast(user.id, tonumber(self.params.post_id), nil, upvote)
+			local post = Posts:find(tonumber(self.params.post_id))
+			if post then
+				Votes:cast(user.id, post.id, nil, upvote)
+				Users:recompute_reputation(post.user_id)
+			end
 		end
 
 		-- Return to the page the vote was cast from.

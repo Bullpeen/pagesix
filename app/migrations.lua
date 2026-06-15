@@ -700,6 +700,26 @@ return {
 		}, opts)
 	end,
 
+	-- Cached user reputation (net vote score). Persists what Users:karma()
+	-- computes live so it can be surfaced cheaply and gate features (trust
+	-- levels). Recomputed on each vote; backfilled here from existing votes.
+	[102] = function()
+		-- Idempotent: add_column throws "duplicate column" on a second run, so
+		-- only add it when absent. The backfill below is always safe to repeat.
+		local has_col = false
+		for _, c in ipairs(db.query("PRAGMA table_info(users)")) do
+			if c.name == "reputation" then
+				has_col = true
+			end
+		end
+		if not has_col then
+			schema.add_column("users", "reputation", types.integer({ default = 0 }))
+		end
+		for _, user in ipairs(Users:select()) do
+			Users:recompute_reputation(user.id)
+		end
+	end,
+
 	-- classify text : https://github.com/leafo/lapis-bayes
 	[1439944992] = require("lapis.bayes.schema").run_migrations,
 }

@@ -1,5 +1,11 @@
 <div class="user-profile">
     <h1>User Profile for <%= user_name %></h1>
     <p class="karma"><%= karma %> karma</p>
+    <% if trust_level then %>
+    <p class="trust">
+        Reputation <%= reputation %>
+        <span class="trust-badge trust-<%= trust_level %>"><%= trust_level %></span>
+    </p>
+    <% end %>
     <% if created_at then %><p class="cake">User since <%= created_at %>.</p><% end %>
 </div>

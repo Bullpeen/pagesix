@@ -114,4 +114,40 @@ function Users:karma(user_id)
 	return tonumber(row[1].karma) or 0
 end
 
+--- Recompute and persist a user's cached `reputation` (their live karma).
+-- Called on every vote so the column stays current; returns the new value.
+-- @tparam number user_id
+-- @treturn number
+function Users:recompute_reputation(user_id)
+	local rep = self:karma(user_id)
+	local user = self:find(user_id)
+	if user then
+		user:update({ reputation = rep })
+	end
+	return rep
+end
+
+-- Reputation thresholds, highest first. A user's trust level is the first band
+-- whose `min` they meet. Used for profile badges and (later) gating new-user
+-- behaviour like the post queue.
+local TRUST_LEVELS = {
+	{ level = "veteran", min = 250 },
+	{ level = "trusted", min = 100 },
+	{ level = "member", min = 10 },
+	{ level = "new", min = nil }, -- floor: everyone else
+}
+
+--- Map a reputation score to a trust level name.
+-- @tparam number reputation
+-- @treturn string "new" | "member" | "trusted" | "veteran"
+function Users:trust_level(reputation)
+	reputation = tonumber(reputation) or 0
+	for _, band in ipairs(TRUST_LEVELS) do
+		if band.min == nil or reputation >= band.min then
+			return band.level
+		end
+	end
+	return "new"
+end
+
 return Users

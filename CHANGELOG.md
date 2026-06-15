@@ -8,6 +8,19 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Forum generalization: user reputation + trust levels
+- **Persisted reputation** — a cached `users.reputation` column (migration `[102]`,
+  backfilled from existing votes) stores what `Users:karma()` computes live;
+  `Users:recompute_reputation` refreshes it and the vote action calls it for the
+  content author on every up/down vote.
+- **Trust levels** — `Users:trust_level(reputation)` maps a score to
+  `new` < `member` (10) < `trusted` (100) < `veteran` (250); the user profile now
+  shows the reputation total and a trust badge. The threshold helper is the hook
+  the upcoming post queue uses to spot new users.
+- Specs: trust-level boundaries, recompute matches karma + persists, downvotes
+  lower it, the `[102]` backfill, and the vote-action wiring through a real
+  request. (181 specs.)
+
 ### Forum generalization: Admin Control Panel
 - **Authed `/admin` panel** replaces the `"Go away"` stub, gated by the site
   `admin` role (`utils/admin_guard` → 302 to login for anon, 403 for non-admins).

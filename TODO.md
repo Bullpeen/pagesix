@@ -53,8 +53,10 @@ dependency-driven (foundations first); full plan in
       key/value, `site_settings` table, migration `[101]`), gated by the site
       `admin` role (`utils/admin_guard`). First admin bootstraps from the
       `ADMIN_USERNAMES` config/env via `Privileges.ensure_admin`. (`admin_spec`.)
-- [ ] **User reputation** — persist `Users:karma()` into `users.reputation`;
-      trust levels + profile badges.
+- [x] **User reputation** — cached `users.reputation` column (migration `[102]`,
+      backfilled), refreshed by `Users:recompute_reputation` on every vote.
+      `Users:trust_level` bands (new/member/trusted/veteran) drive a profile
+      badge and gate new-user behaviour for the post queue. (`reputation_spec`.)
 - [ ] **Post queue + new-user rate limit** — `approved` flag on posts/comments,
       mod approval queue (privilege `approve`), rate-limit window.
 - [ ] **Tags** — `tags` + `post_tags` tables, tag chips, `/t/:tag` listing.

@@ -21,6 +21,8 @@ return {
 		self.user_name = user.user_name
 		self.created_at = user.created_at
 		self.karma = Users:karma(user.id)
+		self.reputation = user.reputation or 0
+		self.trust_level = Users:trust_level(user.reputation)
 
 		-- The posts/comments fragments expect rows with vote aggregates etc.,
 		-- so use the same enriched queries the listing pages do (filtered to
