@@ -20,6 +20,8 @@ return {
 			posts = count("posts"),
 			comments = count("comments"),
 			admins = count("site_roles WHERE role = 'admin'"),
+			pending_posts = count("posts WHERE approved = 0 AND deleted = 0"),
+			pending_comments = count("comments WHERE approved = 0 AND deleted = 0"),
 		}
 	end,
 

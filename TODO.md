@@ -57,8 +57,11 @@ dependency-driven (foundations first); full plan in
       backfilled), refreshed by `Users:recompute_reputation` on every vote.
       `Users:trust_level` bands (new/member/trusted/veteran) drive a profile
       badge and gate new-user behaviour for the post queue. (`reputation_spec`.)
-- [ ] **Post queue + new-user rate limit** — `approved` flag on posts/comments,
-      mod approval queue (privilege `approve`), rate-limit window.
+- [x] **Post queue + new-user rate limit** — `approved` flag on posts/comments
+      (migration `[103]`); brand-new users held (`utils/queue`), filtered from
+      listings/search/threads/profiles. Moderator queue at `/r/:sub/queue`
+      (approve/reject → modlog), dashboard pending counts, and `utils/ratelimit`
+      flood control on submit/comment. (`queue_spec`.)
 - [ ] **Tags** — `tags` + `post_tags` tables, tag chips, `/t/:tag` listing.
 - [ ] **@mentions** — `utils/mentions`, `mention` notifications (nullable
       `notifications.post_id`), linkified in Markdown.

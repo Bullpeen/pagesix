@@ -14,6 +14,8 @@
             <tr><th>Subreddits</th><td><%= stats.forums %></td></tr>
             <tr><th>Posts</th><td><%= stats.posts %></td></tr>
             <tr><th>Comments</th><td><%= stats.comments %></td></tr>
+            <tr><th>Pending posts</th><td><%= stats.pending_posts %></td></tr>
+            <tr><th>Pending comments</th><td><%= stats.pending_comments %></td></tr>
         </tbody>
     </table>
 </div>

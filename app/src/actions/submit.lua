@@ -7,6 +7,11 @@ local Users = require("models.users")
 local Spam = require("src.utils.spam")
 local media = require("src.utils.media")
 local markdown = require("src.utils.markdown")
+local Queue = require("src.utils.queue")
+local Ratelimit = require("src.utils.ratelimit")
+
+-- Flood control: at most this many posts per user per window (seconds).
+local RATE_LIMIT, RATE_WINDOW = 10, 600
 
 return {
 	before = function(self) end,
@@ -55,6 +60,15 @@ return {
 			return { render = "submit" }
 		end
 
+		-- Flood control before we write anything.
+		if Ratelimit.exceeded("posts", user.id, RATE_LIMIT, RATE_WINDOW) then
+			self.errors = { "You're posting too fast. Try again in a few minutes." }
+			return { render = "submit" }
+		end
+
+		-- Brand-new users' posts are held for a moderator (approved = 0).
+		local held = Queue.should_hold(user, sub)
+
 		local link = (url ~= "") and url or nil
 		local post, err = Posts:create({
 			user_id = user.id,
@@ -64,11 +78,19 @@ return {
 			body = (body ~= "") and body or nil,
 			is_self = is_self and 1 or 0,
 			thumbnail = media.thumbnail_for(link),
+			approved = held and 0 or 1,
 		})
 
 		if not post then
 			self.errors = { err }
 			return { render = "submit" }
+		end
+
+		-- A held post is hidden from listings and its own page, so send the
+		-- author to the subreddit (where a future flash can explain the wait)
+		-- rather than to a page that would just bounce them home.
+		if held then
+			return { redirect_to = self:url_for("subreddit", { subreddit = sub.name }) }
 		end
 
 		return { redirect_to = self:url_for(post) }

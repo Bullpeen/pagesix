@@ -116,6 +116,7 @@ function Comments:thread(post_id)
 			FROM comments c
 			WHERE c.post_id = ]] .. tonumber(post_id) .. [[
 				AND c.parent_comment_id IS NULL
+				AND c.approved = 1
 			UNION ALL
 			SELECT c.id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
 				c.deleted, c.parent_comment_id, c.is_submitter,
@@ -123,6 +124,7 @@ function Comments:thread(post_id)
 				t.path || '.' || printf('%020d', c.id)
 			FROM comments c
 			JOIN thread t ON c.parent_comment_id = t.id
+			WHERE c.approved = 1
 		)
 		SELECT t.id, t.post_id, t.user_id, t.body, t.created_at, t.edited,
 			t.deleted, t.parent_comment_id, t.is_submitter, t.depth,
@@ -156,10 +158,29 @@ function Comments:by_user(user_id)
 		INNER JOIN users u ON a.user_id = u.id
 		INNER JOIN posts p ON a.post_id = p.id
 		INNER JOIN forum s ON p.sub_id = s.id
-		WHERE a.user_id = ]] .. tonumber(user_id) .. [[ AND a.deleted = 0
+		WHERE a.user_id = ]] .. tonumber(user_id) .. [[ AND a.deleted = 0 AND a.approved = 1
 		ORDER BY a.created_at DESC]])
 
 	return enrich(rows)
+end
+
+--- Comments in a subreddit awaiting moderator approval (the queue), newest
+-- first. Joined to their post so the queue can link back.
+-- @tparam number sub_id
+-- @treturn table array of comment rows
+function Comments:pending_for_sub(sub_id)
+	return db.select(
+		[[
+		a.id, a.post_id, a.body, a.created_at, u.user_name AS author,
+			p.title AS post_title, s.name AS subreddit
+			FROM comments a
+			INNER JOIN users u ON a.user_id = u.id
+			INNER JOIN posts p ON a.post_id = p.id
+			INNER JOIN forum s ON p.sub_id = s.id
+			WHERE p.sub_id = ? AND a.approved = 0 AND a.deleted = 0
+			ORDER BY a.created_at DESC]],
+		tonumber(sub_id)
+	)
 end
 
 --- A single comment's permalink view: the focused comment plus its full reply

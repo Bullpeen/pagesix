@@ -38,6 +38,17 @@ return {
 			return self:write({ redirect_to = self:url_for("homepage") })
 		end
 
+		-- A post held in the approval queue (approved = 0) is visible only to its
+		-- author and the subreddit's moderators; everyone else is bounced home.
+		if tonumber(post_data.approved) == 0 then
+			local viewer = self.current_user
+			local is_author = viewer and tonumber(viewer.id) == tonumber(post_data.user_id)
+			local can_mod = viewer and Forum:can_moderate(viewer.id, subreddit)
+			if not (is_author or can_mod) then
+				return self:write({ redirect_to = self:url_for("homepage") })
+			end
+		end
+
 		-- Full comment thread (depth-ordered, with author + vote aggregates),
 		-- paginated by root comment so a root's replies never split across pages.
 		self.comments, self.pagination =

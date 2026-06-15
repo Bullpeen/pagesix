@@ -946,11 +946,12 @@ describe("pagesix integration", function()
 				user_pass = "password",
 				user_email = "no@e.com",
 			})
+			-- Established enough not to be held in the approval queue.
 			Users:create({
 				user_name = "notif_replier",
 				user_pass = "password",
 				user_email = "nr@e.com",
-			})
+			}):update({ reputation = 50 })
 			local f = Forum:create({ name = "notifsub", creator_id = op.id })
 			local p = Posts:create({
 				user_id = op.id,
@@ -975,6 +976,7 @@ describe("pagesix integration", function()
 				user_email = "na@e.com",
 			})
 			Users:create({ user_name = "notif_b", user_pass = "password", user_email = "nb@e.com" })
+				:update({ reputation = 50 }) -- not held in the approval queue
 			local f = Forum:create({ name = "notifsub2", creator_id = a.id })
 			local p = Posts:create({
 				user_id = a.id,
@@ -1021,7 +1023,7 @@ describe("pagesix integration", function()
 				user_name = "notif_reader2",
 				user_pass = "password",
 				user_email = "nr2@e.com",
-			})
+			}):update({ reputation = 50 }) -- not held in the approval queue
 			local f = Forum:create({ name = "notifsub4", creator_id = op.id })
 			local p = Posts:create({
 				user_id = op.id,

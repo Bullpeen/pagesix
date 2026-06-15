@@ -8,6 +8,26 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Forum generalization: post/comment approval queue + rate limiting
+- **Hold new users' content** — posts and comments gain an `approved` flag
+  (migration `[103]`, default 1 so existing content stays visible). Brand-new
+  users (trust level `new`) have their submissions held (`approved = 0`);
+  moderators/owners/admins and reputable users post directly
+  (`utils/queue.should_hold`). Held content is filtered out of listings, search,
+  threads, and profiles, and a held post's own page is visible only to its author
+  and the sub's moderators.
+- **Moderator queue** — `/r/:subreddit/queue` (gated by the RBAC `approve`
+  privilege) lists pending posts + comments with approve/reject buttons; approve
+  publishes, reject approves-and-soft-deletes, both recorded in the modlog. A
+  "queue" link appears in the subreddit header for mods, and the admin dashboard
+  shows site-wide pending counts.
+- **Flood control** — `utils/ratelimit` caps posts (10) and comments (30) per
+  user per 10-minute window in the submit/comment actions.
+- Specs: holding policy (new vs established vs mod), rate-limit threshold,
+  listing/thread visibility filtering, the held-post page guard, submit-action
+  holding, and the queue review flow (access control + approve/reject + modlog).
+  (191 specs.)
+
 ### Forum generalization: user reputation + trust levels
 - **Persisted reputation** — a cached `users.reputation` column (migration `[102]`,
   backfilled from existing votes) stores what `Users:karma()` computes live;

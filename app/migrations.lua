@@ -720,6 +720,27 @@ return {
 		end
 	end,
 
+	-- Post/comment approval queue. `approved` defaults to 1 so all existing
+	-- content stays visible; new content from brand-new users is created with
+	-- approved = 0 and held for a moderator (see src/utils/queue.lua). Listings,
+	-- search, and threads filter approved = 1.
+	[103] = function()
+		for _, t in ipairs({ "posts", "comments" }) do
+			-- Idempotent: only add the column when it's absent.
+			local has_col = false
+			for _, c in ipairs(db.query("PRAGMA table_info(" .. t .. ")")) do
+				if c.name == "approved" then
+					has_col = true
+				end
+			end
+			if not has_col then
+				schema.add_column(t, "approved", types.integer({ default = 1 }))
+			end
+		end
+		schema.create_index("posts", "sub_id", "approved", { if_not_exists = true })
+		schema.create_index("comments", "post_id", "approved", { if_not_exists = true })
+	end,
+
 	-- classify text : https://github.com/leafo/lapis-bayes
 	[1439944992] = require("lapis.bayes.schema").run_migrations,
 }

@@ -4,6 +4,7 @@
     <a class="modlog-link" href="/r/<%= subreddit %>/modlog">modlog</a>
     <% if can_moderate then %>
         <a class="feeds-link" href="/r/<%= subreddit %>/feeds">manage feeds</a>
+        <a class="queue-link" href="/r/<%= subreddit %>/queue">queue</a>
     <% end %>
     <% if current_user then %>
         <form class="subscribe-form" method="POST" action="/subscribe/<%= subreddit %>">

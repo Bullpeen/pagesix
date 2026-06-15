@@ -104,7 +104,7 @@ function Posts:get_listing(filters)
 		FROM posts a
 		INNER JOIN users c ON a.user_id = c.id
 		INNER JOIN forum s ON a.sub_id = s.id
-		WHERE a.locked = 0 AND a.deleted = 0]]
+		WHERE a.locked = 0 AND a.deleted = 0 AND a.approved = 1]]
 
 	if filters.sub_id then
 		query = query .. " AND a.sub_id = " .. tonumber(filters.sub_id)
@@ -167,7 +167,7 @@ function Posts:search(query)
 		INNER JOIN posts a ON a.id = f.rowid
 		INNER JOIN users c ON a.user_id = c.id
 		INNER JOIN forum s ON a.sub_id = s.id
-		WHERE posts_fts MATCH ? AND a.deleted = 0
+		WHERE posts_fts MATCH ? AND a.deleted = 0 AND a.approved = 1
 		ORDER BY rank
 		LIMIT 50]],
 		phrase
@@ -179,6 +179,21 @@ function Posts:search(query)
 	end
 
 	return rows
+end
+
+--- Posts in a subreddit awaiting moderator approval (the queue), newest first.
+-- @tparam number sub_id
+-- @treturn table array of post rows with the author's name
+function Posts:pending_for_sub(sub_id)
+	return db.select(
+		[[
+		a.id, a.title, a.url, a.body, a.created_at, u.user_name AS author
+			FROM posts a
+			INNER JOIN users u ON a.user_id = u.id
+			WHERE a.sub_id = ? AND a.approved = 0 AND a.deleted = 0
+			ORDER BY a.created_at DESC]],
+		tonumber(sub_id)
+	)
 end
 
 return Posts

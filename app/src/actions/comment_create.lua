@@ -6,6 +6,12 @@ local Posts = require("src.models.posts")
 local Comments = require("models.comments")
 local Notifications = require("models.notifications")
 local Spam = require("src.utils.spam")
+local Forum = require("src.models.forum")
+local Queue = require("src.utils.queue")
+local Ratelimit = require("src.utils.ratelimit")
+
+-- Flood control: at most this many comments per user per window (seconds).
+local RATE_LIMIT, RATE_WINDOW = 30, 600
 
 return {
 	-- POST /post/:post_id/comment  (form: body, optional parent_comment_id)
@@ -42,7 +48,12 @@ return {
 		-- the existing redirect-based error path does.
 		if Spam.is_spam(self.params.body) then
 			self.errors = { "Your comment looks like spam." }
+		elseif Ratelimit.exceeded("comments", user.id, RATE_LIMIT, RATE_WINDOW) then
+			self.errors = { "You're commenting too fast. Try again in a few minutes." }
 		else
+			-- Brand-new users' comments are held for a moderator (approved = 0).
+			local held = Queue.should_hold(user, Forum:find(post.sub_id))
+
 			-- The Comments model's `body` constraint validates the text; create
 			-- returns nil + error if it fails.
 			local comment, err = Comments:create({
@@ -51,12 +62,14 @@ return {
 				parent_comment_id = parent_id,
 				body = self.params.body,
 				is_submitter = post.user_id == user.id and 1 or 0,
+				approved = held and 0 or 1,
 			})
 			if not comment then
 				self.errors = { err }
-			else
+			elseif not held then
 				-- Notify the parent comment's author (reply) or the post's author
-				-- (top-level comment), unless you're replying to yourself.
+				-- (top-level comment), unless you're replying to yourself. Held
+				-- comments don't notify until a moderator approves them.
 				local recipient = parent and parent.user_id or post.user_id
 				if tonumber(recipient) ~= tonumber(user.id) then
 					Notifications:notify(
