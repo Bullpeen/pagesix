@@ -511,6 +511,15 @@ return {
 		schema.create_index("password_resets", "user_id", { if_not_exists = true })
 	end,
 
+	-- moderation: sticky a post to the top of its subreddit, and lock its
+	-- comment thread (no new comments/replies). Separate from `locked`, which
+	-- the remove/approve flow uses to hide a post from listings.
+	[18] = function()
+		schema.add_column("posts", "stickied", types.integer({ default = false }))
+		schema.add_column("posts", "comments_locked", types.integer({ default = false }))
+		schema.create_index("posts", "sub_id", "stickied", { if_not_exists = true })
+	end,
+
 	-- cast Votes on posts in each subreddit
 	[20] = function()
 		local posts = Posts:select()

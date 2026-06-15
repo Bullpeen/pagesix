@@ -43,9 +43,13 @@ suite + luacheck pass**.
 - [x] User karma (net votes on a user's posts + comments), shown on the profile.
 - [x] Saved / hidden posts — per-user toggle; `/saved` page; hidden posts are
       excluded from a user's listings.
-- [x] Moderation (basic): subreddit creator/mods can remove a post (recorded
-      in `modlog`); removed posts drop from listings and show `[removed]`.
-      Sticky / lock-comments / a public modlog page still TODO.
+- [x] Moderation: subreddit creator/mods can remove a post (recorded in
+      `modlog`); removed posts drop from listings and show `[removed]`. **Sticky**
+      (pins to the top of the subreddit listing), **lock-comments** (thread stays
+      visible but rejects new comments/replies), and a **public modlog page**
+      (`/r/:sub/modlog`) are now done — sticky/comments_locked are separate
+      `posts` columns (migration `[18]`), each toggle is mod-only + CSRF-guarded
+      and recorded in the modlog.
 - [x] Reply notifications — replying to a post/comment notifies its author
       (not self); `/inbox` lists them + marks read; header shows an unread count.
       (Direct messages between users intentionally out of scope.)
@@ -108,8 +112,9 @@ suite + luacheck pass**.
     host in SQL (feeds the generated column above) + content normalization.
   - `fuzzy` — **useful**: `dlevenshtein`/`soundex` for typo-tolerant search
     ranking on top of FTS5.
-  - `crypto` — **useful**: `sha256`/`randomblob`-based secure tokens for the
-    pending password-reset flow.
+  - `crypto` — **not needed**: the only planned consumer was the password-reset
+    flow, which now ships using `openssl.rand` for its tokens (see migration
+    `[17]` / `models/password_resets`).
   - `text` — **minor**: `text_substring`/`split` helpers; mostly doable in Lua.
   - `stats` / `math` — **minor**: could move the `hot`/`rising` score math into
     SQL ranking, but `sort.lua` already does it; revisit if sorting becomes a

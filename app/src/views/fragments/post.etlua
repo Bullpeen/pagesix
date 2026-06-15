@@ -1,9 +1,11 @@
 <h1 class="post-title">
+    <% if stickied then %><span class="stickied-badge" title="stickied by a moderator">stickied</span> <% end %>
     <% if url then %>
         <a href="<%= url %>"><%= title %></a>
     <% else %>
         <%= title %>
     <% end %>
+    <% if comments_locked then %><span class="locked-badge" title="comments locked">locked</span><% end %>
 </h1>
 
 <% if crosspost_from then %>
@@ -40,10 +42,20 @@
 <% end %>
 
 <% if can_moderate then %>
-    <form class="mod-form" method="POST" action="/post/<%= post_id %>/remove">
-        <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-        <button class="button" type="submit"><%= removed and "approve" or "remove" %></button>
-    </form>
+    <div class="mod-controls">
+        <form class="mod-form" method="POST" action="/post/<%= post_id %>/remove">
+            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+            <button class="button" type="submit"><%= removed and "approve" or "remove" %></button>
+        </form>
+        <form class="mod-form" method="POST" action="/post/<%= post_id %>/sticky">
+            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+            <button class="button" type="submit"><%= stickied and "unsticky" or "sticky" %></button>
+        </form>
+        <form class="mod-form" method="POST" action="/post/<%= post_id %>/lock">
+            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+            <button class="button" type="submit"><%= comments_locked and "unlock comments" or "lock comments" %></button>
+        </form>
+    </div>
 <% end %>
 
 <% if current_user and not deleted and tonumber(current_user.id) == tonumber(post_user_id) then %>

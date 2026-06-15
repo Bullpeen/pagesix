@@ -1,6 +1,7 @@
 <div class="subreddit-header">
     <h1>/r/<%= subreddit %></h1>
     <a class="rss-link" href="/r/<%= subreddit %>/.rss">RSS</a>
+    <a class="modlog-link" href="/r/<%= subreddit %>/modlog">modlog</a>
     <% if current_user then %>
         <form class="subscribe-form" method="POST" action="/subscribe/<%= subreddit %>">
             <input type="hidden" name="csrf_token" value="<%= csrf_token %>">

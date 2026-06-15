@@ -1,5 +1,9 @@
 <% render('views.fragments.post') %>
-<% render('views.fragments.form_comment') %>
+<% if comments_locked then %>
+    <p class="locked-notice">This thread is locked. New comments can't be posted.</p>
+<% else %>
+    <% render('views.fragments.form_comment') %>
+<% end %>
 <% render('views.fragments.comments') %>
 <% render('views.fragments.page_nav') %>
 

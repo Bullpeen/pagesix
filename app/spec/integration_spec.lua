@@ -596,6 +596,82 @@ describe("pagesix integration", function()
 		end)
 	end)
 
+	describe("moderation: sticky / lock / modlog", function()
+		-- "demo" created /r/programming in setup, so demo can moderate it.
+		local function make_post(title)
+			return Posts:create({
+				user_id = 1,
+				sub_id = 1,
+				title = title,
+				url = "https://mod.example/" .. title,
+			})
+		end
+
+		it("lets a mod sticky and unsticky a post (pinned in the listing)", function()
+			local p = make_post("sticky-target")
+			local status = POST("/post/" .. p.id .. "/sticky", {}, "demo")
+			assert.same(302, status)
+			assert.same(1, tonumber(Posts:find(p.id).stickied))
+
+			local s2, body = GET("/r/programming")
+			assert.same(200, s2)
+			assert.truthy(body:find("stickied", 1, true)) -- badge in the listing
+
+			POST("/post/" .. p.id .. "/sticky", {}, "demo") -- toggle back off
+			assert.same(0, tonumber(Posts:find(p.id).stickied))
+		end)
+
+		it("lets a mod lock a thread, blocking new comments", function()
+			local p = make_post("lock-target")
+			local before = #Comments:select("where post_id = " .. p.id)
+
+			POST("/post/" .. p.id .. "/lock", {}, "demo")
+			assert.same(1, tonumber(Posts:find(p.id).comments_locked))
+
+			-- A comment on the locked thread is rejected (redirects, no insert).
+			local status =
+				POST("/post/" .. p.id .. "/comment", { body = "should be blocked" }, "demo")
+			assert.same(302, status)
+			assert.same(before, #Comments:select("where post_id = " .. p.id))
+
+			-- The post page shows the locked notice instead of a comment form.
+			local _, body = GET("/r/programming/comments/" .. p.id .. "/lock_target")
+			assert.truthy(body:find("This thread is locked", 1, true))
+
+			-- Unlocking restores commenting.
+			POST("/post/" .. p.id .. "/lock", {}, "demo")
+			assert.same(0, tonumber(Posts:find(p.id).comments_locked))
+			POST("/post/" .. p.id .. "/comment", { body = "now allowed" }, "demo")
+			assert.same(before + 1, #Comments:select("where post_id = " .. p.id))
+		end)
+
+		it("ignores moderation actions from a non-moderator", function()
+			Users:create({
+				user_name = "not_a_mod",
+				user_pass = "password",
+				user_email = "nm@e.com",
+			})
+			local p = make_post("nonmod-target")
+			POST("/post/" .. p.id .. "/sticky", {}, "not_a_mod")
+			assert.same(0, tonumber(Posts:find(p.id).stickied))
+			POST("/post/" .. p.id .. "/lock", {}, "not_a_mod")
+			assert.same(0, tonumber(Posts:find(p.id).comments_locked))
+		end)
+
+		it("records actions on the public modlog page", function()
+			local p = make_post("modlog-target")
+			POST("/post/" .. p.id .. "/sticky", {}, "demo")
+			POST("/post/" .. p.id .. "/remove", {}, "demo")
+
+			local status, body = GET("/r/programming/modlog")
+			assert.same(200, status)
+			assert.truthy(body:find("moderation log", 1, true))
+			assert.truthy(body:find("stickied", 1, true))
+			assert.truthy(body:find("removed", 1, true))
+			assert.truthy(body:find("demo", 1, true)) -- the acting moderator
+		end)
+	end)
+
 	describe("RSS output feeds", function()
 		it("serves the frontpage feed as RSS XML", function()
 			local status, body, headers = simulate_request(app, "/.rss", { method = "GET" })

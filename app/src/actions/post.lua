@@ -54,6 +54,8 @@ return {
 		self.edited = tonumber(post_data["edited"]) == 1
 		self.post_user_id = post_data["user_id"]
 		self.removed = tonumber(post_data["locked"]) == 1
+		self.stickied = tonumber(post_data["stickied"]) == 1
+		self.comments_locked = tonumber(post_data["comments_locked"]) == 1
 		self.can_moderate = self.current_user
 			and Forum:can_moderate(self.current_user.id, subreddit)
 

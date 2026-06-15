@@ -29,7 +29,7 @@
                         <ul class="flat-list buttons">
                             <li class="first"><a href="<%= comment.permalink %>" class="bylink" rel="nofollow">permalink</a></li>
                         </ul>
-                        <% if tonumber(comment.deleted) ~= 1 then %>
+                        <% if tonumber(comment.deleted) ~= 1 and not comments_locked then %>
                         <details class="reply">
                             <summary>reply</summary>
                             <form method="POST" action="/post/<%= comment.post_id %>/comment">

@@ -28,7 +28,22 @@ return {
 			}),
 			sort
 		)
-		self.posts, self.pagination = require("src.utils.paginate")(sorted, self.params.page)
+
+		-- Pin moderator-stickied posts to the top of the subreddit listing,
+		-- keeping their relative sorted order; everything else follows.
+		local pinned, rest = {}, {}
+		for _, post in ipairs(sorted) do
+			if tonumber(post.stickied) == 1 then
+				pinned[#pinned + 1] = post
+			else
+				rest[#rest + 1] = post
+			end
+		end
+		for _, post in ipairs(rest) do
+			pinned[#pinned + 1] = post
+		end
+
+		self.posts, self.pagination = require("src.utils.paginate")(pinned, self.params.page)
 
 		-- current_user is set by the app before_filter when signed in.
 		if self.current_user then

@@ -8,6 +8,25 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Moderation: sticky, lock-comments, public modlog
+- **Sticky posts** — mods can pin a post to the top of its subreddit listing
+  (`POST /post/:id/sticky`, toggle). New `posts.stickied` column (migration
+  `[18]`); `r_subreddit` pins stickied posts to the top after sorting, before
+  pagination; a "stickied" badge shows on the listing and post page.
+- **Lock comments** — mods can lock a thread (`POST /post/:id/lock`, toggle); a
+  locked thread stays visible but `comment_create` rejects new comments/replies,
+  the post page shows a locked notice instead of the comment box, and reply forms
+  are hidden. New `posts.comments_locked` column — separate from `locked`, which
+  the remove/approve flow already uses to hide a post, so locking doesn't drop
+  the post from listings.
+- **Public modlog** — `GET /r/:sub/modlog` lists a subreddit's moderator actions
+  (remove/approve, sticky/unsticky, lock/unlock) newest-first with the acting mod
+  and the affected post (`models/modlog:for_subreddit`); linked from the subreddit
+  header. The sticky/lock toggles write modlog entries like remove already did.
+- All three toggles are moderator-only (`Forum:can_moderate`) and CSRF-guarded.
+  Specs cover sticky pin + badge, lock blocks/then-restores commenting, non-mod
+  actions are ignored, and the modlog renders the recorded actions. (141 specs.)
+
 ### Auth follow-ups: site-wide CSRF, password reset, seed re-hash, submit preview
 - **CSRF on every state-changing form** — promoted CSRF from just login/register
   to a single global `before_filter` (`app.lua`) that validates any non-GET

@@ -28,6 +28,8 @@ local function auth(app)
 	app:match("hide_post", "/post/:post_id[%d]/hide", r2(require("actions.hide")))
 	app:match("saved", "/saved", r2(require("actions.saved")))
 	app:match("mod_remove", "/post/:post_id[%d]/remove", r2(require("actions.mod_remove")))
+	app:match("post_lock", "/post/:post_id[%d]/lock", r2(require("actions.lock")))
+	app:match("post_sticky", "/post/:post_id[%d]/sticky", r2(require("actions.sticky")))
 	app:match("crosspost", "/post/:post_id[%d]/crosspost", r2(require("actions.crosspost")))
 	app:match("inbox", "/inbox", r2(require("actions.inbox")))
 

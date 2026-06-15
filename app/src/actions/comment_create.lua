@@ -21,6 +21,12 @@ return {
 			return { redirect_to = self:url_for("homepage") }
 		end
 
+		-- A moderator-locked thread accepts no new comments or replies.
+		if tonumber(post.comments_locked) == 1 then
+			local referer = self.req.headers["referer"]
+			return { redirect_to = referer or self:url_for("homepage") }
+		end
+
 		-- Only thread under a parent that actually belongs to this post.
 		local parent_id, parent
 		if self.params.parent_comment_id and self.params.parent_comment_id ~= "" then

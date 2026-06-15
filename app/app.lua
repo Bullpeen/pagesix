@@ -122,6 +122,8 @@ app:match("r_popular", "/r/popular(/:sort)", r2(require("actions.r_popular")))
 
 app:match("search", "/search", r2(require("actions.search")))
 app:match("r_random", "/r/random", r2(require("actions.r_random")))
+-- Public moderation log (literal `modlog` segment beats the :sort param below).
+app:match("modlog", "/r/:subreddit/modlog", r2(require("actions.modlog")))
 app:match("subreddit", "/r/:subreddit(/:sort)", r2(require("actions.r_subreddit")))
 
 app:match("post", "/r/:subreddit/comments/:post_id[%d](/:title_stub)", r2(require("actions.post")))
