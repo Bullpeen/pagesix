@@ -27,6 +27,10 @@
 		<span>Tags <span data-optional>(comma-separated, up to 5)</span></span>
 		<input name="tags" type="text" autocapitalize="none" value="<%= params and params.tags or '' %>">
 	</label>
+	<label>
+		<span>Flair <span data-optional>(an optional short label)</span></span>
+		<input name="flair" type="text" maxlength="64" autocapitalize="none" value="<%= params and params.flair or '' %>">
+	</label>
 	<label data-check>
 		<input type="checkbox" name="is_question" value="1" <%= params and params.is_question and "checked" or "" %>>
 		<span>Ask a question <span data-optional>(lets you mark an accepted answer)</span></span>

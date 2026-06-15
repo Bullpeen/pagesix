@@ -123,6 +123,31 @@ describe("pagesix models", function()
 		assert.same("example.com", row.domain)
 	end)
 
+	it("get_listing carries each post's link_flair label", function()
+		local author = make_user("flair_author")
+		local sub = Forum:create({ name = "flairsub", creator_id = author.id })
+		Posts:create({
+			user_id = author.id,
+			sub_id = sub.id,
+			title = "Flaired post",
+			url = "https://example.com/f",
+			link_flair = "Discussion",
+		})
+		Posts:create({
+			user_id = author.id,
+			sub_id = sub.id,
+			title = "Unflaired post",
+			url = "https://example.com/u",
+		})
+
+		local by_title = {}
+		for _, row in ipairs(Posts:get_listing(sub.id)) do
+			by_title[row.title] = row
+		end
+		assert.same("Discussion", by_title["Flaired post"].link_flair)
+		assert.is_nil(by_title["Unflaired post"].link_flair)
+	end)
+
 	it("get_listing lists zero-vote posts and filters by subreddit", function()
 		local user = make_user("frank")
 		local a = Forum:create({ name = "gaming", creator_id = user.id })

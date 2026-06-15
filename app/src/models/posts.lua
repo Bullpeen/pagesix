@@ -111,7 +111,7 @@ function Posts:get_listing(filters)
 
 	local query = [[
 		a.id, a.title, a.url, a.body, a.is_self, a.over_18, a.locked, a.sub_id, a.thumbnail, a.domain,
-			a.stickied, a.comments_locked, a.is_question, a.accepted_comment_id,
+			a.link_flair, a.stickied, a.comments_locked, a.is_question, a.accepted_comment_id,
 			a.created_at AS age, a.created_at,
 			c.user_name AS author,
 			s.name AS subreddit,
@@ -173,6 +173,7 @@ end
 -- enrichable columns get_listing returns, including the stored `domain`.
 local SEARCH_SELECT = [[
 	a.id, a.title, a.url, a.body, a.is_self, a.over_18, a.locked, a.sub_id, a.thumbnail, a.domain,
+		a.link_flair,
 		a.created_at AS age, a.created_at,
 		c.user_name AS author,
 		s.name AS subreddit,

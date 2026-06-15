@@ -4,6 +4,7 @@
 		<h1>
 			<% if stickied then %><span data-badge="sticky">stickied</span> <% end %>
 			<% if is_question then %><span data-badge="<%= accepted_comment_id and "solved" or "question" %>"><%= accepted_comment_id and "solved" or "question" %></span> <% end %>
+			<% if link_flair and link_flair ~= "" then %><span data-flair><%= link_flair %></span> <% end %>
 			<% if url then %><a href="<%= url %>"><%= title %></a><% else %><%= title %><% end %>
 			<% if comments_locked then %><span data-badge="locked">locked</span><% end %>
 		</h1>

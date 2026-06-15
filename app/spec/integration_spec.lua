@@ -45,7 +45,18 @@ describe("pagesix integration", function()
 		require("spec.schema_helper")()
 		local u =
 			Users:create({ user_name = "demo", user_pass = "password", user_email = "d@e.com" })
+		-- A separate submitter for the flair tests: post submissions are rate
+		-- limited per user (10 / 600s) and `demo` runs close to that ceiling
+		-- across this suite, so the extra flair submits get their own budget.
+		local flair_user = Users:create({
+			user_name = "flairuser",
+			user_pass = "password",
+			user_email = "flair@e.com",
+		})
 		local s = Forum:create({ name = "programming", creator_id = u.id, description = "Coding" })
+		-- Moderators post directly; without this flairuser is brand new and its
+		-- posts would be held in the approval queue (approved = 0) and 404/redirect.
+		Forum:add_moderator(s.id, flair_user.id)
 		local p = Posts:create({
 			user_id = u.id,
 			sub_id = s.id,
@@ -488,6 +499,48 @@ describe("pagesix integration", function()
 			assert.same(200, status)
 			assert.truthy(body:find("<strong>bold</strong>", 1, true))
 			assert.is_nil(Posts:find({ title = "preview me" }))
+		end)
+
+		it("stores a trimmed link flair and renders it on the post page", function()
+			local status = POST("/submit", {
+				title = "Flaired submission",
+				url = "https://flair.example",
+				subreddit = "programming",
+				flair = "  Discussion  ",
+			}, "flairuser")
+			assert.same(302, status)
+
+			local p = Posts:find({ title = "Flaired submission" })
+			assert.same("Discussion", p.link_flair) -- surrounding whitespace trimmed
+
+			local s2, body = GET("/r/programming/comments/" .. p.id .. "/flaired_submission")
+			assert.same(200, s2)
+			assert.truthy(body:find("data-flair", 1, true))
+			assert.truthy(body:find(">Discussion<", 1, true))
+
+			-- and on the subreddit listing (newest post is first)
+			local _, listing = GET("/r/programming")
+			assert.truthy(listing:find(">Discussion<", 1, true))
+		end)
+
+		it("treats a blank flair as no flair", function()
+			POST("/submit", {
+				title = "No flair here",
+				url = "https://noflair.example",
+				subreddit = "programming",
+				flair = "   ",
+			}, "flairuser")
+			assert.is_nil(Posts:find({ title = "No flair here" }).link_flair)
+		end)
+
+		it("caps an over-long flair at 64 characters", function()
+			POST("/submit", {
+				title = "Long flair",
+				url = "https://longflair.example",
+				subreddit = "programming",
+				flair = string.rep("x", 100),
+			}, "flairuser")
+			assert.same(64, #Posts:find({ title = "Long flair" }).link_flair)
 		end)
 	end)
 
