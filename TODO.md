@@ -8,9 +8,14 @@ hot/new/top/controversial/best/rising and `?t=` time windows + pagination;
 full-text search (FTS5); open a post; vote on posts & comments; submit
 link/self posts; post threaded comments/replies with Markdown; edit/delete own
 posts & comments; subscribe/unsubscribe; saved/hidden posts; user profiles +
-karma; reply notifications (`/inbox`); basic moderation (remove); RSS output
-feeds; bcrypt + CSRF auth. The Docker image boots and serves; **219-spec Busted
-suite + luacheck pass**.
+karma; reply notifications (`/inbox`); RSS in/out feeds; bcrypt + CSRF auth.
+
+Forum-generalization layer (all shipped): role-based moderation via a privilege
+matrix (`owner`/`moderator`/`member` + site `admin`); an Admin Control Panel
+(`/admin`); cached user reputation + trust levels; a new-user post-approval
+queue (`/r/:sub/queue`) with rate limiting; tags (`/t/:tag`); `@mentions`;
+accept-answer Q&A mode; and OAuth login. The Docker image boots and serves;
+**219-spec Busted suite + luacheck pass**.
 
 ## Next up
 - [x] **Auth/password hardening** (issue #6): bcrypt password hashing
