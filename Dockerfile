@@ -22,6 +22,16 @@ RUN luarocks --lua-version=5.1 build --only-deps /pagesix-dev-1.rockspec \
  && luarocks --lua-version=5.1 install luacov \
  && luarocks --lua-version=5.1 install luacheck
 
+# SQLite loadable extensions. The sqlean bundle (regexp / fuzzy / stats / text /
+# crypto / math / ...) is loaded into Lapis's connection at runtime by
+# src/utils/sqlite_ext.lua. The linux-x64 build matches our amd64 deploy target.
+ARG SQLEAN_VERSION=0.28.3
+RUN curl -fsSL -o /tmp/sqlean.zip \
+      "https://github.com/nalgeon/sqlean/releases/download/${SQLEAN_VERSION}/sqlean-linux-x64.zip" \
+ && mkdir -p /usr/local/lib/sqlite \
+ && unzip -o /tmp/sqlean.zip sqlean.so -d /usr/local/lib/sqlite \
+ && rm -f /tmp/sqlean.zip
+
 # Entrypoint
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh

@@ -27,6 +27,11 @@ local function tune_sqlite()
 	pcall(db.query, "PRAGMA busy_timeout = 5000") -- wait, don't error, on WAL write locks
 	pcall(db.query, "PRAGMA cache_size = -16000") -- ~16 MB page cache
 	pcall(db.query, "PRAGMA synchronous = NORMAL")
+
+	-- Load SQLite loadable extensions (sqlean: regexp / fuzzy / stats / text /
+	-- crypto / ...) into this worker's connection so application SQL can call
+	-- their functions. Extensions are per-connection, hence loaded here.
+	pcall(require("src.utils.sqlite_ext").load)
 end
 
 app:before_filter(function(self)
