@@ -1,0 +1,8 @@
+<div class="tag-header">
+    <h1>Posts tagged <span class="tag"><%= tag %></span></h1>
+</div>
+
+<% render('views.fragments.posts') %>
+<% render('views.fragments.page_nav') %>
+
+<% render('views.fragments.nav') %>

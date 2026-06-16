@@ -14,13 +14,14 @@ return {
 		end
 
 		local post = Posts:find(tonumber(self.params.post_id))
-		if
-			post
-			and post.user_id == user.id
-			and tonumber(post.is_self) == 1
-			and tonumber(post.deleted) ~= 1
-		then
-			post:update({ body = self.params.body, edited = 1 })
+		if post and post.user_id == user.id and tonumber(post.deleted) ~= 1 then
+			if tonumber(post.is_self) == 1 then
+				post:update({ body = self.params.body, edited = 1 })
+			end
+			-- Re-tag when the form supplied a tags field (works for link posts too).
+			if self.params.tags ~= nil then
+				require("src.models.tags"):set_for_post(post.id, self.params.tags)
+			end
 		end
 
 		local referer = self.req.headers["referer"]

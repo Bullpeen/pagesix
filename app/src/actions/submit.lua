@@ -86,6 +86,9 @@ return {
 			return { render = "submit" }
 		end
 
+		-- Attach any tags from the form (parsed/slugified by the model).
+		require("src.models.tags"):set_for_post(post.id, self.params.tags)
+
 		-- A held post is hidden from listings and its own page, so send the
 		-- author to the subreddit (where a future flash can explain the wait)
 		-- rather than to a page that would just bounce them home.

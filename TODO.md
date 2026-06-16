@@ -62,7 +62,10 @@ dependency-driven (foundations first); full plan in
       listings/search/threads/profiles. Moderator queue at `/r/:sub/queue`
       (approve/reject → modlog), dashboard pending counts, and `utils/ratelimit`
       flood control on submit/comment. (`queue_spec`.)
-- [ ] **Tags** — `tags` + `post_tags` tables, tag chips, `/t/:tag` listing.
+- [x] **Tags** — `tags` + `post_tags` tables (migration `[104]`), `models/tags`
+      (`normalize`/`set_for_post`/`for_post`, ≤5 slugs/post). Tags input on submit
+      + edit, chips on the post page, `/t/:tag` listing via a `get_listing` tag
+      filter. (`tags_spec`.)
 - [ ] **@mentions** — `utils/mentions`, `mention` notifications (nullable
       `notifications.post_id`), linkified in Markdown.
 - [ ] **Accept-answer mode** — `posts.is_question` + `accepted_comment_id`,

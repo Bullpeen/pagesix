@@ -8,6 +8,18 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Forum generalization: tags
+- **Tag posts** — a flat tag vocabulary (`tags`) and a post<->tag join
+  (`post_tags`), migration `[104]`, with `models/tags` + `models/post_tags`.
+  `Tags.normalize` parses a free-text field ("Lua, Web") into deduped lowercase
+  slugs, capped at 5/post; `Tags:set_for_post` find-or-creates and replaces a
+  post's tags; `Tags:for_post` reads them back.
+- **Surfaced** — a tags input on the submit form (and re-tagging via post edit),
+  tag chips on the post page, and a `/t/:tag` listing (a new `tag` filter on
+  `Posts:get_listing`, normalized so `/t/Roadmap` finds `roadmap`).
+- Specs: normalization (split/slug/dedupe/cap), set/replace + tag reuse, the
+  listing filter, and the submit → `/t/:tag` round trip. (198 specs.)
+
 ### Forum generalization: post/comment approval queue + rate limiting
 - **Hold new users' content** — posts and comments gain an `approved` flag
   (migration `[103]`, default 1 so existing content stays visible). Brand-new

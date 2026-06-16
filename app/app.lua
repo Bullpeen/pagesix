@@ -110,6 +110,7 @@ app:match("homepage", "/(:sort)", r2(require("actions.index")))
 
 -- app:match("comments", "/comments", r2(require("actions.index")))
 app:match("domains", "/domain/:domain", r2(require("actions.domain")))
+app:match("tag", "/t/:tag(/:sort)", r2(require("actions.tag")))
 app:match("subreddits_search", "/subreddits/search", r2(require("actions.subreddits")))
 -- An exact `/subreddits` route (like /login) takes precedence over the
 -- `/(:sort)` homepage catch-all; the optional-group form did not.

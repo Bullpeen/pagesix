@@ -26,6 +26,14 @@
     </div>
 <% end %>
 
+<% if tags and #tags > 0 then %>
+    <p class="post-tags">
+        <% for _, tag in ipairs(tags) do %>
+            <a class="tag" href="/t/<%= tag %>"><%= tag %></a>
+        <% end %>
+    </p>
+<% end %>
+
 <p class="tagline">Submitted by
     <a href="/user/<%= user_name %>"><%= user_name %></a> at <%= created_at %>.
     <% if edited then %><span class="edited">(edited)</span><% end %>

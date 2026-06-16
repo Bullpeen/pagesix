@@ -741,6 +741,29 @@ return {
 		schema.create_index("comments", "post_id", "approved", { if_not_exists = true })
 	end,
 
+	-- Tags: a flat tag vocabulary and a post<->tag join (see src/models/tags.lua).
+	[104] = function()
+		schema.create_table("tags", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "name", types.text({ unique = true }) },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"UNIQUE(name)",
+		}, opts)
+		schema.create_table("post_tags", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "post_id", types.integer },
+			{ "tag_id", types.integer },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(post_id) REFERENCES posts(id)",
+			"FOREIGN KEY(tag_id) REFERENCES tags(id)",
+			"UNIQUE(post_id, tag_id)",
+		}, opts)
+		schema.create_index("post_tags", "post_id", { if_not_exists = true })
+		schema.create_index("post_tags", "tag_id", { if_not_exists = true })
+	end,
+
 	-- classify text : https://github.com/leafo/lapis-bayes
 	[1439944992] = require("lapis.bayes.schema").run_migrations,
 }

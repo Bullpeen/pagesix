@@ -130,6 +130,13 @@ function Posts:get_listing(filters)
 	if filters.domain then
 		query = query .. " AND a.url LIKE " .. db.escape_literal("%" .. filters.domain .. "%")
 	end
+	if filters.tag then
+		query = query
+			.. " AND a.id IN (SELECT pt.post_id FROM post_tags pt"
+			.. " INNER JOIN tags t ON pt.tag_id = t.id WHERE t.name = "
+			.. db.escape_literal(filters.tag)
+			.. ")"
+	end
 	query = query .. " ORDER BY a.created_at DESC"
 
 	local rows = db.select(query)
