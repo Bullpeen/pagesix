@@ -6,7 +6,7 @@ local Password = require("src.utils.password")
 
 -- CSRF is generated/validated globally in app.lua's before_filter.
 local function fail(self, message)
-	self.error = message
+	self.form_error = message
 	return { render = "register" }
 end
 

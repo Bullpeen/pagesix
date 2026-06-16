@@ -30,11 +30,11 @@ return {
 
 		local passwd = self.params.passwd or ""
 		if passwd ~= (self.params.passwd2 or "") then
-			self.error = "Passwords do not match."
+			self.form_error = "Passwords do not match."
 			return { render = "password_reset" }
 		end
 		if #passwd < 7 then
-			self.error = "Password must be at least 7 characters."
+			self.form_error = "Password must be at least 7 characters."
 			return { render = "password_reset" }
 		end
 

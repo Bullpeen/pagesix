@@ -24,7 +24,7 @@ return {
 			return { redirect_to = self:url_for("homepage") }
 		end
 
-		self.error = "Invalid username or password."
+		self.form_error = "Invalid username or password."
 		return { render = "login" }
 	end,
 }
