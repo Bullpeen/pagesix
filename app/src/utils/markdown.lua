@@ -15,8 +15,9 @@ return function(text)
 		return ""
 	end
 	if ok_md and ok_san then
-		-- Render markdown, then sanitize so any embedded raw HTML can't inject
-		-- scripts/styles/etc.
+		-- Turn @mentions into Markdown profile links first, then render and
+		-- sanitize so any embedded raw HTML can't inject scripts/styles/etc.
+		text = require("src.utils.mentions").linkify(text)
 		return web_sanitize.sanitize_html(markdown(text))
 	end
 	-- Fallback if the optional rocks aren't present: escape and keep newlines.

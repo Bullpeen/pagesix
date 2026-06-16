@@ -9,6 +9,7 @@ local Spam = require("src.utils.spam")
 local Forum = require("src.models.forum")
 local Queue = require("src.utils.queue")
 local Ratelimit = require("src.utils.ratelimit")
+local Mentions = require("src.utils.mentions")
 
 -- Flood control: at most this many comments per user per window (seconds).
 local RATE_LIMIT, RATE_WINDOW = 30, 600
@@ -77,6 +78,14 @@ return {
 						comment.id,
 						parent_id and "comment_reply" or "post_reply"
 					)
+				end
+
+				-- @mention notifications, skipping yourself and the reply
+				-- recipient (who already got a reply notification above).
+				for _, mentioned in ipairs(Mentions.resolve(self.params.body, user.id)) do
+					if tonumber(mentioned.id) ~= tonumber(recipient) then
+						Notifications:notify_mention(mentioned.id, comment.id, nil)
+					end
 				end
 			end
 		end

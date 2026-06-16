@@ -8,6 +8,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Forum generalization: @mentions
+- **Mention users** — `utils/mentions` extracts `@username` tokens (frontier
+  pattern so emails like `bob@x` and code spans/fences are skipped), resolves
+  them to existing users, and linkifies them to profile links during Markdown
+  rendering.
+- **Notifications generalized** — migration `[105]` rebuilds the `notifications`
+  table so a row can reference a comment OR a post body (`comment_id` made
+  nullable, new nullable `post_id`); `for_user` LEFT JOINs both. Commenting and
+  submitting a self post now fire `mention` notifications to mentioned users
+  (skipping yourself and a reply recipient who'd otherwise be notified twice;
+  held content notifies no one until approved). The inbox renders mention rows.
+- Specs: extraction/linkify edge cases, resolution, comment + post-body mention
+  notifications, the no-double-notify rule, and the `[105]` rebuild. (205 specs.)
+
 ### Forum generalization: tags
 - **Tag posts** — a flat tag vocabulary (`tags`) and a post<->tag join
   (`post_tags`), migration `[104]`, with `models/tags` + `models/post_tags`.

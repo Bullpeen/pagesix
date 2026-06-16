@@ -5,12 +5,23 @@
     <div class="message <%= tonumber(n.seen) == 1 and "read" or "unread" %>">
         <p class="subject">
             <a class="author" href="/user/<%= n.author %>"><%= n.author %></a>
-            <%= n.kind == "post_reply" and "replied to your post" or "replied to your comment" %>
+            <%
+                local verb = "replied to your comment"
+                if n.kind == "post_reply" then
+                    verb = "replied to your post"
+                elseif n.kind == "mention" then
+                    verb = n.comment_id and "mentioned you in a comment on"
+                        or "mentioned you in"
+                end
+            %>
+            <%= verb %>
             on <a href="<%= n.permalink %>"><%= n.post_title %></a>
         </p>
+        <% if n.body and n.body ~= "" then %>
         <div class="usertext-body md">
             <p><%= n.body %></p>
         </div>
+        <% end %>
     </div>
     <% end %>
 <% else %>

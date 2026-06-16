@@ -764,6 +764,42 @@ return {
 		schema.create_index("post_tags", "tag_id", { if_not_exists = true })
 	end,
 
+	-- Generalize notifications so a row can point at a comment OR a post body
+	-- (for @mentions): make comment_id nullable and add a nullable post_id.
+	-- SQLite can't ALTER a column's nullability in place, so rebuild the table.
+	[105] = function()
+		local has_post_id = false
+		for _, c in ipairs(db.query("PRAGMA table_info(notifications)")) do
+			if c.name == "post_id" then
+				has_post_id = true
+			end
+		end
+		if has_post_id then
+			return -- already migrated; idempotent
+		end
+
+		db.query("ALTER TABLE notifications RENAME TO notifications_old")
+		schema.create_table("notifications", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer }, -- recipient
+			{ "comment_id", types.integer({ null = true }) }, -- the reply/mention comment
+			{ "post_id", types.integer({ null = true }) }, -- the post a body-mention is in
+			{ "kind", types.text }, -- post_reply | comment_reply | mention
+			{ "seen", types.integer({ default = false }) },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+			"FOREIGN KEY(comment_id) REFERENCES comments(id)",
+			"FOREIGN KEY(post_id) REFERENCES posts(id)",
+		}, opts)
+		db.query([[
+			INSERT INTO notifications (id, user_id, comment_id, kind, seen, created_at, updated_at)
+			SELECT id, user_id, comment_id, kind, seen, created_at, updated_at FROM notifications_old
+		]])
+		db.query("DROP TABLE notifications_old")
+		schema.create_index("notifications", "user_id", { if_not_exists = true })
+	end,
+
 	-- classify text : https://github.com/leafo/lapis-bayes
 	[1439944992] = require("lapis.bayes.schema").run_migrations,
 }

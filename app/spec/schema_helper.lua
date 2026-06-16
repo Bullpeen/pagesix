@@ -27,6 +27,7 @@ return function()
 		102,
 		103,
 		104,
+		105,
 	}) do
 		if migrations[k] then
 			migrations[k]()

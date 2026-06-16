@@ -66,8 +66,10 @@ dependency-driven (foundations first); full plan in
       (`normalize`/`set_for_post`/`for_post`, ≤5 slugs/post). Tags input on submit
       + edit, chips on the post page, `/t/:tag` listing via a `get_listing` tag
       filter. (`tags_spec`.)
-- [ ] **@mentions** — `utils/mentions`, `mention` notifications (nullable
-      `notifications.post_id`), linkified in Markdown.
+- [x] **@mentions** — `utils/mentions` (extract/resolve/linkify, skips
+      emails+code); `mention` notifications for comments and post bodies via the
+      `[105]` notifications rebuild (nullable `comment_id` + new `post_id`);
+      linkified in Markdown; inbox renders them. (`mentions_spec`.)
 - [ ] **Accept-answer mode** — `posts.is_question` + `accepted_comment_id`,
       OP/mod accept (privilege `accept_answer`), pinned answer.
 - [ ] **OAuth login** — `oauth_identities` table, authorization-code flow,

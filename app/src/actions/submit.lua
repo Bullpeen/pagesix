@@ -89,6 +89,16 @@ return {
 		-- Attach any tags from the form (parsed/slugified by the model).
 		require("src.models.tags"):set_for_post(post.id, self.params.tags)
 
+		-- @mention notifications for a visible self-post body (held posts notify
+		-- nobody until approved, mirroring the comment path).
+		if not held and body and body ~= "" then
+			local Mentions = require("src.utils.mentions")
+			local Notifications = require("models.notifications")
+			for _, mentioned in ipairs(Mentions.resolve(body, user.id)) do
+				Notifications:notify_mention(mentioned.id, nil, post.id)
+			end
+		end
+
 		-- A held post is hidden from listings and its own page, so send the
 		-- author to the subreddit (where a future flash can explain the wait)
 		-- rather than to a page that would just bounce them home.
