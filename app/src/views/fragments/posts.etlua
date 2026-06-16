@@ -24,6 +24,7 @@
                     <p class="title">
                         <% -- TODO <span class="linkflairlabel " title="TAG">TAG</span> %>
                         <% if post.stickied and tonumber(post.stickied) == 1 then %><span class="stickied-badge" title="stickied by a moderator">stickied</span> <% end %>
+                        <% if post.is_question and tonumber(post.is_question) == 1 then %><span class="<%= post.accepted_comment_id and "solved-badge" or "question-badge" %>"><%= post.accepted_comment_id and "solved" or "question" %></span> <% end %>
                         <a class="title may-blank loggedin " data-event-action="title" href="<%= post.url %>" tabindex="<%= n %>"><%= post.title %></a>
                         <span class="domain">(<a href="/domain/<%= post.domain %>/"><%= post.domain %></a>)</span>
                     </p>

@@ -16,6 +16,7 @@ local function auth(app)
 	app:match("post_comment", "/post/:post_id[%d]/comment", r2(require("actions.comment_create")))
 	app:match("create_subreddit", "/subreddit/create", r2(require("actions.create_subreddit")))
 	app:match("subscribe", "/subscribe/:subreddit", r2(require("actions.subscribe")))
+	app:match("accept_answer", "/comment/:comment_id[%d]/accept", r2(require("actions.accept")))
 	app:match("comment_edit", "/comment/:comment_id[%d]/edit", r2(require("actions.comment_edit")))
 	app:match(
 		"comment_delete",

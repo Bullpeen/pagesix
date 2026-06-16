@@ -1,5 +1,6 @@
 <h1 class="post-title">
     <% if stickied then %><span class="stickied-badge" title="stickied by a moderator">stickied</span> <% end %>
+    <% if is_question then %><span class="<%= accepted_comment_id and "solved-badge" or "question-badge" %>"><%= accepted_comment_id and "solved" or "question" %></span> <% end %>
     <% if url then %>
         <a href="<%= url %>"><%= title %></a>
     <% else %>

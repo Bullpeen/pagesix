@@ -79,6 +79,7 @@ return {
 			is_self = is_self and 1 or 0,
 			thumbnail = media.thumbnail_for(link),
 			approved = held and 0 or 1,
+			is_question = self.params.is_question and 1 or 0,
 		})
 
 		if not post then

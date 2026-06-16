@@ -70,8 +70,10 @@ dependency-driven (foundations first); full plan in
       emails+code); `mention` notifications for comments and post bodies via the
       `[105]` notifications rebuild (nullable `comment_id` + new `post_id`);
       linkified in Markdown; inbox renders them. (`mentions_spec`.)
-- [ ] **Accept-answer mode** — `posts.is_question` + `accepted_comment_id`,
-      OP/mod accept (privilege `accept_answer`), pinned answer.
+- [x] **Accept-answer mode** — `posts.is_question` + `accepted_comment_id`
+      (migration `[106]`); `POST /comment/:id/accept` toggles, gated to the OP or
+      the `accept_answer` privilege. Accepted-answer badge/highlight in-thread,
+      question/solved badges in listings + post page. (`accept_spec`.)
 - [ ] **OAuth login** — `oauth_identities` table, authorization-code flow,
       provider buttons on login/register.
 

@@ -72,6 +72,17 @@ return {
 		self.can_moderate = self.current_user
 			and Forum:can_moderate(self.current_user.id, subreddit)
 
+		-- Accept-answer: surface the question flag, the accepted comment, and
+		-- whether the viewer (OP or a moderator) may accept answers.
+		self.is_question = tonumber(post_data["is_question"]) == 1
+		self.accepted_comment_id = post_data["accepted_comment_id"]
+			and tonumber(post_data["accepted_comment_id"])
+		self.can_accept = self.current_user
+			and (
+				tonumber(self.current_user.id) == tonumber(post_data["user_id"])
+				or self.can_moderate
+			)
+
 		if tonumber(post_data["deleted"]) == 1 then
 			-- Keep the page (and its comments) but blank the post itself.
 			self.title = "[deleted]"

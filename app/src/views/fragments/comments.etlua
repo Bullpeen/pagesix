@@ -1,9 +1,11 @@
 <div class="commentarea">
     <div class="sitetable nestedlisting">
         <% if comments ~= nil and #comments > 0 then
-            for _, comment in ipairs(comments) do %>
+            for _, comment in ipairs(comments) do
+                local is_accepted = accepted_comment_id
+                    and tonumber(accepted_comment_id) == tonumber(comment.id) %>
                 <% -- depth-first order + depth come from Comments:thread (recursive CTE) %>
-                <div class="thing comment" style="margin-left: <%= comment.depth * 24 %>px">
+                <div class="thing comment<%= is_accepted and " accepted-answer" or "" %>" style="margin-left: <%= comment.depth * 24 %>px">
                     <div class="midcol">
                         <form class="arrow-form" method="POST" action="/vote/comment/<%= comment.id %>/up">
                             <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
@@ -19,6 +21,7 @@
                         <p class="tagline">
                             <a class="author" href="/user/<%= comment.author %>"><%= comment.author %></a>
                             <% if tonumber(comment.is_submitter) == 1 then %><span class="submitter" title="original poster">OP</span><% end %>
+                            <% if is_accepted then %><span class="accepted-badge" title="accepted answer">&check; accepted answer</span><% end %>
                             <span class="score">&middot; <%= comment.score %> points</span>
                             <time datetime="<%= comment.created_at %>"><%= comment.created_at %></time>
                             <% if tonumber(comment.edited) == 1 then %><span class="edited">(edited)</span><% end %>
@@ -28,6 +31,14 @@
                         </div>
                         <ul class="flat-list buttons">
                             <li class="first"><a href="<%= comment.permalink %>" class="bylink" rel="nofollow">permalink</a></li>
+                            <% if can_accept and tonumber(comment.deleted) ~= 1 then %>
+                            <li class="accept">
+                                <form method="POST" action="/comment/<%= comment.id %>/accept">
+                                    <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+                                    <button class="button-link" type="submit"><%= is_accepted and "unaccept" or "accept answer" %></button>
+                                </form>
+                            </li>
+                            <% end %>
                         </ul>
                         <% if tonumber(comment.deleted) ~= 1 and not comments_locked then %>
                         <details class="reply">

@@ -36,6 +36,12 @@
             <input name="tags" type="text" autocapitalize="none" autocorrect="off" value="<%= params and params.tags or '' %>">
         </label>
     </div>
+    <div class="input_row">
+        <label class="checkbox">
+            <input type="checkbox" name="is_question" value="1" <%= params and params.is_question and "checked" or "" %>>
+            Ask a question <span class="optional">(lets you mark an accepted answer)</span>
+        </label>
+    </div>
     <div class="button_row">
         <button class="button" name="preview" value="1" type="submit" formnovalidate>Preview</button>
         <input class="button" value="Submit" type="submit">

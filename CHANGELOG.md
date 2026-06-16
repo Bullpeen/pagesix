@@ -8,6 +8,18 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Forum generalization: accept-answer mode
+- **Q&A posts** — a post can be flagged a question (an "Ask a question" checkbox
+  on submit; `posts.is_question`), and the OP or a moderator can mark one comment
+  as the accepted answer (`posts.accepted_comment_id`, migration `[106]`).
+- **Accept toggle** — `POST /comment/:id/accept` (author or the `accept_answer`
+  RBAC privilege) sets/clears the accepted comment. The accepted comment gets a
+  badge + highlight in the thread and an accept/unaccept control for OP/mods;
+  questions show a `question`/`solved` badge on the post page and in listings
+  (`is_question`/`accepted_comment_id` added to `get_listing`).
+- Specs: the question flag, the accept/unaccept toggle, authorization (OP, mod,
+  and a denied stranger), and the listing fields. (210 specs.)
+
 ### Forum generalization: @mentions
 - **Mention users** — `utils/mentions` extracts `@username` tokens (frontier
   pattern so emails like `bob@x` and code spans/fences are skipped), resolves

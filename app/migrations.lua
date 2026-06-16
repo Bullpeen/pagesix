@@ -800,6 +800,21 @@ return {
 		schema.create_index("notifications", "user_id", { if_not_exists = true })
 	end,
 
+	-- Accept-answer mode: flag a post as a question and record which comment the
+	-- OP (or a moderator) accepted as the answer.
+	[106] = function()
+		local existing = {}
+		for _, c in ipairs(db.query("PRAGMA table_info(posts)")) do
+			existing[c.name] = true
+		end
+		if not existing.is_question then
+			schema.add_column("posts", "is_question", types.integer({ default = false }))
+		end
+		if not existing.accepted_comment_id then
+			schema.add_column("posts", "accepted_comment_id", types.integer({ null = true }))
+		end
+	end,
+
 	-- classify text : https://github.com/leafo/lapis-bayes
 	[1439944992] = require("lapis.bayes.schema").run_migrations,
 }
