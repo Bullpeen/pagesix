@@ -365,7 +365,7 @@ label[data-check] input {
 	background: var(--bg);
 	flex: none;
 }
-[data-post] > div {
+[data-post] > div:not([data-votes]) {
 	min-width: 0;
 	flex: 1;
 }
@@ -514,11 +514,13 @@ article {
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
 	padding: var(--gap);
-}
-article > div {
 	display: flex;
 	gap: 10px;
 	align-items: flex-start;
+}
+article > div:not([data-votes]) {
+	min-width: 0;
+	flex: 1;
 }
 [data-comments] {
 	margin-top: 16px;
@@ -533,7 +535,7 @@ article > div {
 	gap: 10px;
 	align-items: flex-start;
 }
-[data-comment] > div {
+[data-comment] > div:not([data-votes]) {
 	min-width: 0;
 	flex: 1;
 }
