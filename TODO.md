@@ -9,7 +9,7 @@ full-text search (FTS5); open a post; vote on posts & comments; submit
 link/self posts; post threaded comments/replies with Markdown; edit/delete own
 posts & comments; subscribe/unsubscribe; saved/hidden posts; user profiles +
 karma; reply notifications (`/inbox`); basic moderation (remove); RSS output
-feeds; bcrypt + CSRF auth. The Docker image boots and serves; **127-spec Busted
+feeds; bcrypt + CSRF auth. The Docker image boots and serves; **219-spec Busted
 suite + luacheck pass**.
 
 ## Next up
@@ -228,7 +228,7 @@ dependency-driven (foundations first); full plan in
     `-- TODO rename` marker.
 
 ## Test & quality
-- **127 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
+- **219 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
   coverage, and **luacheck** (0 warnings / 0 errors).
 - CI per push: super-linter, **stylua** (`--check app`), **luacheck**
   (`luacheck app`), **busted + luacov** (with an 80% coverage gate), and a
