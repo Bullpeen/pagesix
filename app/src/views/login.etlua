@@ -3,6 +3,7 @@
 <% else %>
     <% if error then %><p class="error c-alert c-alert-danger"><%= error %></p><% end %>
     <% render('views.fragments.login') %>
+    <% render('views.fragments.oauth_buttons') %>
 <% end %>
 
 <% render('views.fragments.nav') %>

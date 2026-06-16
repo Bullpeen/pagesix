@@ -36,6 +36,34 @@ local function admin_usernames()
 	return names
 end
 
+-- OAuth providers, enabled per environment via env vars. Each entry is a
+-- provider key -> { client_id, client_secret, authorize_url, token_url,
+-- profile_url, scope }. GitHub and Google ship as presets; add more as needed.
+local function oauth_providers()
+	local providers = {}
+	if os.getenv("GITHUB_CLIENT_ID") then
+		providers.github = {
+			client_id = os.getenv("GITHUB_CLIENT_ID"),
+			client_secret = os.getenv("GITHUB_CLIENT_SECRET"),
+			authorize_url = "https://github.com/login/oauth/authorize",
+			token_url = "https://github.com/login/oauth/access_token",
+			profile_url = "https://api.github.com/user",
+			scope = "read:user",
+		}
+	end
+	if os.getenv("GOOGLE_CLIENT_ID") then
+		providers.google = {
+			client_id = os.getenv("GOOGLE_CLIENT_ID"),
+			client_secret = os.getenv("GOOGLE_CLIENT_SECRET"),
+			authorize_url = "https://accounts.google.com/o/oauth2/v2/auth",
+			token_url = "https://oauth2.googleapis.com/token",
+			profile_url = "https://openidconnect.googleapis.com/v1/userinfo",
+			scope = "openid email profile",
+		}
+	end
+	return providers
+end
+
 -- https://github.com/snap-cloud/snapCloud/blob/master/config.lua
 -- config({'development', 'test'}, {
 --     use_daemon = 'off',
@@ -66,6 +94,7 @@ config("development", {
 	session_name = "dev_app_session",
 	secret = os.getenv("SESSION_SECRET") or "dev-insecure-secret-change-me",
 	admin_usernames = admin_usernames(),
+	oauth = oauth_providers(),
 	measure_performance = true,
 	sqlite = {
 		database = "/var/data/dev.sqlite",
@@ -88,6 +117,18 @@ config("test", {
 	session_name = "test_app_session",
 	secret = "test-secret",
 	admin_usernames = {},
+	-- A fake provider so the OAuth spec can exercise the flow (the network step
+	-- is stubbed in the spec).
+	oauth = {
+		fakeprov = {
+			client_id = "test-client",
+			client_secret = "test-secret",
+			authorize_url = "https://provider.test/authorize",
+			token_url = "https://provider.test/token",
+			profile_url = "https://provider.test/me",
+			scope = "email",
+		},
+	},
 	-- In-memory database so the test suite never touches dev/prod data.
 	sqlite = {
 		database = ":memory:",
@@ -106,6 +147,7 @@ config("production", {
 	session_name = "prod_app_session",
 	secret = os.getenv("LAPIS_SECRET"),
 	admin_usernames = admin_usernames(),
+	oauth = oauth_providers(),
 	logging = {
 		requests = true,
 		queries = false,

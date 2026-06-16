@@ -111,6 +111,11 @@ app:match("homepage", "/(:sort)", r2(require("actions.index")))
 -- app:match("comments", "/comments", r2(require("actions.index")))
 app:match("domains", "/domain/:domain", r2(require("actions.domain")))
 app:match("tag", "/t/:tag(/:sort)", r2(require("actions.tag")))
+
+-- OAuth login (GET round trip; the `state` param guards CSRF, so these are
+-- exempt from the form-CSRF filter that only covers non-GET requests).
+app:match("oauth_start", "/auth/:provider", r2(require("actions.oauth_start")))
+app:match("oauth_callback", "/auth/:provider/callback", r2(require("actions.oauth_callback")))
 app:match("subreddits_search", "/subreddits/search", r2(require("actions.subreddits")))
 -- An exact `/subreddits` route (like /login) takes precedence over the
 -- `/(:sort)` homepage catch-all; the optional-group form did not.

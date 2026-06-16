@@ -815,6 +815,21 @@ return {
 		end
 	end,
 
+	-- OAuth: link external provider identities to local users.
+	[107] = function()
+		schema.create_table("oauth_identities", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer },
+			{ "provider", types.text },
+			{ "provider_user_id", types.text },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+			"UNIQUE(provider, provider_user_id)",
+		}, opts)
+		schema.create_index("oauth_identities", "user_id", { if_not_exists = true })
+	end,
+
 	-- classify text : https://github.com/leafo/lapis-bayes
 	[1439944992] = require("lapis.bayes.schema").run_migrations,
 }

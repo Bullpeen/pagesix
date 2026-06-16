@@ -74,8 +74,10 @@ dependency-driven (foundations first); full plan in
       (migration `[106]`); `POST /comment/:id/accept` toggles, gated to the OP or
       the `accept_answer` privilege. Accepted-answer badge/highlight in-thread,
       question/solved badges in listings + post page. (`accept_spec`.)
-- [ ] **OAuth login** — `oauth_identities` table, authorization-code flow,
-      provider buttons on login/register.
+- [x] **OAuth login** — `oauth_identities` table (migration `[107]`),
+      authorization-code flow (`utils/oauth`, `/auth/:provider` + `/callback`),
+      link-or-create with an unusable password, GitHub/Google config presets, and
+      provider buttons on login/register. (`oauth_spec`.)
 
 ## Missing Reddit / HN features (backlog)
 - [x] Search — **SQLite FTS5** virtual table over post title/body, kept in sync

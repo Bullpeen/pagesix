@@ -8,6 +8,22 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Forum generalization: OAuth login
+- **Sign in with an external provider** — `utils/oauth` implements the OAuth2
+  authorization-code flow: `/auth/:provider` stashes an anti-CSRF `state` and
+  redirects to the provider; `/auth/:provider/callback` validates the state,
+  exchanges the code, and links-or-creates a local user. New `oauth_identities`
+  table (migration `[107]`) keyed on `(provider, provider_user_id)`.
+- **Accounts** — a first-time login creates a user with a derived (collision-
+  disambiguated) username and an unusable password, mirroring the `rss_bot`
+  system user; a returning identity signs into the same account. Provider buttons
+  show on the login/register pages.
+- **Configurable** — providers come from `config.oauth`; GitHub and Google ship
+  as presets enabled via `*_CLIENT_ID`/`*_CLIENT_SECRET` env vars. The network
+  step is a single seam (`OAuth.identify`) so it's stubbable.
+- Specs: authorize-url building, link-or-create (new/repeat/colliding), and the
+  start + callback actions including state validation. (219 specs.)
+
 ### Forum generalization: accept-answer mode
 - **Q&A posts** — a post can be flagged a question (an "Ask a question" checkbox
   on submit; `posts.is_question`), and the OP or a moderator can mark one comment
