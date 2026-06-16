@@ -1,49 +1,38 @@
 <% if preview_html and preview_html ~= "" then %>
-    <div class="submit-preview">
-        <div class="label">Preview</div>
-        <div class="usertext-body md self-text"><%- preview_html %></div>
-    </div>
+	<div class="card" style="margin-bottom:12px">
+		<div class="label">Preview</div>
+		<div class="md"><%- preview_html %></div>
+	</div>
 <% end %>
-<form class="form primary_form" method="POST" action="/submit">
-    <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-    <div class="input_row">
-        <label>
-            <div class="label">Title</div>
-            <input name="title" required="required" type="text" autocapitalize="words" autocorrect="off" value="<%= params and params.title or '' %>">
-        </label>
-    </div>
-    <div class="input_row">
-        <label>
-            <div class="label">URL <span class="optional">(for a link post)</span></div>
-            <input autocomplete="url" name="url" type="text" autocapitalize="none" autocorrect="off" value="<%= params and params.url or '' %>">
-        </label>
-    </div>
-    <div class="input_row">
-        <label>
-            <div class="label">Text <span class="optional">(for a self post; Markdown supported)</span></div>
-            <textarea name="body" rows="6"><%= params and params.body or '' %></textarea>
-        </label>
-    </div>
-    <div class="input_row">
-        <label>
-            <div class="label">Subreddit</div>
-            <input name="subreddit" required="required" type="text" autocapitalize="none" autocorrect="off" value="<%= params and params.subreddit or '' %>">
-        </label>
-    </div>
-    <div class="input_row">
-        <label>
-            <div class="label">Tags <span class="optional">(comma-separated, up to 5)</span></div>
-            <input name="tags" type="text" autocapitalize="none" autocorrect="off" value="<%= params and params.tags or '' %>">
-        </label>
-    </div>
-    <div class="input_row">
-        <label class="checkbox">
-            <input type="checkbox" name="is_question" value="1" <%= params and params.is_question and "checked" or "" %>>
-            Ask a question <span class="optional">(lets you mark an accepted answer)</span>
-        </label>
-    </div>
-    <div class="button_row">
-        <button class="button" name="preview" value="1" type="submit" formnovalidate>Preview</button>
-        <input class="button" value="Submit" type="submit">
-    </div>
+
+<form class="form" method="POST" action="/submit">
+	<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+	<label class="field">
+		<span class="label">Title</span>
+		<input name="title" type="text" autocapitalize="words" required value="<%= params and params.title or '' %>">
+	</label>
+	<label class="field">
+		<span class="label">URL <span class="optional">(for a link post)</span></span>
+		<input name="url" type="url" autocapitalize="none" value="<%= params and params.url or '' %>">
+	</label>
+	<label class="field">
+		<span class="label">Text <span class="optional">(for a self post; Markdown supported)</span></span>
+		<textarea name="body" rows="6"><%= params and params.body or '' %></textarea>
+	</label>
+	<label class="field">
+		<span class="label">Subreddit</span>
+		<input name="subreddit" type="text" autocapitalize="none" required value="<%= params and params.subreddit or '' %>">
+	</label>
+	<label class="field">
+		<span class="label">Tags <span class="optional">(comma-separated, up to 5)</span></span>
+		<input name="tags" type="text" autocapitalize="none" value="<%= params and params.tags or '' %>">
+	</label>
+	<label class="checkbox">
+		<input type="checkbox" name="is_question" value="1" <%= params and params.is_question and "checked" or "" %>>
+		Ask a question <span class="optional">(lets you mark an accepted answer)</span>
+	</label>
+	<div class="row">
+		<button class="btn" name="preview" value="1" type="submit" formnovalidate>Preview</button>
+		<button class="btn btn--primary" type="submit">Submit</button>
+	</div>
 </form>

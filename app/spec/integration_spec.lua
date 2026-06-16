@@ -326,6 +326,25 @@ describe("pagesix integration", function()
 			assert.same(302, status)
 			assert.truthy(#Votes:select("where comment_id = 1") >= 1)
 		end)
+
+		it("answers a Datastar vote with an SSE score patch (no redirect)", function()
+			-- Datastar sends its own request header + CSRF via X-Csrf-Token (the
+			-- JSON body carries no form field); the action replies with an SSE
+			-- element patch instead of a 302.
+			local status, body, headers = simulate_request(app, "/vote/post/1/up", {
+				method = "POST",
+				session = { current_user = "demo" },
+				cookies = { [CSRF_COOKIE] = CSRF_KEY },
+				headers = {
+					["datastar-request"] = "true",
+					["x-csrf-token"] = CSRF_TOKEN,
+				},
+			})
+			assert.same(200, status)
+			assert.truthy(headers["content-type"]:find("text/event-stream", 1, true))
+			assert.truthy(body:find("datastar-patch-elements", 1, true))
+			assert.truthy(body:find('id="post-score-1"', 1, true))
+		end)
 	end)
 
 	describe("commenting", function()

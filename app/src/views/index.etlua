@@ -1,2 +1,8 @@
+<ul class="sorts">
+	<% for _, s in ipairs({ { "", "hot" }, { "new", "new" }, { "top", "top" }, { "controversial", "controversial" }, { "rising", "rising" } }) do %>
+		<li><a href="/<%= s[1] %>"><%= s[2] %></a></li>
+	<% end %>
+</ul>
+
 <% render('views.fragments.posts') %>
 <% render('views.fragments.page_nav') %>

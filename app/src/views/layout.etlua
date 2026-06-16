@@ -1,20 +1,25 @@
 <!DOCTYPE html>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Page Six</title>
-<link rel="stylesheet" href="/static/css/saidit.css">
-<main>
-	<%  render('views.fragments.header') %>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Page Six</title>
+	<link rel="stylesheet" href="/static/css/app.css">
+	<link rel="icon" href="/static/favicon.ico">
+	<script type="module" src="/static/js/datastar.js"></script>
+</head>
+<body data-signals="{csrf: '<%= csrf_token %>'}">
+	<% render('views.fragments.header') %>
 
-	<%  render('views.fragments.sidebar') %>
-
-	<a name="content"></a>
-	<div class="content" role="main">
-		<% content_for("inner") %>
+	<div class="layout">
+		<main class="main" role="main">
+			<% content_for("inner") %>
+		</main>
+		<aside class="sidebar">
+			<% render('views.fragments.sidebar') %>
+		</aside>
 	</div>
 
-	<%  render('views.fragments.footer') %>
-
-	<script src="/static/js/base.js">
-	<script src="https://unpkg.com/htmx.org@2.0.0" integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw" crossorigin="anonymous"></script>
-</main>
+	<% render('views.fragments.footer') %>
+</body>
+</html>

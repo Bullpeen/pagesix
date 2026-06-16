@@ -47,4 +47,28 @@ function Votes:cast(user_id, post_id, comment_id, upvote)
 	})
 end
 
+--- Net score (upvotes - downvotes) for a post's own votes (comment_id IS NULL).
+-- @tparam number post_id
+-- @treturn number
+function Votes:post_score(post_id)
+	local row = db.select(
+		[[COALESCE(SUM(CASE WHEN upvote = 1 THEN 1 ELSE -1 END), 0) AS s
+			FROM votes WHERE post_id = ? AND comment_id IS NULL]],
+		tonumber(post_id)
+	)
+	return tonumber(row[1].s) or 0
+end
+
+--- Net score (upvotes - downvotes) for a single comment.
+-- @tparam number comment_id
+-- @treturn number
+function Votes:comment_score(comment_id)
+	local row = db.select(
+		[[COALESCE(SUM(CASE WHEN upvote = 1 THEN 1 ELSE -1 END), 0) AS s
+			FROM votes WHERE comment_id = ?]],
+		tonumber(comment_id)
+	)
+	return tonumber(row[1].s) or 0
+end
+
 return Votes

@@ -103,6 +103,12 @@ dependency-driven (foundations first); full plan in
       (not self); `/inbox` lists them + marks read; header shows an unread count.
       (Direct messages between users intentionally out of scope.)
 - Flair, awards/gold (currently static placeholders).
+- [x] **Front-end clean slate** — dropped the 14k-line vendored `saidit.css` and
+      the ~75k-line dead `static/js` tree for a single semantic `app.css` and
+      self-hosted **Datastar** (no hand-written JS). Menus + inline reply/edit
+      toggles are `data-signals`/`data-show`; voting is progressive (form POST
+      fallback + Datastar `@post` → SSE score patch via `utils/datastar`). Vote
+      control extracted to `utils/widgets`.
 - [x] RSS **out**: `/.rss` and `/r/:sub/.rss` output feeds. RSS **in**: a live
       importer (`utils/feed_import` + `utils/feed_parse`, luaexpat-based, no
       `feedparser` dep) fetches each feed, parses RSS/Atom, and creates posts for

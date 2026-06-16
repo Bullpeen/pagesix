@@ -8,6 +8,36 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### UI clean slate: new CSS + Datastar, drop the vendored Reddit front-end
+- **New stylesheet** — replaced the 14k-line vendored `saidit.css` (plus
+  `compact`/`highlight`/`mobile` and the `.less`/`.scss` soup) with a single
+  ~600-line `static/css/app.css`: design tokens, a semantic reset, and components
+  (header, link listing + vote column, threaded comments, forms, badges, tables,
+  cards, dropdown menu). Keeps the reddit/saidit silhouette; most styling targets
+  semantic elements so pages look right without class soup.
+- **Datastar (self-hosted v1.0.2)** replaces htmx + the dead `base.js`. Used for
+  all client interactivity with no hand-written JS: the header "my subs"/account
+  dropdowns and the inline comment reply/edit and post-edit toggles are
+  `data-signals` + `data-show`; voting is progressive — a plain `<form>` POST is
+  the no-JS fallback, and Datastar intercepts the submit (`data-on:submit__prevent
+  → @post`) so the vote action replies with an **SSE element patch** that updates
+  just the score in place (no reload). New `utils/datastar` (request detection +
+  `text/event-stream` patch helper) and `Votes:post_score`/`:comment_score`; the
+  CSRF filter now also accepts an `X-Csrf-Token` header (Datastar posts JSON, not
+  a form field).
+- **Templates rewritten** — layout, header, sidebar, footer, nav, the post
+  listing, single post, comments, and the submit/register/login/subreddit/inbox
+  views were rewritten as clean semantic HTML, dropping the dead Reddit markup
+  (recaptcha, strength-meters, fake mockup rows, `onclick` handlers). The vote
+  control is extracted into a shared `utils/widgets` helper (etlua's parameterless
+  `render` can't pass per-row values inside the posts/comments loops).
+- **Deleted** the entire unreferenced `static/js` tree (~75k lines of vendored
+  jQuery/React/Reddit JS) and all unused images — `static/` is now just
+  `css/app.css`, `js/datastar.js`, and `favicon.ico`.
+- Spec: the Datastar vote path returns an `text/event-stream` score patch when the
+  `Datastar-Request` header is set (CSRF via `X-Csrf-Token`), vs the 302 redirect
+  for a plain form post. (220 specs.) Verified visually (home + post page).
+
 ### Forum generalization: OAuth login
 - **Sign in with an external provider** — `utils/oauth` implements the OAuth2
   authorization-code flow: `/auth/:provider` stashes an anti-CSRF `state` and

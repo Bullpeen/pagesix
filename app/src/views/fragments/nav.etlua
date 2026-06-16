@@ -1,5 +1,3 @@
-<div>
-    <br />
-    <a href="/">Home</a>
-    <a href="/subreddits">Subreddits</a>    
-</div>
+<nav class="muted" style="margin-top:20px">
+	<a href="/">&larr; back to Page Six</a>
+</nav>

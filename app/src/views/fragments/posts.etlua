@@ -1,87 +1,45 @@
-<% if posts ~= nil then
-    for n, post in ipairs(posts) do %>
-        <div class=" thing link " id="" onclick="click_thing(this)">
-            <p class="parent"></p>
-            <span class="rank"><%= n %></span>
-            <div class="midcol unvoted">
-                <form class="arrow-form" method="POST" action="/vote/post/<%= post.id %>/up">
-                    <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                    <button class="arrow up" type="submit" aria-label="upvote"></button>
-                </form>
-                <div class="score unvoted" title=""><%= post.upvotes - post.downvotes %></div>
-                <form class="arrow-form" method="POST" action="/vote/post/<%= post.id %>/down">
-                    <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                    <button class="arrow down" type="submit" aria-label="downvote"></button>
-                </form>
-            </div>
-            <% if post.thumbnail then %>
-            <a class="thumbnail may-blank" href="<%= post.url %>">
-                <img src="<%= post.thumbnail %>" alt="<%= post.title %>" width="70" height="70" loading="lazy">
-            </a>
-            <% end %>
-            <div class="entry unvoted">
-                <div class="top-matter">
-                    <p class="title">
-                        <% -- TODO <span class="linkflairlabel " title="TAG">TAG</span> %>
-                        <% if post.stickied and tonumber(post.stickied) == 1 then %><span class="stickied-badge" title="stickied by a moderator">stickied</span> <% end %>
-                        <% if post.is_question and tonumber(post.is_question) == 1 then %><span class="<%= post.accepted_comment_id and "solved-badge" or "question-badge" %>"><%= post.accepted_comment_id and "solved" or "question" %></span> <% end %>
-                        <a class="title may-blank loggedin " data-event-action="title" href="<%= post.url %>" tabindex="<%= n %>"><%= post.title %></a>
-                        <span class="domain">(<a href="/domain/<%= post.domain %>/"><%= post.domain %></a>)</span>
-                    </p>
-                    <p class="tagline ">
-                        submitted <time title="<%= post.age %>" datetime="" class="live-timestamp"><%= post.age %></time> by <a href="/user/<%= post.author %>" class="author may-blank"><%= post.author %></a>
-                        <span class="userattrs"></span>
-                        <span class="awardings-bar" data-subredditpath=""></span>
-                    </p>
-                    <ul class="flat-list buttons">
-                        <li class="first">
-                            <a href="<%= post.permalink %>"
-                                data-event-action="comments"
-                                class="bylink comments may-blank" rel="nofollow"><%= post.num_comments %> comments</a>
-                        </li>
-                        <li class="share">
-                            <a class="post-sharing-button" href="javascript: void 0;">share</a>
-                        </li>
-                        <% if current_user then %>
-                        <li class="link-save-button">
-                            <form method="POST" action="/post/<%= post.id %>/save">
-                                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                                <button class="button-link" type="submit">save</button>
-                            </form>
-                        </li>
-                        <li class="hide-button">
-                            <form method="POST" action="/post/<%= post.id %>/hide">
-                                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                                <button class="button-link" type="submit">hide</button>
-                            </form>
-                        </li>
-                        <% end %>
-                        <li class="give-gold-button">
-                            <a href="/gold"
-                                title="give an award in appreciation of this post."
-                                class="give-gold login-required access-required gold-give-gold"
-                                rel="nofollow">give award</a>
-                        </li>
-                        <li class="report-button login-required">
-                            <a href="javascript:void(0)"
-                                class="reportbtn access-required"
-                                data-event-action="report">report</a>
-                        </li>
-                        <li class="crosspost-button">
-                            <a class="post-crosspost-button" href="javascript: void 0;">crosspost</a>
-                        </li>
-                    </ul>
-                    <div class="reportform">
-                    </div>
-                </div>
-            </div>
-            <div class="child">
-            </div>
-            <div class="clearleft">
-            </div>
-        </div>
-    <% end %>
-<% else %>
-    Nothing (posts) to see here.
-<% end %>
+<% if posts ~= nil and #posts > 0 then %>
+	<ul class="listing">
+		<% local W = require("src.utils.widgets") %>
+		<% for _, post in ipairs(posts) do %>
+			<li class="post-row">
+				<%- W.votes("post", post.id, post.upvotes - post.downvotes, csrf_token) %>
 
+				<% if post.thumbnail then %>
+					<a class="thumb-link" href="<%= post.url %>"><img class="thumb" src="<%= post.thumbnail %>" alt="" loading="lazy"></a>
+				<% end %>
+
+				<div class="post-main">
+					<h2 class="post-title">
+						<% if post.stickied and tonumber(post.stickied) == 1 then %><span class="badge sticky">stickied</span> <% end %>
+						<% if post.is_question and tonumber(post.is_question) == 1 then %><span class="badge <%= post.accepted_comment_id and "solved" or "question" %>"><%= post.accepted_comment_id and "solved" or "question" %></span> <% end %>
+						<a href="<%= post.url or post.permalink %>"><%= post.title %></a>
+						<% if post.domain and post.domain ~= "" then %><span class="domain">(<a href="/domain/<%= post.domain %>"><%= post.domain %></a>)</span><% end %>
+					</h2>
+					<p class="post-meta">
+						submitted <time><%= post.age %></time> by <a href="/user/<%= post.author %>"><%= post.author %></a>
+					</p>
+					<ul class="post-actions">
+						<li><a href="<%= post.permalink %>"><%= post.num_comments %> comments</a></li>
+						<% if current_user then %>
+						<li>
+							<form class="inline-form" method="POST" action="/post/<%= post.id %>/save">
+								<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+								<button class="btn-link" type="submit">save</button>
+							</form>
+						</li>
+						<li>
+							<form class="inline-form" method="POST" action="/post/<%= post.id %>/hide">
+								<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+								<button class="btn-link" type="submit">hide</button>
+							</form>
+						</li>
+						<% end %>
+					</ul>
+				</div>
+			</li>
+		<% end %>
+	</ul>
+<% else %>
+	<p class="empty">Nothing here yet.</p>
+<% end %>

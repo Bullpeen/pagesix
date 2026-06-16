@@ -55,6 +55,7 @@ return {
 			paginate_thread(Comments:thread(post_data.id), self.params.page, COMMENTS_PER_PAGE)
 
 		self.tags = require("src.models.tags"):for_post(post_data.id)
+		self.score = require("src.models.votes"):post_score(post_data.id)
 
 		-- print("Post data:")
 		-- require 'pl.pretty'.dump(post_data[1])

@@ -1,87 +1,75 @@
-<h1 class="post-title">
-    <% if stickied then %><span class="stickied-badge" title="stickied by a moderator">stickied</span> <% end %>
-    <% if is_question then %><span class="<%= accepted_comment_id and "solved-badge" or "question-badge" %>"><%= accepted_comment_id and "solved" or "question" %></span> <% end %>
-    <% if url then %>
-        <a href="<%= url %>"><%= title %></a>
-    <% else %>
-        <%= title %>
-    <% end %>
-    <% if comments_locked then %><span class="locked-badge" title="comments locked">locked</span><% end %>
-</h1>
+<article class="post">
+	<div class="row" style="align-items:flex-start">
+		<%- require("src.utils.widgets").votes("post", post_id, score or 0, csrf_token) %>
+		<div style="min-width:0;flex:1">
+			<h1 class="post-title">
+				<% if stickied then %><span class="badge sticky">stickied</span> <% end %>
+				<% if is_question then %><span class="badge <%= accepted_comment_id and "solved" or "question" %>"><%= accepted_comment_id and "solved" or "question" %></span> <% end %>
+				<% if url then %><a href="<%= url %>"><%= title %></a><% else %><%= title %><% end %>
+				<% if comments_locked then %><span class="badge locked">locked</span><% end %>
+			</h1>
 
-<% if crosspost_from then %>
-    <p class="crosspost-tagline">crossposted from
-        <a href="<%= crosspost_from.permalink %>">/r/<%= crosspost_from.subreddit %></a>
-    </p>
-<% end %>
+			<% if crosspost_from then %>
+				<p class="muted">crossposted from <a href="<%= crosspost_from.permalink %>">/r/<%= crosspost_from.subreddit %></a></p>
+			<% end %>
 
-<% if thumbnail then %>
-    <a class="thumbnail image-preview" href="<%= url %>">
-        <img src="<%= thumbnail %>" alt="<%= title %>" loading="lazy">
-    </a>
-<% end %>
+			<% if thumbnail then %>
+				<a class="post-thumb" href="<%= url %>"><img src="<%= thumbnail %>" alt="" width="120" loading="lazy"></a>
+			<% end %>
 
-<% if is_self and body_html then %>
-    <div class="usertext-body md self-text">
-        <%- body_html %>
-    </div>
-<% end %>
+			<% if is_self and body_html then %>
+				<div class="post-body md"><%- body_html %></div>
+			<% end %>
 
-<% if tags and #tags > 0 then %>
-    <p class="post-tags">
-        <% for _, tag in ipairs(tags) do %>
-            <a class="tag" href="/t/<%= tag %>"><%= tag %></a>
-        <% end %>
-    </p>
-<% end %>
+			<% if tags and #tags > 0 then %>
+				<p class="tags">
+					<% for _, tag in ipairs(tags) do %><a class="tag" href="/t/<%= tag %>"><%= tag %></a><% end %>
+				</p>
+			<% end %>
 
-<p class="tagline">Submitted by
-    <a href="/user/<%= user_name %>"><%= user_name %></a> at <%= created_at %>.
-    <% if edited then %><span class="edited">(edited)</span><% end %>
-    <% if removed then %><span class="removed">[removed by a moderator]</span><% end %>
-    <a href="/r/<%= subreddit %>/comments/<%= post_id %>" alt="permalink">Permalink</a>
-</p>
+			<p class="post-meta">
+				submitted by <a href="/user/<%= user_name %>"><%= user_name %></a> at <%= created_at %>
+				<% if edited then %><span class="muted">(edited)</span><% end %>
+				<% if removed then %><span class="badge removed">[removed by a moderator]</span><% end %>
+				&middot; <a href="/r/<%= subreddit %>/comments/<%= post_id %>">permalink</a>
+			</p>
 
-<% if current_user and not deleted then %>
-    <form class="crosspost-form" method="POST" action="/post/<%= post_id %>/crosspost">
-        <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-        <input name="subreddit" placeholder="subreddit" required="required" autocapitalize="none">
-        <button class="button" type="submit">crosspost</button>
-    </form>
-<% end %>
+			<div class="comment-actions">
+				<% if current_user and not deleted then %>
+				<form class="inline-form" method="POST" action="/post/<%= post_id %>/crosspost">
+					<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+					<input name="subreddit" placeholder="subreddit" required aria-label="crosspost to subreddit" style="width:auto">
+					<button class="btn-link" type="submit">crosspost</button>
+				</form>
+				<% end %>
 
-<% if can_moderate then %>
-    <div class="mod-controls">
-        <form class="mod-form" method="POST" action="/post/<%= post_id %>/remove">
-            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-            <button class="button" type="submit"><%= removed and "approve" or "remove" %></button>
-        </form>
-        <form class="mod-form" method="POST" action="/post/<%= post_id %>/sticky">
-            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-            <button class="button" type="submit"><%= stickied and "unsticky" or "sticky" %></button>
-        </form>
-        <form class="mod-form" method="POST" action="/post/<%= post_id %>/lock">
-            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-            <button class="button" type="submit"><%= comments_locked and "unlock comments" or "lock comments" %></button>
-        </form>
-    </div>
-<% end %>
+				<% if can_moderate then %>
+				<% for _, m in ipairs({ { "remove", removed and "approve" or "remove" }, { "sticky", stickied and "unsticky" or "sticky" }, { "lock", comments_locked and "unlock comments" or "lock comments" } }) do %>
+				<form class="inline-form" method="POST" action="/post/<%= post_id %>/<%= m[1] %>">
+					<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+					<button class="btn-link" type="submit"><%= m[2] %></button>
+				</form>
+				<% end %>
+				<% end %>
 
-<% if current_user and not deleted and tonumber(current_user.id) == tonumber(post_user_id) then %>
-    <div class="post-controls">
-        <% if is_self then %>
-        <details class="edit">
-            <summary>edit</summary>
-            <form method="POST" action="/post/<%= post_id %>/edit">
-                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                <textarea name="body" rows="6" required><%= body %></textarea>
-                <button class="button" type="submit">save</button>
-            </form>
-        </details>
-        <% end %>
-        <form class="delete-form" method="POST" action="/post/<%= post_id %>/delete">
-            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-            <button class="button" type="submit">delete</button>
-        </form>
-    </div>
-<% end %>
+				<% if current_user and not deleted and tonumber(current_user.id) == tonumber(post_user_id) then %>
+				<% if is_self then %>
+				<button class="btn-link" data-signals="{editpost: false}" data-on:click="$editpost = !$editpost">edit</button>
+				<% end %>
+				<form class="inline-form" method="POST" action="/post/<%= post_id %>/delete">
+					<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+					<button class="btn-link" type="submit">delete</button>
+				</form>
+				<% end %>
+			</div>
+
+			<% if current_user and not deleted and is_self and tonumber(current_user.id) == tonumber(post_user_id) then %>
+			<form class="form" data-show="$editpost" method="POST" action="/post/<%= post_id %>/edit">
+				<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+				<textarea name="body" rows="6" required><%= body %></textarea>
+				<button class="btn btn--primary" type="submit">save</button>
+			</form>
+			<% end %>
+		</div>
+	</div>
+</article>

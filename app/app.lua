@@ -45,6 +45,9 @@ app:before_filter(function(self)
 	local method = self.req.method
 	local path = self.req.parsed_url.path or ""
 	if method ~= "GET" and method ~= "HEAD" and not path:match("^/console") then
+		-- Datastar's @post sends a JSON body (no form field), so accept the token
+		-- from an X-Csrf-Token header as a fallback to the csrf_token param.
+		self.params.csrf_token = self.params.csrf_token or self.req.headers["x-csrf-token"]
 		if not csrf.validate_token(self) then
 			return self:write({
 				status = 403,

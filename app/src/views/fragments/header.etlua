@@ -1,97 +1,46 @@
-<div id="header" role="banner">
-	<div id="header2" role="banner"></div>
-	<a tabindex="1" href="#content" id="jumpToContent">jump to content</a>
-	<div id="sr-header-area">
-		<div class="width-clip">
-			<div class="dropdown srdrop" onclick="open_menu(this)">
-				<span class="selected title">my subs</span>
-			</div>
-			<div class="drop-choices srdrop">
-                <% if subs ~= nil then %>
-				<% for _, sub in ipairs(subs) do %>
-				    <a href="/r/<%= sub.name %>" class="choice"><%= sub.name %></a>
-                <% end %>
-                <% end %>
+<header class="site-header">
+	<div class="bar">
+		<a href="/" class="brand">pagesix</a>
 
+		<nav class="site-nav">
+			<a href="/">hot</a>
+			<a href="/new">new</a>
+			<a href="/top">top</a>
+			<a href="/r/all">all</a>
+			<a href="/subreddits">subs</a>
+		</nav>
 
-				<a href="/subreddits/mine/" class="bottom-option choice">edit subscriptions</a>
-				<a href="/subreddits/popular/" class="bottom-option choice">find popular subs</a>
-				<a href="/subreddits/new/" class="bottom-option choice">find new subs</a>
-			</div>
-			<div class="sr-list">
-				<ul class="flat-list sr-bar hover">
-					<li
-                        class="selected">
-						<a href="/subscribed" class="choice">subscribed</a>
-					</li>
-					<li>
-						<span class="separator">-</span>
-						<a href="/r/all" class="choice">all</a>
-					</li>
-					<li>
-						<span class="separator">-</span>
-						<a href="/r/random/" class="random choice">random</a>
-					</li>
-					<% if current_user then %>
-					<li>
-						<span class="separator">-</span>
-						<a href="/inbox" class="choice">inbox<% if unread_count and tonumber(unread_count) > 0 then %> (<%= unread_count %>)<% end %></a>
-					</li>
-					<% end %>
+		<div class="header-right">
+			<% if current_user then %>
+				<% if subs and #subs > 0 then %>
+				<div class="menu" data-signals="{subsmenu: false}">
+					<button class="btn-link" data-on:click="$subsmenu = !$subsmenu">my subs &#9662;</button>
+					<div class="menu-list" data-show="$subsmenu" data-on:click__outside="$subsmenu = false">
+						<% for _, sub in ipairs(subs) do %>
+							<a href="/r/<%= sub.name %>"><%= sub.name %></a>
+						<% end %>
+					</div>
+				</div>
+				<% end %>
 
-					<% if subs ~= nil then %>
-					<% for _, sub in ipairs(subs) do %>
-					<li>
-						<span class="separator">-</span>
-						<a href="/r/<%= sub.name %>/" class="choice"><%= sub.name %></a>
-					</li>
-					<% end %>
-					<% end %>
+				<a href="/inbox">inbox<% if unread_count and tonumber(unread_count) > 0 then %> (<%= unread_count %>)<% end %></a>
 
-				</ul>
-				<a href="/subreddits/mine/" id="sr-more-link">- edit subs »</a>
-			</div>
+				<div class="menu" data-signals="{usermenu: false}">
+					<button class="btn-link" data-on:click="$usermenu = !$usermenu"><%= current_user.user_name %> &#9662;</button>
+					<div class="menu-list" data-show="$usermenu" data-on:click__outside="$usermenu = false">
+						<a href="/user/<%= current_user.user_name %>">profile</a>
+						<a href="/saved">saved</a>
+						<% if is_admin then %><a href="/admin">admin</a><% end %>
+						<form class="inline-form" method="POST" action="/logout">
+							<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+							<button class="btn-link" type="submit">log out</button>
+						</form>
+					</div>
+				</div>
+			<% else %>
+				<a href="/login">log in</a>
+				<a class="btn btn--primary" href="/register">sign up</a>
+			<% end %>
 		</div>
 	</div>
-	<div id="header-bottom-left">
-		<a href="/" id="header-img" class="default-header">pagesix</a>&nbsp;
-		<span class="hover pagename redditname"></span>
-		<ul class="tabmenu ">
-			<li class="selected">
-				<a href="/" class="hot choice">hot</a>
-			</li>
-			<li>
-				<a href="/new" class="new choice">new</a>
-			</li>
-			<li>
-				<a href="/top" class="top choice">top</a>
-			</li>
-			<li>
-				<a href="/controversial" class="new choice">controversial</a>
-			</li>
-			<li>
-				<a href="/r/all" class="sr-comments choice">all</a>
-			</li>
-		</ul>
-	</div>
-
-    <div id="header-bottom-right">
-		<% if current_user then %>
-        <span class="user">
-            <a href="/user/<%= current_user.user_name %>"><%= current_user.user_name %></a>
-            <% if is_admin then %>
-            <span class="separator">-</span>
-            <a href="/admin" class="choice">admin</a>
-            <% end %>
-            <form class="logout-form" method="POST" action="/logout" style="display:inline">
-                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                <button class="button-link" type="submit">log out</button>
-            </form>
-        </span>
-		<% else %>
-        <span class="user">Want to join?
-            <a href="/login" class="login-required">Log in or sign up</a> in seconds.
-        </span>
-		<% end %>
-    </div>
-</div>
+</header>

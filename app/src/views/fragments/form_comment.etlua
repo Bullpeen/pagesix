@@ -1,7 +1,11 @@
 <% if post_id then %>
-    <form class="comment-form" method="POST" action="/post/<%= post_id %>/comment">
-        <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-        <textarea name="body" rows="4" placeholder="What are your thoughts?" required></textarea>
-        <button class="button" type="submit">Comment</button>
-    </form>
+	<% if current_user then %>
+	<form class="form comment-form" method="POST" action="/post/<%= post_id %>/comment">
+		<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+		<textarea name="body" rows="4" placeholder="What are your thoughts?" required></textarea>
+		<button class="btn btn--primary" type="submit">Comment</button>
+	</form>
+	<% else %>
+	<p class="notice"><a href="/login">Log in</a> to leave a comment.</p>
+	<% end %>
 <% end %>

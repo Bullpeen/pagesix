@@ -1,75 +1,66 @@
-<div class="commentarea">
-    <div class="sitetable nestedlisting">
-        <% if comments ~= nil and #comments > 0 then
-            for _, comment in ipairs(comments) do
-                local is_accepted = accepted_comment_id
-                    and tonumber(accepted_comment_id) == tonumber(comment.id) %>
-                <% -- depth-first order + depth come from Comments:thread (recursive CTE) %>
-                <div class="thing comment<%= is_accepted and " accepted-answer" or "" %>" style="margin-left: <%= comment.depth * 24 %>px">
-                    <div class="midcol">
-                        <form class="arrow-form" method="POST" action="/vote/comment/<%= comment.id %>/up">
-                            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                            <button class="arrow up" type="submit" aria-label="upvote"></button>
-                        </form>
-                        <span class="score"><%= comment.score %></span>
-                        <form class="arrow-form" method="POST" action="/vote/comment/<%= comment.id %>/down">
-                            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                            <button class="arrow down" type="submit" aria-label="downvote"></button>
-                        </form>
-                    </div>
-                    <div class="entry">
-                        <p class="tagline">
-                            <a class="author" href="/user/<%= comment.author %>"><%= comment.author %></a>
-                            <% if tonumber(comment.is_submitter) == 1 then %><span class="submitter" title="original poster">OP</span><% end %>
-                            <% if is_accepted then %><span class="accepted-badge" title="accepted answer">&check; accepted answer</span><% end %>
-                            <span class="score">&middot; <%= comment.score %> points</span>
-                            <time datetime="<%= comment.created_at %>"><%= comment.created_at %></time>
-                            <% if tonumber(comment.edited) == 1 then %><span class="edited">(edited)</span><% end %>
-                        </p>
-                        <div class="usertext-body md">
-                            <%- comment.body_html %>
-                        </div>
-                        <ul class="flat-list buttons">
-                            <li class="first"><a href="<%= comment.permalink %>" class="bylink" rel="nofollow">permalink</a></li>
-                            <% if can_accept and tonumber(comment.deleted) ~= 1 then %>
-                            <li class="accept">
-                                <form method="POST" action="/comment/<%= comment.id %>/accept">
-                                    <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                                    <button class="button-link" type="submit"><%= is_accepted and "unaccept" or "accept answer" %></button>
-                                </form>
-                            </li>
-                            <% end %>
-                        </ul>
-                        <% if tonumber(comment.deleted) ~= 1 and not comments_locked then %>
-                        <details class="reply">
-                            <summary>reply</summary>
-                            <form method="POST" action="/post/<%= comment.post_id %>/comment">
-                                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                                <input type="hidden" name="parent_comment_id" value="<%= comment.id %>">
-                                <textarea name="body" rows="3" required></textarea>
-                                <button class="button" type="submit">reply</button>
-                            </form>
-                        </details>
-                        <% end %>
-                        <% if current_user and tonumber(current_user.id) == tonumber(comment.user_id) and tonumber(comment.deleted) ~= 1 then %>
-                        <details class="edit">
-                            <summary>edit</summary>
-                            <form method="POST" action="/comment/<%= comment.id %>/edit">
-                                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                                <textarea name="body" rows="3" required><%= comment.body %></textarea>
-                                <button class="button" type="submit">save</button>
-                            </form>
-                        </details>
-                        <form class="delete-form" method="POST" action="/comment/<%= comment.id %>/delete">
-                            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                            <button class="button" type="submit">delete</button>
-                        </form>
-                        <% end %>
-                    </div>
-                </div>
-            <% end %>
-        <% else %>
-            <p class="empty">No comments yet.</p>
-        <% end %>
-    </div>
+<div class="comments">
+	<% if comments ~= nil and #comments > 0 then %>
+		<% local W = require("src.utils.widgets") %>
+		<% for _, comment in ipairs(comments) do
+			local is_accepted = accepted_comment_id
+				and tonumber(accepted_comment_id) == tonumber(comment.id)
+			local mine = current_user and tonumber(current_user.id) == tonumber(comment.user_id)
+		%>
+			<div class="comment<%= is_accepted and " accepted-answer" or "" %>" style="margin-left: <%= comment.depth * 20 %>px"
+				data-signals="{reply<%= comment.id %>: false, edit<%= comment.id %>: false}">
+				<div class="row" style="align-items:flex-start">
+					<%- W.votes("comment", comment.id, comment.score, csrf_token) %>
+					<div style="min-width:0;flex:1">
+						<p class="comment-meta">
+							<a class="author" href="/user/<%= comment.author %>"><%= comment.author %></a>
+							<% if tonumber(comment.is_submitter) == 1 then %><span class="submitter" title="original poster">OP</span><% end %>
+							<% if is_accepted then %><span class="badge accepted">&check; accepted answer</span><% end %>
+							<span><%= comment.score %> points</span>
+							<time><%= comment.created_at %></time>
+							<% if tonumber(comment.edited) == 1 then %><span class="muted">(edited)</span><% end %>
+						</p>
+						<div class="comment-body md"><%- comment.body_html %></div>
+						<div class="comment-actions">
+							<a href="<%= comment.permalink %>">permalink</a>
+							<% if can_accept and tonumber(comment.deleted) ~= 1 then %>
+							<form class="inline-form" method="POST" action="/comment/<%= comment.id %>/accept">
+								<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+								<button class="btn-link" type="submit"><%= is_accepted and "unaccept" or "accept answer" %></button>
+							</form>
+							<% end %>
+							<% if tonumber(comment.deleted) ~= 1 and not comments_locked then %>
+							<button class="btn-link" data-on:click="$reply<%= comment.id %> = !$reply<%= comment.id %>">reply</button>
+							<% end %>
+							<% if mine and tonumber(comment.deleted) ~= 1 then %>
+							<button class="btn-link" data-on:click="$edit<%= comment.id %> = !$edit<%= comment.id %>">edit</button>
+							<form class="inline-form" method="POST" action="/comment/<%= comment.id %>/delete">
+								<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+								<button class="btn-link" type="submit">delete</button>
+							</form>
+							<% end %>
+						</div>
+
+						<% if tonumber(comment.deleted) ~= 1 and not comments_locked then %>
+						<form class="form comment-form" data-show="$reply<%= comment.id %>" method="POST" action="/post/<%= comment.post_id %>/comment">
+							<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+							<input type="hidden" name="parent_comment_id" value="<%= comment.id %>">
+							<textarea name="body" rows="3" placeholder="Reply&hellip;" required></textarea>
+							<button class="btn btn--primary" type="submit">reply</button>
+						</form>
+						<% end %>
+
+						<% if mine and tonumber(comment.deleted) ~= 1 then %>
+						<form class="form" data-show="$edit<%= comment.id %>" method="POST" action="/comment/<%= comment.id %>/edit">
+							<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+							<textarea name="body" rows="3" required><%= comment.body %></textarea>
+							<button class="btn btn--primary" type="submit">save</button>
+						</form>
+						<% end %>
+					</div>
+				</div>
+			</div>
+		<% end %>
+	<% else %>
+		<p class="empty">No comments yet.</p>
+	<% end %>
 </div>

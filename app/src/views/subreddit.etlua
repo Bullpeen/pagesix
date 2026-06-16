@@ -1,20 +1,26 @@
-<div class="subreddit-header">
-    <h1>/r/<%= subreddit %></h1>
-    <a class="rss-link" href="/r/<%= subreddit %>/.rss">RSS</a>
-    <a class="modlog-link" href="/r/<%= subreddit %>/modlog">modlog</a>
-    <% if can_moderate then %>
-        <a class="feeds-link" href="/r/<%= subreddit %>/feeds">manage feeds</a>
-        <a class="queue-link" href="/r/<%= subreddit %>/queue">queue</a>
-    <% end %>
-    <% if current_user then %>
-        <form class="subscribe-form" method="POST" action="/subscribe/<%= subreddit %>">
-            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-            <button class="button" type="submit"><%= subscribed and "Unsubscribe" or "Subscribe" %></button>
-        </form>
-    <% end %>
+<div class="page-head">
+	<h1>/r/<%= subreddit %></h1>
+	<div class="links">
+		<a href="/r/<%= subreddit %>/.rss">RSS</a>
+		<a href="/r/<%= subreddit %>/modlog">modlog</a>
+		<% if can_moderate then %>
+			<a href="/r/<%= subreddit %>/feeds">manage feeds</a>
+			<a href="/r/<%= subreddit %>/queue">queue</a>
+		<% end %>
+	</div>
+	<% if current_user then %>
+		<form class="inline-form" method="POST" action="/subscribe/<%= subreddit %>" style="margin-left:auto">
+			<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+			<button class="btn btn--primary" type="submit"><%= subscribed and "Unsubscribe" or "Subscribe" %></button>
+		</form>
+	<% end %>
 </div>
+
+<ul class="sorts">
+	<% for _, s in ipairs({ "hot", "new", "top", "controversial" }) do %>
+		<li><a href="/r/<%= subreddit %>/<%= s %>"><%= s %></a></li>
+	<% end %>
+</ul>
 
 <% render('views.fragments.posts') %>
 <% render('views.fragments.page_nav') %>
-
-<% render('views.fragments.nav') %>
