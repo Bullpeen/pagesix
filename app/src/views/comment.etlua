@@ -1,8 +1,9 @@
-<% render('views.fragments.info_bar') %>
-<% render('views.fragments.menubar') %>
+<div data-head>
+	<h1>Comment thread</h1>
+</div>
 
-<% --[[ The shared comments fragment provides its own .commentarea wrapper and
-    renders self.comments (focused comment + context + replies) depth-first. ]] %>
+<% --[[ The shared comments fragment renders self.comments (focused comment +
+    context + replies) depth-first. ]] %>
 <% render('views.fragments.comments') %>
 
 <% render('views.fragments.nav') %>

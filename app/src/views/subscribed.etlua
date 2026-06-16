@@ -1,11 +1,11 @@
 <% if subreddits ~= nil and #subreddits > 0 then
-    for _, sub in ipairs(subreddits) do
-        render('views.fragments.subreddit_listing', {
-            name = sub.name,
-            description = sub.description,
-            subscribers = sub.subscribers,
-        })
-    end %>
+	for _, sub in ipairs(subreddits) do
+		render('views.fragments.subreddit_listing', {
+			name = sub.name,
+			description = sub.description,
+			subscribers = sub.subscribers,
+		})
+	end %>
 <% else %>
-    <p class="empty">You have no subscriptions yet.</p>
+	<p data-muted>You have no subscriptions yet.</p>
 <% end %>

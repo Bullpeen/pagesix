@@ -1,20 +1,18 @@
-<%  render('views.fragments.search_pane') %>
-<%  render('views.fragments.info_bar') %>
-
+<h1>Communities</h1>
+<% render('views.fragments.search_pane') %>
+<% render('views.fragments.info_bar') %>
 <% render('views.fragments.create_subreddit') %>
 
-<div id="siteTable" class="sitetable linklisting">
-    <% if subreddits ~= nil and #subreddits > 0 then %>
-        <% for _, sub in ipairs(subreddits) do
-            render('views.fragments.subreddit_listing', {
-                name = sub.name,
-                description = sub.description,
-                subscribers = sub.subscribers,
-            })
-        end %>
-    <% else %>
-        No subreddits found.
-    <% end %>
-</div>
+<% if subreddits ~= nil and #subreddits > 0 then %>
+	<% for _, sub in ipairs(subreddits) do
+		render('views.fragments.subreddit_listing', {
+			name = sub.name,
+			description = sub.description,
+			subscribers = sub.subscribers,
+		})
+	end %>
+<% else %>
+	<p data-muted>No subreddits found.</p>
+<% end %>
 
-<%  render('views.fragments.nav_bar') %>
+<% render('views.fragments.nav_bar') %>

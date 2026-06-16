@@ -9,9 +9,9 @@ local Datastar = require("src.utils.datastar")
 
 local DIRECTIONS = { up = 1, down = 0 }
 
--- The score <span> Datastar morphs in place after an async vote.
+-- The score <span> Datastar morphs in place after an async vote (matched by id).
 local function score_html(dom_id, score)
-	return '<span class="score" id="' .. dom_id .. '">' .. score .. "</span>"
+	return '<span id="' .. dom_id .. '">' .. score .. "</span>"
 end
 
 return {

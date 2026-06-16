@@ -9,12 +9,13 @@ This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
 ### UI clean slate: new CSS + Datastar, drop the vendored Reddit front-end
-- **New stylesheet** — replaced the 14k-line vendored `saidit.css` (plus
-  `compact`/`highlight`/`mobile` and the `.less`/`.scss` soup) with a single
-  ~600-line `static/css/app.css`: design tokens, a semantic reset, and components
-  (header, link listing + vote column, threaded comments, forms, badges, tables,
-  cards, dropdown menu). Keeps the reddit/saidit silhouette; most styling targets
-  semantic elements so pages look right without class soup.
+- **New classless stylesheet** — replaced the 14k-line vendored `saidit.css`
+  (plus `compact`/`highlight`/`mobile` and the `.less`/`.scss` soup) with a single
+  `static/css/app.css`. It uses **no class or id selectors**: styling targets
+  semantic elements and `data-*` attributes (Datastar's own idiom). Templates
+  carry no `class` attributes and no `id`s except the score `<span>` Datastar
+  patches after an async vote. Keeps the reddit/saidit silhouette (header, link
+  listing + vote column, threaded comments, forms, badges, cards, dropdowns).
 - **Datastar (self-hosted v1.0.2)** replaces htmx + the dead `base.js`. Used for
   all client interactivity with no hand-written JS: the header "my subs"/account
   dropdowns and the inline comment reply/edit and post-edit toggles are
@@ -25,12 +26,16 @@ test-covered Reddit clone. Highlights, newest first:
   `text/event-stream` patch helper) and `Votes:post_score`/`:comment_score`; the
   CSRF filter now also accepts an `X-Csrf-Token` header (Datastar posts JSON, not
   a form field).
-- **Templates rewritten** — layout, header, sidebar, footer, nav, the post
-  listing, single post, comments, and the submit/register/login/subreddit/inbox
-  views were rewritten as clean semantic HTML, dropping the dead Reddit markup
-  (recaptcha, strength-meters, fake mockup rows, `onclick` handlers). The vote
-  control is extracted into a shared `utils/widgets` helper (etlua's parameterless
-  `render` can't pass per-row values inside the posts/comments loops).
+- **Every template rewritten** classless — layout, header, sidebar, footer, nav,
+  listing, post, comments, submit/register/login/password, subreddit(s), inbox,
+  modlog, queue, feeds, tag, and the admin views — as clean semantic HTML with
+  `data-*` hooks, dropping the dead Reddit markup (recaptcha, strength-meters,
+  fake mockup rows, `onclick`) and the legacy form classes
+  (`split-panel`/`input_row`/`c-form-*`/`primary_form`/…) plus the CSS shims that
+  propped them up. Deleted six now-dead fragments (`link_listing`, `login_panel`,
+  `menubar`, `commentsignupbar`, `subreddit_title`, `subreddit_moderators`,
+  `error`). The vote control is a shared `utils/widgets` helper (etlua's
+  parameterless `render` can't pass per-row values inside the posts/comments loops).
 - **Deleted** the entire unreferenced `static/js` tree (~75k lines of vendored
   jQuery/React/Reddit JS) and all unused images — `static/` is now just
   `css/app.css`, `js/datastar.js`, and `favicon.ico`.

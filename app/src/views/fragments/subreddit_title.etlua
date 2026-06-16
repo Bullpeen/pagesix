@@ -1,3 +1,0 @@
-<div class="page-head">
-	<h1>/r/<%= params.subreddit %></h1>
-</div>

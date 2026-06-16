@@ -1,30 +1,30 @@
-<div class="modlog">
-    <h1>/r/<%= subreddit %> &mdash; moderation log</h1>
-    <p class="modlog-intro">A public record of moderator actions in this community.</p>
-
-    <% if entries and #entries > 0 then %>
-        <table class="modlog-table">
-            <thead>
-                <tr><th>when</th><th>moderator</th><th>action</th><th>post</th></tr>
-            </thead>
-            <tbody>
-                <% for _, e in ipairs(entries) do %>
-                    <tr>
-                        <td><time datetime="<%= e.created_at %>"><%= e.created_at %></time></td>
-                        <td><a href="/user/<%= e.mod_name %>"><%= e.mod_name %></a></td>
-                        <td><%= e.reason %></td>
-                        <td>
-                            <% if e.post_id and e.post_title then %>
-                                <a href="/r/<%= subreddit %>/comments/<%= e.post_id %>"><%= e.post_title %></a>
-                            <% end %>
-                        </td>
-                    </tr>
-                <% end %>
-            </tbody>
-        </table>
-    <% else %>
-        <p class="empty">No moderator actions logged yet.</p>
-    <% end %>
-
-    <% render('views.fragments.nav') %>
+<div data-head>
+	<h1>/r/<%= subreddit %> &mdash; moderation log</h1>
 </div>
+<p data-muted>A public record of moderator actions in this community.</p>
+
+<% if entries and #entries > 0 then %>
+	<table>
+		<thead>
+			<tr><th>when</th><th>moderator</th><th>action</th><th>post</th></tr>
+		</thead>
+		<tbody>
+			<% for _, e in ipairs(entries) do %>
+				<tr>
+					<td><time datetime="<%= e.created_at %>"><%= e.created_at %></time></td>
+					<td><a href="/user/<%= e.mod_name %>"><%= e.mod_name %></a></td>
+					<td><%= e.reason %></td>
+					<td>
+						<% if e.post_id and e.post_title then %>
+							<a href="/r/<%= subreddit %>/comments/<%= e.post_id %>"><%= e.post_title %></a>
+						<% end %>
+					</td>
+				</tr>
+			<% end %>
+		</tbody>
+	</table>
+<% else %>
+	<p data-muted>No moderator actions logged yet.</p>
+<% end %>
+
+<% render('views.fragments.nav') %>

@@ -1,30 +1,28 @@
-<div class="admin">
-    <h1>Admin Control Panel</h1>
-    <ul class="admin-nav">
-        <li><a href="/admin">dashboard</a></li>
-        <li><a href="/admin/users">users</a></li>
-        <li><a href="/admin/settings">settings</a></li>
-    </ul>
+<h1>Admin Control Panel</h1>
+<nav data-row>
+	<a href="/admin">dashboard</a>
+	<a href="/admin/users">users</a>
+	<a href="/admin/settings">settings</a>
+</nav>
 
-    <h2>Site settings</h2>
-    <% if settings and #settings > 0 then %>
-        <table class="admin-settings">
-            <thead><tr><th>key</th><th>value</th></tr></thead>
-            <tbody>
-                <% for _, s in ipairs(settings) do %>
-                    <tr><td><%= s.key %></td><td><%= s.value %></td></tr>
-                <% end %>
-            </tbody>
-        </table>
-    <% else %>
-        <p class="empty">No settings yet.</p>
-    <% end %>
+<h2>Site settings</h2>
+<% if settings and #settings > 0 then %>
+	<table>
+		<thead><tr><th>key</th><th>value</th></tr></thead>
+		<tbody>
+			<% for _, s in ipairs(settings) do %>
+				<tr><td><%= s.key %></td><td><%= s.value %></td></tr>
+			<% end %>
+		</tbody>
+	</table>
+<% else %>
+	<p data-muted>No settings yet.</p>
+<% end %>
 
-    <h3>Set a value</h3>
-    <form method="POST" action="/admin/settings">
-        <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-        <label>key <input type="text" name="key" required></label>
-        <label>value <input type="text" name="value"></label>
-        <button type="submit">save</button>
-    </form>
-</div>
+<h3>Set a value</h3>
+<form data-form method="POST" action="/admin/settings">
+	<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+	<label><span>key</span><input type="text" name="key" required></label>
+	<label><span>value</span><input type="text" name="value"></label>
+	<div><button data-primary type="submit">save</button></div>
+</form>

@@ -1,7 +1,0 @@
-<div id="error">
-<h3>ERROR</h3>
-<% for err in pairs(errors) do %>
-<p><%= err %></p>
-<% end %>
-</div>
-

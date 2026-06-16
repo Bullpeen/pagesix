@@ -1,10 +1,8 @@
-<div class="split-panel">
 <% if current_user then %>
 	<p>Welcome, <%= current_user.user_name %>!</p>
 <% else %>
-	<h2 class="modal-title">Log in</h2>
-	<% if error then %><p class="alert danger"><%= error %></p><% end %>
+	<h1>Log in</h1>
+	<% if error then %><p data-alert="danger"><%= error %></p><% end %>
 	<% render('views.fragments.login') %>
 	<% render('views.fragments.oauth_buttons') %>
 <% end %>
-</div>

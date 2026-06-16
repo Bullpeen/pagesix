@@ -1,11 +1,11 @@
 <% if post_id then %>
 	<% if current_user then %>
-	<form class="form comment-form" method="POST" action="/post/<%= post_id %>/comment">
+	<form data-form method="POST" action="/post/<%= post_id %>/comment">
 		<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
 		<textarea name="body" rows="4" placeholder="What are your thoughts?" required></textarea>
-		<button class="btn btn--primary" type="submit">Comment</button>
+		<div><button data-primary type="submit">Comment</button></div>
 	</form>
 	<% else %>
-	<p class="notice"><a href="/login">Log in</a> to leave a comment.</p>
+	<p data-muted><a href="/login">Log in</a> to leave a comment.</p>
 	<% end %>
 <% end %>

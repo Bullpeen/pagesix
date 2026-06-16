@@ -1,23 +1,21 @@
-<h2 class="modal-title">Create a new account</h2>
-<form class="form" method="POST" action="/register">
+<h2>Create a new account</h2>
+<form data-form method="POST" action="/register">
 	<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-	<label class="field">
-		<span class="label">Username</span>
+	<label>
+		<span>Username</span>
 		<input name="name" type="text" maxlength="20" placeholder="choose a username" autocomplete="username" autocapitalize="none" required>
 	</label>
-	<label class="field">
-		<span class="label">Password</span>
+	<label>
+		<span>Password</span>
 		<input name="passwd" type="password" placeholder="password" autocomplete="new-password" required>
 	</label>
-	<label class="field">
-		<span class="label">Verify password</span>
+	<label>
+		<span>Verify password</span>
 		<input name="passwd2" type="password" placeholder="verify password" autocomplete="new-password" required>
 	</label>
-	<label class="field">
-		<span class="label">Email <span class="optional">(optional)</span></span>
+	<label>
+		<span>Email <span data-optional>(optional)</span></span>
 		<input name="email" type="email" placeholder="email" autocomplete="email" autocapitalize="none">
 	</label>
-	<div>
-		<button type="submit" class="btn btn--primary">Sign up</button>
-	</div>
+	<div><button data-primary type="submit">Sign up</button></div>
 </form>

@@ -1,5 +1,5 @@
-<div class="card" style="margin-bottom:8px">
+<div data-card style="margin-bottom:8px">
 	<h2 style="margin-bottom:2px"><a href="/r/<%= name %>">/r/<%= name %></a></h2>
-	<p class="muted" style="margin:0"><%= subscribers %> subscribers</p>
+	<p data-muted style="margin:0"><%= subscribers %> subscribers</p>
 	<% if description and description ~= "" then %><p style="margin:6px 0 0"><%= description %></p><% end %>
 </div>

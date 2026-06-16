@@ -1,29 +1,27 @@
 <h1>Inbox</h1>
 
 <% if notifications ~= nil and #notifications > 0 then
-    for _, n in ipairs(notifications) do %>
-    <div class="message <%= tonumber(n.seen) == 1 and "read" or "unread" %>">
-        <p class="subject">
-            <a class="author" href="/user/<%= n.author %>"><%= n.author %></a>
-            <%
-                local verb = "replied to your comment"
-                if n.kind == "post_reply" then
-                    verb = "replied to your post"
-                elseif n.kind == "mention" then
-                    verb = n.comment_id and "mentioned you in a comment on"
-                        or "mentioned you in"
-                end
-            %>
-            <%= verb %>
-            on <a href="<%= n.permalink %>"><%= n.post_title %></a>
-        </p>
-        <% if n.body and n.body ~= "" then %>
-        <div class="usertext-body md">
-            <p><%= n.body %></p>
-        </div>
-        <% end %>
-    </div>
-    <% end %>
+	for _, n in ipairs(notifications) do %>
+	<div data-card<%= tonumber(n.seen) ~= 1 and ' data-unread' or '' %> style="margin-bottom:8px">
+		<p data-meta>
+			<a data-author href="/user/<%= n.author %>"><%= n.author %></a>
+			<%
+				local verb = "replied to your comment"
+				if n.kind == "post_reply" then
+					verb = "replied to your post"
+				elseif n.kind == "mention" then
+					verb = n.comment_id and "mentioned you in a comment on"
+						or "mentioned you in"
+				end
+			%>
+			<%= verb %>
+			on <a href="<%= n.permalink %>"><%= n.post_title %></a>
+		</p>
+		<% if n.body and n.body ~= "" then %>
+		<div data-md><p><%= n.body %></p></div>
+		<% end %>
+	</div>
+	<% end %>
 <% else %>
-    <p class="empty">No messages.</p>
+	<p data-muted>No messages.</p>
 <% end %>

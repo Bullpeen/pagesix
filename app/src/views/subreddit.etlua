@@ -1,22 +1,22 @@
-<div class="page-head">
+<div data-head>
 	<h1>/r/<%= subreddit %></h1>
-	<div class="links">
+	<nav>
 		<a href="/r/<%= subreddit %>/.rss">RSS</a>
 		<a href="/r/<%= subreddit %>/modlog">modlog</a>
 		<% if can_moderate then %>
 			<a href="/r/<%= subreddit %>/feeds">manage feeds</a>
 			<a href="/r/<%= subreddit %>/queue">queue</a>
 		<% end %>
-	</div>
+	</nav>
 	<% if current_user then %>
-		<form class="inline-form" method="POST" action="/subscribe/<%= subreddit %>" style="margin-left:auto">
+		<form data-inline method="POST" action="/subscribe/<%= subreddit %>" style="margin-left:auto">
 			<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-			<button class="btn btn--primary" type="submit"><%= subscribed and "Unsubscribe" or "Subscribe" %></button>
+			<button data-primary type="submit"><%= subscribed and "Unsubscribe" or "Subscribe" %></button>
 		</form>
 	<% end %>
 </div>
 
-<ul class="sorts">
+<ul data-sorts>
 	<% for _, s in ipairs({ "hot", "new", "top", "controversial" }) do %>
 		<li><a href="/r/<%= subreddit %>/<%= s %>"><%= s %></a></li>
 	<% end %>

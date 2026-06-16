@@ -1,38 +1,36 @@
-<div class="admin">
-    <h1>Admin Control Panel</h1>
-    <ul class="admin-nav">
-        <li><a href="/admin">dashboard</a></li>
-        <li><a href="/admin/users">users</a></li>
-        <li><a href="/admin/settings">settings</a></li>
-    </ul>
+<h1>Admin Control Panel</h1>
+<nav data-row>
+	<a href="/admin">dashboard</a>
+	<a href="/admin/users">users</a>
+	<a href="/admin/settings">settings</a>
+</nav>
 
-    <h2>Users</h2>
-    <table class="admin-users">
-        <thead>
-            <tr><th>id</th><th>user</th><th>karma</th><th>admin</th><th></th></tr>
-        </thead>
-        <tbody>
-            <% for _, u in ipairs(users) do %>
-                <tr>
-                    <td><%= u.id %></td>
-                    <td><a href="/user/<%= u.user_name %>"><%= u.user_name %></a></td>
-                    <td><%= u.karma %></td>
-                    <td><%= u.is_admin and "yes" or "" %></td>
-                    <td>
-                        <form method="POST" action="/admin/users" style="display:inline">
-                            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                            <input type="hidden" name="user_id" value="<%= u.id %>">
-                            <% if u.is_admin then %>
-                                <input type="hidden" name="op" value="revoke">
-                                <button type="submit"<%= u.id == current_user.id and ' disabled title="you cannot revoke your own admin"' or "" %>>revoke admin</button>
-                            <% else %>
-                                <input type="hidden" name="op" value="grant">
-                                <button type="submit">make admin</button>
-                            <% end %>
-                        </form>
-                    </td>
-                </tr>
-            <% end %>
-        </tbody>
-    </table>
-</div>
+<h2>Users</h2>
+<table>
+	<thead>
+		<tr><th>id</th><th>user</th><th>karma</th><th>admin</th><th></th></tr>
+	</thead>
+	<tbody>
+		<% for _, u in ipairs(users) do %>
+			<tr>
+				<td><%= u.id %></td>
+				<td><a href="/user/<%= u.user_name %>"><%= u.user_name %></a></td>
+				<td><%= u.karma %></td>
+				<td><%= u.is_admin and "yes" or "" %></td>
+				<td>
+					<form data-inline method="POST" action="/admin/users">
+						<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+						<input type="hidden" name="user_id" value="<%= u.id %>">
+						<% if u.is_admin then %>
+							<input type="hidden" name="op" value="revoke">
+							<button data-button type="submit"<%= u.id == current_user.id and ' disabled title="you cannot revoke your own admin"' or "" %>>revoke admin</button>
+						<% else %>
+							<input type="hidden" name="op" value="grant">
+							<button data-button type="submit">make admin</button>
+						<% end %>
+					</form>
+				</td>
+			</tr>
+		<% end %>
+	</tbody>
+</table>

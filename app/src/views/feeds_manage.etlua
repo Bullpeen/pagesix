@@ -1,55 +1,55 @@
-<div class="feeds-manage">
-    <h1>/r/<%= subreddit %> &mdash; feeds</h1>
-    <p class="feeds-intro">
-        RSS/Atom sources the scheduler imports into this community.
-        <a href="/r/<%= subreddit %>">back to /r/<%= subreddit %></a>
-    </p>
-
-    <form class="feed-add-form" method="POST" action="/r/<%= subreddit %>/feeds/add">
-        <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-        <input type="url" name="url" placeholder="https://example.com/feed.xml" required>
-        <button class="button" type="submit">add feed</button>
-    </form>
-
-    <% if feeds and #feeds > 0 then %>
-        <table class="modlog-table feeds-table">
-            <thead>
-                <tr>
-                    <th>feed</th><th>status</th><th>last fetched</th>
-                    <th>last result</th><th>fails</th><th>actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% for _, f in ipairs(feeds) do %>
-                    <% local on = tonumber(f.enabled) == 1 %>
-                    <tr>
-                        <td><a href="<%= f.url %>"><%= f.url %></a></td>
-                        <td><%= on and "enabled" or "disabled" %></td>
-                        <td><%= f.last_fetched_at or "never" %></td>
-                        <td><%= f.last_status or "—" %></td>
-                        <td><%= tonumber(f.failure_count) or 0 %></td>
-                        <td>
-                            <form method="POST" action="/r/<%= subreddit %>/feeds/<%= f.id %>/toggle" style="display:inline">
-                                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                                <button class="button-link" type="submit"><%= on and "disable" or "enable" %></button>
-                            </form>
-                            <form method="POST" action="/r/<%= subreddit %>/feeds/<%= f.id %>/remove" style="display:inline">
-                                <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                                <button class="button-link" type="submit">remove</button>
-                            </form>
-                        </td>
-                    </tr>
-                <% end %>
-            </tbody>
-        </table>
-    <% else %>
-        <p class="empty">No feeds configured for this community yet.</p>
-    <% end %>
-
-    <form class="refresh-feeds-form" method="POST" action="/r/<%= subreddit %>/feeds/refresh">
-        <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-        <button class="button" type="submit">refresh now</button>
-    </form>
-
-    <% render('views.fragments.nav') %>
+<div data-head>
+	<h1>/r/<%= subreddit %> &mdash; feeds</h1>
 </div>
+<p data-muted>
+	RSS/Atom sources the scheduler imports into this community.
+	<a href="/r/<%= subreddit %>">back to /r/<%= subreddit %></a>
+</p>
+
+<form data-row method="POST" action="/r/<%= subreddit %>/feeds/add">
+	<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+	<input type="url" name="url" placeholder="https://example.com/feed.xml" required style="width:auto;flex:1">
+	<button data-button type="submit">add feed</button>
+</form>
+
+<% if feeds and #feeds > 0 then %>
+	<table>
+		<thead>
+			<tr>
+				<th>feed</th><th>status</th><th>last fetched</th>
+				<th>last result</th><th>fails</th><th>actions</th>
+			</tr>
+		</thead>
+		<tbody>
+			<% for _, f in ipairs(feeds) do %>
+				<% local on = tonumber(f.enabled) == 1 %>
+				<tr>
+					<td><a href="<%= f.url %>"><%= f.url %></a></td>
+					<td><%= on and "enabled" or "disabled" %></td>
+					<td><%= f.last_fetched_at or "never" %></td>
+					<td><%= f.last_status or "—" %></td>
+					<td><%= tonumber(f.failure_count) or 0 %></td>
+					<td>
+						<form data-inline method="POST" action="/r/<%= subreddit %>/feeds/<%= f.id %>/toggle">
+							<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+							<button data-link type="submit"><%= on and "disable" or "enable" %></button>
+						</form>
+						<form data-inline method="POST" action="/r/<%= subreddit %>/feeds/<%= f.id %>/remove">
+							<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+							<button data-link type="submit">remove</button>
+						</form>
+					</td>
+				</tr>
+			<% end %>
+		</tbody>
+	</table>
+<% else %>
+	<p data-muted>No feeds configured for this community yet.</p>
+<% end %>
+
+<form data-inline method="POST" action="/r/<%= subreddit %>/feeds/refresh" style="margin-top:12px">
+	<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+	<button data-button type="submit">refresh now</button>
+</form>
+
+<% render('views.fragments.nav') %>

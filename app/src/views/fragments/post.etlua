@@ -1,75 +1,73 @@
-<article class="post">
-	<div class="row" style="align-items:flex-start">
-		<%- require("src.utils.widgets").votes("post", post_id, score or 0, csrf_token) %>
-		<div style="min-width:0;flex:1">
-			<h1 class="post-title">
-				<% if stickied then %><span class="badge sticky">stickied</span> <% end %>
-				<% if is_question then %><span class="badge <%= accepted_comment_id and "solved" or "question" %>"><%= accepted_comment_id and "solved" or "question" %></span> <% end %>
-				<% if url then %><a href="<%= url %>"><%= title %></a><% else %><%= title %><% end %>
-				<% if comments_locked then %><span class="badge locked">locked</span><% end %>
-			</h1>
+<article>
+	<%- require("src.utils.widgets").votes("post", post_id, score or 0, csrf_token) %>
+	<div>
+		<h1>
+			<% if stickied then %><span data-badge="sticky">stickied</span> <% end %>
+			<% if is_question then %><span data-badge="<%= accepted_comment_id and "solved" or "question" %>"><%= accepted_comment_id and "solved" or "question" %></span> <% end %>
+			<% if url then %><a href="<%= url %>"><%= title %></a><% else %><%= title %><% end %>
+			<% if comments_locked then %><span data-badge="locked">locked</span><% end %>
+		</h1>
 
-			<% if crosspost_from then %>
-				<p class="muted">crossposted from <a href="<%= crosspost_from.permalink %>">/r/<%= crosspost_from.subreddit %></a></p>
-			<% end %>
+		<% if crosspost_from then %>
+			<p data-muted>crossposted from <a href="<%= crosspost_from.permalink %>">/r/<%= crosspost_from.subreddit %></a></p>
+		<% end %>
 
-			<% if thumbnail then %>
-				<a class="post-thumb" href="<%= url %>"><img src="<%= thumbnail %>" alt="" width="120" loading="lazy"></a>
-			<% end %>
+		<% if thumbnail then %>
+			<p><a href="<%= url %>"><img src="<%= thumbnail %>" alt="" width="120" loading="lazy"></a></p>
+		<% end %>
 
-			<% if is_self and body_html then %>
-				<div class="post-body md"><%- body_html %></div>
-			<% end %>
+		<% if is_self and body_html then %>
+			<div data-md><%- body_html %></div>
+		<% end %>
 
-			<% if tags and #tags > 0 then %>
-				<p class="tags">
-					<% for _, tag in ipairs(tags) do %><a class="tag" href="/t/<%= tag %>"><%= tag %></a><% end %>
-				</p>
-			<% end %>
-
-			<p class="post-meta">
-				submitted by <a href="/user/<%= user_name %>"><%= user_name %></a> at <%= created_at %>
-				<% if edited then %><span class="muted">(edited)</span><% end %>
-				<% if removed then %><span class="badge removed">[removed by a moderator]</span><% end %>
-				&middot; <a href="/r/<%= subreddit %>/comments/<%= post_id %>">permalink</a>
+		<% if tags and #tags > 0 then %>
+			<p data-tags>
+				<% for _, tag in ipairs(tags) do %><a data-tag href="/t/<%= tag %>"><%= tag %></a><% end %>
 			</p>
+		<% end %>
 
-			<div class="comment-actions">
-				<% if current_user and not deleted then %>
-				<form class="inline-form" method="POST" action="/post/<%= post_id %>/crosspost">
-					<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-					<input name="subreddit" placeholder="subreddit" required aria-label="crosspost to subreddit" style="width:auto">
-					<button class="btn-link" type="submit">crosspost</button>
-				</form>
-				<% end %>
+		<p data-meta>
+			submitted by <a data-author href="/user/<%= user_name %>"><%= user_name %></a> at <%= created_at %>
+			<% if edited then %><span data-muted>(edited)</span><% end %>
+			<% if removed then %><span data-badge="removed">[removed by a moderator]</span><% end %>
+			&middot; <a href="/r/<%= subreddit %>/comments/<%= post_id %>">permalink</a>
+		</p>
 
-				<% if can_moderate then %>
-				<% for _, m in ipairs({ { "remove", removed and "approve" or "remove" }, { "sticky", stickied and "unsticky" or "sticky" }, { "lock", comments_locked and "unlock comments" or "lock comments" } }) do %>
-				<form class="inline-form" method="POST" action="/post/<%= post_id %>/<%= m[1] %>">
-					<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-					<button class="btn-link" type="submit"><%= m[2] %></button>
-				</form>
-				<% end %>
-				<% end %>
-
-				<% if current_user and not deleted and tonumber(current_user.id) == tonumber(post_user_id) then %>
-				<% if is_self then %>
-				<button class="btn-link" data-signals="{editpost: false}" data-on:click="$editpost = !$editpost">edit</button>
-				<% end %>
-				<form class="inline-form" method="POST" action="/post/<%= post_id %>/delete">
-					<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-					<button class="btn-link" type="submit">delete</button>
-				</form>
-				<% end %>
-			</div>
-
-			<% if current_user and not deleted and is_self and tonumber(current_user.id) == tonumber(post_user_id) then %>
-			<form class="form" data-show="$editpost" method="POST" action="/post/<%= post_id %>/edit">
+		<div data-actions>
+			<% if current_user and not deleted then %>
+			<form data-inline method="POST" action="/post/<%= post_id %>/crosspost">
 				<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-				<textarea name="body" rows="6" required><%= body %></textarea>
-				<button class="btn btn--primary" type="submit">save</button>
+				<input name="subreddit" placeholder="subreddit" required aria-label="crosspost to subreddit" style="width:auto">
+				<button data-link type="submit">crosspost</button>
+			</form>
+			<% end %>
+
+			<% if can_moderate then %>
+			<% for _, m in ipairs({ { "remove", removed and "approve" or "remove" }, { "sticky", stickied and "unsticky" or "sticky" }, { "lock", comments_locked and "unlock comments" or "lock comments" } }) do %>
+			<form data-inline method="POST" action="/post/<%= post_id %>/<%= m[1] %>">
+				<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+				<button data-link type="submit"><%= m[2] %></button>
+			</form>
+			<% end %>
+			<% end %>
+
+			<% if current_user and not deleted and tonumber(current_user.id) == tonumber(post_user_id) then %>
+			<% if is_self then %>
+			<button data-link data-signals="{editpost: false}" data-on:click="$editpost = !$editpost">edit</button>
+			<% end %>
+			<form data-inline method="POST" action="/post/<%= post_id %>/delete">
+				<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+				<button data-link type="submit">delete</button>
 			</form>
 			<% end %>
 		</div>
+
+		<% if current_user and not deleted and is_self and tonumber(current_user.id) == tonumber(post_user_id) then %>
+		<form data-form data-show="$editpost" method="POST" action="/post/<%= post_id %>/edit">
+			<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+			<textarea name="body" rows="6" required><%= body %></textarea>
+			<button data-primary type="submit">save</button>
+		</form>
+		<% end %>
 	</div>
 </article>

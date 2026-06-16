@@ -1,16 +1,16 @@
 <%
-    local providers = require("lapis.config").get().oauth or {}
-    local names = {}
-    for name in pairs(providers) do
-        names[#names + 1] = name
-    end
-    table.sort(names)
+	local providers = require("lapis.config").get().oauth or {}
+	local names = {}
+	for name in pairs(providers) do
+		names[#names + 1] = name
+	end
+	table.sort(names)
 %>
 <% if #names > 0 then %>
-<div class="oauth-buttons">
-    <span class="oauth-or">or</span>
-    <% for _, name in ipairs(names) do %>
-        <a class="oauth-button oauth-<%= name %>" href="/auth/<%= name %>">Sign in with <%= name %></a>
-    <% end %>
+<div data-oauth>
+	<span data-muted>or</span>
+	<% for _, name in ipairs(names) do %>
+		<a href="/auth/<%= name %>">Sign in with <%= name %></a>
+	<% end %>
 </div>
 <% end %>

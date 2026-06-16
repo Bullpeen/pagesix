@@ -1,4 +1,4 @@
-<div class="card" style="margin-bottom:12px">
+<div data-card style="margin-bottom:12px">
 	<form action="/search" role="search">
 		<input type="search" name="q" placeholder="Search subs by name&hellip;" aria-label="search">
 	</form>

@@ -1,20 +1,16 @@
-<form class="form primary_form" method="POST" action="/login">
+<form data-form method="POST" action="/login">
 	<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-    <div class="input_row">
-        <label>
-            <div class="label">Username</div>
-            <input autofocus="" autocomplete="username" name="username" required="required" type="text" autocapitalize="none" autocorrect="off">
-        </label>
-    </div>
-    <div class="input_row">
-        <label>
-            <div class="label">Password</div>
-            <input autocorrect="off" autocomplete="current-password" name="password" required="required" type="password" autocapitalize="none">
-        </label>
-    </div>
-    <div class="button_row">
-        <input class="button" value="Log in" type="submit"> or 
-            <a href="/register">Register account</a> · 
-            <a href="/password">Forgot password</a>
-    </div>
+	<label>
+		<span>Username</span>
+		<input autofocus autocomplete="username" name="username" required type="text" autocapitalize="none" autocorrect="off">
+	</label>
+	<label>
+		<span>Password</span>
+		<input autocorrect="off" autocomplete="current-password" name="password" required type="password" autocapitalize="none">
+	</label>
+	<div data-row>
+		<button data-primary value="Log in" type="submit">Log in</button>
+		<a href="/register">Register account</a> &middot;
+		<a href="/password">Forgot password</a>
+	</div>
 </form>

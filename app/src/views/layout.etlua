@@ -11,11 +11,11 @@
 <body data-signals="{csrf: '<%= csrf_token %>'}">
 	<% render('views.fragments.header') %>
 
-	<div class="layout">
-		<main class="main" role="main">
+	<div>
+		<main>
 			<% content_for("inner") %>
 		</main>
-		<aside class="sidebar">
+		<aside>
 			<% render('views.fragments.sidebar') %>
 		</aside>
 	</div>

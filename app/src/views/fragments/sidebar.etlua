@@ -1,34 +1,34 @@
-<div class="card search">
+<section>
 	<form action="/search" role="search">
 		<input type="search" name="q" placeholder="Search Page Six&hellip;" aria-label="search">
 	</form>
-</div>
+</section>
 
-<div class="card">
-	<a class="btn btn--primary" href="/submit" style="display:block;text-align:center">Submit a new post</a>
+<section>
+	<a data-primary href="/submit" style="display:block">Submit a new post</a>
 	<% if current_user then %>
-		<a class="btn" href="/subreddit/create" style="display:block;text-align:center;margin-top:8px">Create a community</a>
+		<a data-button href="/subreddit/create" style="display:block;margin-top:8px">Create a community</a>
 	<% end %>
-</div>
+</section>
 
 <% if not current_user then %>
-	<div class="card">
+	<section>
 		<h2>Welcome</h2>
-		<p class="muted">Log in or sign up to post, comment, and vote.</p>
-		<div class="row">
-			<a class="btn btn--primary" href="/register">Sign up</a>
-			<a class="btn" href="/login">Log in</a>
+		<p data-muted>Log in or sign up to post, comment, and vote.</p>
+		<div data-row>
+			<a data-primary href="/register">Sign up</a>
+			<a data-button href="/login">Log in</a>
 		</div>
-	</div>
+	</section>
 <% end %>
 
 <% if moderators and moderators ~= "" then %>
-	<div class="card">
+	<section>
 		<h2>Moderators</h2>
-		<ul class="sub-list">
+		<ul style="list-style:none;padding:0;margin:0">
 			<% for mod in pairs(moderators) do %>
 				<li><a href="/user/<%= mod %>"><%= mod %></a></li>
 			<% end %>
 		</ul>
-	</div>
+	</section>
 <% end %>

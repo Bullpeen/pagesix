@@ -1,54 +1,62 @@
-<div class="queue">
-    <h1>/r/<%= subreddit %> &mdash; approval queue</h1>
-    <p class="queue-intro">Posts and comments from new users, held for review.</p>
-
-    <h2>Posts (<%= #pending_posts %>)</h2>
-    <% if #pending_posts > 0 then %>
-        <ul class="queue-list">
-            <% for _, p in ipairs(pending_posts) do %>
-                <li>
-                    <span class="queue-title"><%= p.title %></span>
-                    by <a href="/user/<%= p.author %>"><%= p.author %></a>
-                    <time datetime="<%= p.created_at %>"><%= p.created_at %></time>
-                    <% for _, op in ipairs({ "approve", "reject" }) do %>
-                        <form method="POST" action="/r/<%= subreddit %>/queue" style="display:inline">
-                            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                            <input type="hidden" name="kind" value="post">
-                            <input type="hidden" name="id" value="<%= p.id %>">
-                            <input type="hidden" name="op" value="<%= op %>">
-                            <button type="submit"><%= op %></button>
-                        </form>
-                    <% end %>
-                </li>
-            <% end %>
-        </ul>
-    <% else %>
-        <p class="empty">No posts awaiting review.</p>
-    <% end %>
-
-    <h2>Comments (<%= #pending_comments %>)</h2>
-    <% if #pending_comments > 0 then %>
-        <ul class="queue-list">
-            <% for _, c in ipairs(pending_comments) do %>
-                <li>
-                    <span class="queue-body"><%= c.body %></span>
-                    by <a href="/user/<%= c.author %>"><%= c.author %></a>
-                    on <span class="queue-title"><%= c.post_title %></span>
-                    <% for _, op in ipairs({ "approve", "reject" }) do %>
-                        <form method="POST" action="/r/<%= subreddit %>/queue" style="display:inline">
-                            <input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-                            <input type="hidden" name="kind" value="comment">
-                            <input type="hidden" name="id" value="<%= c.id %>">
-                            <input type="hidden" name="op" value="<%= op %>">
-                            <button type="submit"><%= op %></button>
-                        </form>
-                    <% end %>
-                </li>
-            <% end %>
-        </ul>
-    <% else %>
-        <p class="empty">No comments awaiting review.</p>
-    <% end %>
-
-    <% render('views.fragments.nav') %>
+<div data-head>
+	<h1>/r/<%= subreddit %> &mdash; approval queue</h1>
 </div>
+<p data-muted>Posts and comments from new users, held for review.</p>
+
+<h2>Posts (<%= #pending_posts %>)</h2>
+<% if #pending_posts > 0 then %>
+	<table>
+		<tbody>
+			<% for _, p in ipairs(pending_posts) do %>
+				<tr>
+					<td><%= p.title %></td>
+					<td><a href="/user/<%= p.author %>"><%= p.author %></a></td>
+					<td><time><%= p.created_at %></time></td>
+					<td>
+						<% for _, op in ipairs({ "approve", "reject" }) do %>
+							<form data-inline method="POST" action="/r/<%= subreddit %>/queue">
+								<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+								<input type="hidden" name="kind" value="post">
+								<input type="hidden" name="id" value="<%= p.id %>">
+								<input type="hidden" name="op" value="<%= op %>">
+								<button data-link type="submit"><%= op %></button>
+							</form>
+						<% end %>
+					</td>
+				</tr>
+			<% end %>
+		</tbody>
+	</table>
+<% else %>
+	<p data-muted>No posts awaiting review.</p>
+<% end %>
+
+<h2>Comments (<%= #pending_comments %>)</h2>
+<% if #pending_comments > 0 then %>
+	<table>
+		<tbody>
+			<% for _, c in ipairs(pending_comments) do %>
+				<tr>
+					<td><%= c.body %></td>
+					<td><a href="/user/<%= c.author %>"><%= c.author %></a></td>
+					<td><%= c.post_title %></td>
+					<td>
+						<% for _, op in ipairs({ "approve", "reject" }) do %>
+							<form data-inline method="POST" action="/r/<%= subreddit %>/queue">
+								<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+								<input type="hidden" name="kind" value="comment">
+								<input type="hidden" name="id" value="<%= c.id %>">
+								<input type="hidden" name="op" value="<%= op %>">
+								<button data-link type="submit"><%= op %></button>
+							</form>
+						<% end %>
+					</td>
+				</tr>
+			<% end %>
+		</tbody>
+	</table>
+<% else %>
+	<p data-muted>No comments awaiting review.</p>
+<% end %>
+
+<% render('views.fragments.nav') %>

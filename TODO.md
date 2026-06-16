@@ -104,8 +104,10 @@ dependency-driven (foundations first); full plan in
       (Direct messages between users intentionally out of scope.)
 - Flair, awards/gold (currently static placeholders).
 - [x] **Front-end clean slate** — dropped the 14k-line vendored `saidit.css` and
-      the ~75k-line dead `static/js` tree for a single semantic `app.css` and
-      self-hosted **Datastar** (no hand-written JS). Menus + inline reply/edit
+      the ~75k-line dead `static/js` tree for a single **classless** `app.css`
+      (no class/id selectors — styles semantic elements + `data-*` only) and
+      self-hosted **Datastar** (no hand-written JS). Templates carry no `class`
+      and no `id` except the Datastar score-patch span. Menus + inline reply/edit
       toggles are `data-signals`/`data-show`; voting is progressive (form POST
       fallback + Datastar `@post` → SSE score patch via `utils/datastar`). Vote
       control extracted to `utils/widgets`.

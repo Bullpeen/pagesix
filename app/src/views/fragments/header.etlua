@@ -1,8 +1,8 @@
-<header class="site-header">
-	<div class="bar">
-		<a href="/" class="brand">pagesix</a>
+<header>
+	<div>
+		<a href="/">pagesix</a>
 
-		<nav class="site-nav">
+		<nav>
 			<a href="/">hot</a>
 			<a href="/new">new</a>
 			<a href="/top">top</a>
@@ -10,12 +10,12 @@
 			<a href="/subreddits">subs</a>
 		</nav>
 
-		<div class="header-right">
+		<div data-account>
 			<% if current_user then %>
 				<% if subs and #subs > 0 then %>
-				<div class="menu" data-signals="{subsmenu: false}">
-					<button class="btn-link" data-on:click="$subsmenu = !$subsmenu">my subs &#9662;</button>
-					<div class="menu-list" data-show="$subsmenu" data-on:click__outside="$subsmenu = false">
+				<div data-menu data-signals="{subsmenu: false}">
+					<button data-link data-on:click="$subsmenu = !$subsmenu">my subs &#9662;</button>
+					<div data-show="$subsmenu" data-on:click__outside="$subsmenu = false">
 						<% for _, sub in ipairs(subs) do %>
 							<a href="/r/<%= sub.name %>"><%= sub.name %></a>
 						<% end %>
@@ -25,21 +25,21 @@
 
 				<a href="/inbox">inbox<% if unread_count and tonumber(unread_count) > 0 then %> (<%= unread_count %>)<% end %></a>
 
-				<div class="menu" data-signals="{usermenu: false}">
-					<button class="btn-link" data-on:click="$usermenu = !$usermenu"><%= current_user.user_name %> &#9662;</button>
-					<div class="menu-list" data-show="$usermenu" data-on:click__outside="$usermenu = false">
+				<div data-menu data-signals="{usermenu: false}">
+					<button data-link data-on:click="$usermenu = !$usermenu"><%= current_user.user_name %> &#9662;</button>
+					<div data-show="$usermenu" data-on:click__outside="$usermenu = false">
 						<a href="/user/<%= current_user.user_name %>">profile</a>
 						<a href="/saved">saved</a>
 						<% if is_admin then %><a href="/admin">admin</a><% end %>
-						<form class="inline-form" method="POST" action="/logout">
+						<form data-inline method="POST" action="/logout">
 							<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
-							<button class="btn-link" type="submit">log out</button>
+							<button data-link type="submit">log out</button>
 						</form>
 					</div>
 				</div>
 			<% else %>
 				<a href="/login">log in</a>
-				<a class="btn btn--primary" href="/register">sign up</a>
+				<a data-primary href="/register">sign up</a>
 			<% end %>
 		</div>
 	</div>
