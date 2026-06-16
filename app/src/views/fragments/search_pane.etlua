@@ -1,5 +1,5 @@
 <div data-card style="margin-bottom:12px">
-	<form action="/search" role="search">
-		<input type="search" name="q" placeholder="Search subs by name&hellip;" aria-label="search">
+	<form action="/subreddits/search" role="search">
+		<input type="search" name="q" value="<%= query or "" %>" placeholder="Search subs by name&hellip;" aria-label="search">
 	</form>
 </div>

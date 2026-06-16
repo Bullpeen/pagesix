@@ -18,13 +18,10 @@ function OAuth.provider(name)
 	return name and (config.oauth or {})[name] or nil
 end
 
---- An opaque anti-CSRF `state` value for the round trip.
+--- An opaque anti-CSRF `state` value for the round trip. Must be unguessable,
+-- so it draws from the CSPRNG-backed token helper rather than math.random.
 function OAuth.gen_state()
-	local t = {}
-	for i = 1, 16 do
-		t[i] = string.format("%02x", math.random(0, 255))
-	end
-	return table.concat(t)
+	return require("src.utils.token").hex(16)
 end
 
 --- The provider's authorization URL to redirect the user to, or nil.
