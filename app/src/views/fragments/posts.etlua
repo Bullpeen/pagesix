@@ -1,8 +1,9 @@
 <% if posts ~= nil and #posts > 0 then %>
 	<ul data-listing>
 		<% local W = require("src.utils.widgets") %>
-		<% for _, post in ipairs(posts) do %>
+		<% for i, post in ipairs(posts) do %>
 			<li data-post>
+				<span data-rank><%= i %></span>
 				<%- W.votes("post", post.id, post.upvotes - post.downvotes, csrf_token) %>
 
 				<% if post.thumbnail then %>
@@ -18,6 +19,7 @@
 					</h2>
 					<p data-meta>
 						submitted <time><%= post.age %></time> by <a data-author href="/user/<%= post.author %>"><%= post.author %></a>
+						<% if post.subreddit then %>to <a href="/r/<%= post.subreddit %>">/r/<%= post.subreddit %></a><% end %>
 					</p>
 					<ul data-actions>
 						<li><a href="<%= post.permalink %>"><%= post.num_comments %> comments</a></li>

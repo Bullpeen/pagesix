@@ -1,27 +1,31 @@
-/* Page Six — classless stylesheet.
-   No class or id selectors: styling targets semantic elements and `data-*`
-   attributes (Datastar's own idiom). The only id on the page is the score
-   <span> Datastar patches after an async vote. */
+/* Page Six — old.reddit-flavoured, classless stylesheet.
+   Desktop: dense, information-rich rows like old.reddit.com.
+   Mobile (<= 640px): a roomier card layout.
+   No class/id selectors: styling targets semantic elements + `data-*`
+   attributes (Datastar's idiom). The only id is the score <span> Datastar
+   patches after an async vote. */
 
 :root {
-	--bg: #f6f7f8;
+	--page: #ffffff;
 	--surface: #ffffff;
-	--border: #e2e5e9;
-	--text: #1a1a1b;
-	--muted: #6b7280;
-	--link: #1d4ed8;
-	--brand: #d93a00;
+	--sidebar: #f7fbff;
+	--border: #cccccc;
+	--border-soft: #e6e6e6;
+	--text: #222222;
+	--muted: #888888;
+	--link: #336699;
+	--title: #1a0dab;
+	--title-seen: #551a8b;
+	--brand: #ff4500;
 	--up: #ff4500;
 	--down: #7193ff;
+	--arrow: #c6c6c6;
+	--topbar: #cee3f8;
 	--ok: #2e8b57;
 	--danger: #c0392b;
-	--accent-bg: #eef4ff;
-	--radius: 6px;
-	--gap: 12px;
-	--maxw: 1100px;
-	--font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-		sans-serif;
-	--mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	--maxw: 1200px;
+	--font: verdana, arial, helvetica, sans-serif;
+	--mono: "Courier New", monospace;
 }
 
 *,
@@ -34,11 +38,9 @@ html {
 }
 body {
 	margin: 0;
-	font-family: var(--font);
-	font-size: 14px;
-	line-height: 1.5;
+	font: 12px/1.45 var(--font);
 	color: var(--text);
-	background: var(--bg);
+	background: var(--page);
 }
 a {
 	color: var(--link);
@@ -48,98 +50,87 @@ a:hover {
 	text-decoration: underline;
 }
 h1 {
-	font-size: 1.5rem;
+	font-size: 18px;
 }
 h2 {
-	font-size: 1.2rem;
+	font-size: 15px;
 }
 h1,
 h2,
-h3 {
-	line-height: 1.25;
-	margin: 0 0 0.5em;
+h3,
+h4 {
+	margin: 0 0 8px;
+	line-height: 1.2;
 }
 img {
 	max-width: 100%;
 	height: auto;
 }
-hr {
-	border: 0;
-	border-top: 1px solid var(--border);
-	margin: var(--gap) 0;
-}
-time {
-	color: var(--muted);
-}
+time,
 small,
 [data-muted] {
 	color: var(--muted);
 }
 [data-muted] {
-	font-style: italic;
+	font-style: normal;
 }
 
-/* ---- header ---- */
+/* ---- header: thin top strip + main bar ---- */
 header {
 	background: var(--surface);
 	border-bottom: 1px solid var(--border);
-	position: sticky;
-	top: 0;
-	z-index: 20;
 }
 header > div {
 	max-width: var(--maxw);
 	margin: 0 auto;
 	display: flex;
 	align-items: center;
-	gap: var(--gap);
-	padding: 8px 16px;
+	gap: 10px;
+	padding: 4px 10px;
 	flex-wrap: wrap;
 }
-/* brand: the header's first link */
 header > div > a:first-child {
-	font-weight: 800;
+	font-weight: bold;
 	color: var(--brand);
-	font-size: 1.15rem;
-	letter-spacing: -0.02em;
+	font-size: 15px;
+	margin-right: 4px;
 }
 header > div > a:first-child:hover {
 	text-decoration: none;
 }
 header nav {
 	display: flex;
-	gap: 14px;
+	gap: 2px;
 	flex-wrap: wrap;
 	align-items: center;
 }
 header nav a {
-	color: var(--muted);
-	font-weight: 600;
+	color: var(--text);
+	font-weight: bold;
+	padding: 2px 7px;
+	border-radius: 3px;
 }
 header nav a:hover {
-	color: var(--text);
+	background: var(--topbar);
 	text-decoration: none;
-}
-/* right-aligned account area */
-header > div > nav + * {
-	margin-left: auto;
 }
 header > div > [data-account] {
 	margin-left: auto;
 	display: flex;
 	align-items: center;
-	gap: 12px;
+	gap: 10px;
+	font-weight: bold;
 }
 
-/* ---- layout: content + sidebar ---- */
+/* ---- layout: content + right sidebar ---- */
 body > div {
 	max-width: var(--maxw);
-	margin: 16px auto;
-	padding: 0 16px;
+	margin: 0 auto;
 	display: grid;
 	grid-template-columns: minmax(0, 1fr) 300px;
-	gap: 20px;
+	gap: 16px;
 	align-items: start;
+	padding: 10px;
 }
 main {
 	min-width: 0;
@@ -147,99 +138,74 @@ main {
 aside {
 	display: flex;
 	flex-direction: column;
-	gap: var(--gap);
-}
-@media (max-width: 820px) {
-	body > div {
-		grid-template-columns: 1fr;
-	}
-	aside {
-		order: 2;
-	}
+	gap: 10px;
 }
 
-/* ---- cards & sidebar sections ---- */
+/* ---- sidebar boxes ---- */
 [data-card],
 aside section {
-	background: var(--surface);
+	background: var(--sidebar);
 	border: 1px solid var(--border);
-	border-radius: var(--radius);
-	padding: var(--gap);
+	border-radius: 3px;
+	padding: 8px 10px;
 }
 aside h2 {
-	font-size: 1.05rem;
+	font-size: 13px;
 }
 
 /* ---- footer ---- */
 footer {
 	border-top: 1px solid var(--border);
 	background: var(--surface);
-	color: var(--muted);
-	margin-top: 32px;
+	margin-top: 24px;
 }
 footer > div {
 	max-width: var(--maxw);
 	margin: 0 auto;
-	padding: 20px 16px;
+	padding: 14px 10px;
 	display: flex;
 	flex-wrap: wrap;
-	gap: 32px;
+	gap: 28px;
 }
 footer h4 {
-	font-size: 0.75rem;
+	font-size: 11px;
 	text-transform: uppercase;
-	letter-spacing: 0.05em;
 	color: var(--muted);
-	margin: 0 0 6px;
+	margin: 0 0 4px;
 }
 footer ul {
 	list-style: none;
 	margin: 0;
 	padding: 0;
 }
-footer a {
-	color: var(--muted);
-}
 
 /* ---- buttons & forms ---- */
 button,
-input[type="submit"] {
+input[type="submit"],
+[data-button],
+[data-primary] {
 	font: inherit;
 	cursor: pointer;
 	border: 1px solid var(--border);
-	background: var(--surface);
+	background: linear-gradient(#fff, #f0f0f0);
 	color: var(--text);
-	padding: 6px 12px;
-	border-radius: var(--radius);
+	padding: 4px 10px;
+	border-radius: 3px;
 	line-height: 1.2;
-}
-button:hover,
-input[type="submit"]:hover {
-	border-color: var(--muted);
-}
-/* button-styled anchors/buttons (so <a data-primary> looks like a button) */
-[data-primary],
-[data-button] {
 	display: inline-block;
-	border: 1px solid var(--border);
-	border-radius: var(--radius);
-	padding: 6px 12px;
-	line-height: 1.2;
-	font: inherit;
-	cursor: pointer;
-	background: var(--surface);
-	color: var(--text);
 	text-align: center;
 }
+button:hover,
+input[type="submit"]:hover,
 [data-button]:hover {
 	border-color: var(--muted);
 	text-decoration: none;
 }
 [data-primary] {
 	background: var(--brand);
-	border-color: var(--brand);
+	border-color: #cc3700;
 	color: #fff;
-	font-weight: 600;
+	font-weight: bold;
 }
 [data-primary]:hover {
 	filter: brightness(0.95);
@@ -253,7 +219,8 @@ button[data-link],
 	background: none;
 	padding: 0;
 	color: var(--muted);
-	font-weight: 600;
+	font-weight: bold;
+	font-size: inherit;
 }
 button[data-link]:hover,
 [data-link]:hover {
@@ -264,29 +231,26 @@ button[disabled] {
 	opacity: 0.5;
 	cursor: default;
 }
-
 form {
 	margin: 0;
 }
-/* stacked form: each top-level label is a field */
 [data-form] {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
-	max-width: 460px;
+	gap: 8px;
+	max-width: 420px;
 }
 [data-form] > label {
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
+	gap: 3px;
 }
 [data-form] > label > span:first-child {
-	font-weight: 600;
-	font-size: 0.85rem;
+	font-weight: bold;
 }
 [data-optional] {
 	color: var(--muted);
-	font-weight: 400;
+	font-weight: normal;
 }
 input[type="text"],
 input[type="password"],
@@ -297,39 +261,38 @@ textarea,
 select {
 	font: inherit;
 	width: 100%;
-	padding: 7px 9px;
+	padding: 4px 6px;
 	border: 1px solid var(--border);
-	border-radius: var(--radius);
+	border-radius: 3px;
 	background: var(--surface);
 	color: var(--text);
 }
 input:focus,
 textarea:focus,
 select:focus {
-	outline: 2px solid var(--accent-bg);
+	outline: none;
 	border-color: var(--link);
 }
 textarea {
 	resize: vertical;
-	min-height: 80px;
+	min-height: 70px;
 }
-/* checkbox row */
 label[data-check] {
 	flex-direction: row;
 	align-items: center;
 	gap: 6px;
-	font-weight: 400;
+	font-weight: normal;
 }
 label[data-check] input {
 	width: auto;
 }
 
-/* ---- alerts / empty ---- */
+/* ---- alerts ---- */
 [data-alert] {
 	border: 1px solid var(--border);
-	border-radius: var(--radius);
-	padding: 8px 12px;
-	background: var(--accent-bg);
+	border-radius: 3px;
+	padding: 6px 10px;
+	background: #ffffe0;
 }
 [data-alert="danger"] {
 	background: #fdecea;
@@ -340,71 +303,80 @@ label[data-check] input {
 	border-left: 3px solid var(--brand);
 }
 
-/* ---- link listing ---- */
+/* ---- link listing (dense, old.reddit) ---- */
 [data-listing] {
 	list-style: none;
 	margin: 0;
 	padding: 0;
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
 }
 [data-post] {
 	display: flex;
-	gap: 10px;
-	background: var(--surface);
-	border: 1px solid var(--border);
-	border-radius: var(--radius);
-	padding: 8px 10px;
+	align-items: flex-start;
+	gap: 7px;
+	padding: 3px 4px 8px;
+	border-bottom: 1px solid var(--border-soft);
 }
-[data-post] img {
+[data-rank] {
+	min-width: 2ch;
+	text-align: right;
+	color: var(--muted);
+	font-size: 14px;
+	padding-top: 1px;
+}
+[data-post] > a > img,
+[data-post] > a img {
 	width: 70px;
 	height: 52px;
 	object-fit: cover;
-	border-radius: 4px;
-	background: var(--bg);
-	flex: none;
+	border: 1px solid var(--border-soft);
 }
 [data-post] > div:not([data-votes]) {
 	min-width: 0;
 	flex: 1;
 }
 [data-post] h2 {
-	font-size: 1.05rem;
+	font-size: 15px;
+	font-weight: normal;
+	line-height: 1.25;
 	margin: 0;
 }
-[data-post] h2 > a:first-of-type,
-[data-post] h2 > a:only-of-type {
-	color: var(--text);
+[data-post] h2 > a {
+	color: var(--title);
+}
+[data-post] h2 > a:visited {
+	color: var(--title-seen);
 }
 [data-domain] {
 	color: var(--muted);
-	font-size: 0.8rem;
+	font-size: 11px;
+}
+[data-domain] a {
+	color: var(--muted);
 }
 
 /* ---- vote control ---- */
 [data-votes] {
 	flex: none;
-	width: 34px;
+	width: 22px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	gap: 2px;
+	gap: 1px;
 	color: var(--muted);
 }
 [data-votes] form {
-	display: inline;
+	display: block;
 	line-height: 0;
 }
 button[data-vote] {
 	border: 0;
 	background: none;
 	padding: 0;
-	width: 22px;
-	height: 16px;
+	width: 18px;
+	height: 14px;
 	line-height: 1;
-	font-size: 12px;
-	color: var(--muted);
+	font-size: 11px;
+	color: var(--arrow);
 }
 button[data-vote="up"]:hover {
 	color: var(--up);
@@ -413,50 +385,52 @@ button[data-vote="down"]:hover {
 	color: var(--down);
 }
 [data-votes] > span {
-	font-weight: 700;
+	font-weight: bold;
 	color: var(--text);
-	font-size: 0.9rem;
+	font-size: 12px;
 }
 
 /* ---- meta + action rows ---- */
 [data-meta] {
 	color: var(--muted);
-	font-size: 0.8rem;
-	margin: 2px 0 0;
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-	align-items: center;
+	font-size: 11px;
+	margin: 1px 0 0;
 }
-[data-meta] a[data-author],
+[data-meta] [data-author],
 [data-author] {
-	font-weight: 600;
-	color: var(--text);
+	color: var(--link);
+	font-weight: normal;
 }
 [data-actions] {
 	list-style: none;
 	display: flex;
 	flex-wrap: wrap;
-	gap: 12px;
-	margin: 6px 0 0;
+	gap: 4px 8px;
+	margin: 2px 0 0;
 	padding: 0;
-	font-size: 0.8rem;
-	font-weight: 600;
+	font-size: 11px;
+	font-weight: bold;
 	align-items: center;
+}
+[data-actions] a,
+[data-actions] [data-link] {
+	color: var(--muted);
+}
+[data-actions] a:hover {
+	color: var(--text);
 }
 
 /* ---- badges / tags ---- */
 [data-badge] {
 	display: inline-block;
-	font-size: 0.7rem;
-	font-weight: 700;
+	font-size: 9px;
+	font-weight: bold;
 	text-transform: uppercase;
-	letter-spacing: 0.03em;
-	padding: 1px 6px;
-	border-radius: 10px;
-	background: var(--bg);
+	padding: 0 4px;
+	border-radius: 3px;
+	background: #eee;
 	color: var(--muted);
-	border: 1px solid var(--border);
+	border: 1px solid var(--border-soft);
 	vertical-align: middle;
 }
 [data-badge="sticky"],
@@ -467,7 +441,7 @@ button[data-vote="down"]:hover {
 	border-color: #cce8d4;
 }
 [data-badge="question"] {
-	background: var(--accent-bg);
+	background: #e8f0fe;
 	color: var(--link);
 	border-color: #cdddf7;
 }
@@ -479,61 +453,66 @@ button[data-vote="down"]:hover {
 }
 [data-op] {
 	color: var(--brand);
-	font-weight: 700;
+	font-weight: bold;
 }
 [data-tags] {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 6px;
-	margin: 8px 0 0;
+	gap: 5px;
+	margin: 6px 0 0;
 	padding: 0;
 }
 [data-tag] {
-	font-size: 0.78rem;
-	padding: 1px 8px;
-	border-radius: 10px;
-	background: var(--accent-bg);
+	font-size: 11px;
+	padding: 0 6px;
+	border-radius: 3px;
+	background: #e8f0fe;
 	color: var(--link);
 	border: 1px solid #cdddf7;
 }
 [data-tag]:hover {
 	text-decoration: none;
-	filter: brightness(0.97);
 }
 [data-trust] {
-	font-size: 0.72rem;
-	padding: 0 6px;
-	border-radius: 10px;
-	border: 1px solid var(--border);
+	font-size: 10px;
+	padding: 0 5px;
+	border-radius: 3px;
+	border: 1px solid var(--border-soft);
 	color: var(--muted);
 }
 
 /* ---- single post + comments ---- */
 article {
 	background: var(--surface);
-	border: 1px solid var(--border);
-	border-radius: var(--radius);
-	padding: var(--gap);
+	border-bottom: 1px solid var(--border-soft);
+	padding: 4px 4px 10px;
 	display: flex;
-	gap: 10px;
+	gap: 7px;
 	align-items: flex-start;
 }
 article > div:not([data-votes]) {
 	min-width: 0;
 	flex: 1;
 }
+article h1 {
+	font-size: 17px;
+	font-weight: normal;
+	margin: 0;
+}
+article h1 > a {
+	color: var(--title);
+}
+
 [data-comments] {
-	margin-top: 16px;
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
+	margin-top: 12px;
 }
 [data-comment] {
-	border-left: 2px solid var(--border);
-	padding: 4px 0 4px 10px;
+	padding: 5px 0 5px 6px;
+	border-left: 2px solid var(--border-soft);
 	display: flex;
-	gap: 10px;
+	gap: 6px;
 	align-items: flex-start;
+	margin-top: 6px;
 }
 [data-comment] > div:not([data-votes]) {
 	min-width: 0;
@@ -542,10 +521,14 @@ article > div:not([data-votes]) {
 [data-comment][data-accepted] {
 	border-left-color: var(--ok);
 	background: #f3faf5;
-	border-radius: 0 var(--radius) var(--radius) 0;
+}
+[data-comment] [data-meta] {
+	font-size: 11px;
 }
 [data-md] {
-	margin: 4px 0;
+	margin: 3px 0;
+	font-size: 13px;
+	line-height: 1.5;
 }
 [data-md] :first-child {
 	margin-top: 0;
@@ -556,11 +539,11 @@ article > div:not([data-votes]) {
 [data-md] pre,
 [data-md] code {
 	font-family: var(--mono);
-	background: var(--bg);
-	border-radius: 4px;
+	background: #f5f5f5;
+	border-radius: 3px;
 }
 [data-md] code {
-	padding: 0 4px;
+	padding: 0 3px;
 }
 [data-md] pre {
 	padding: 8px;
@@ -573,36 +556,33 @@ article > div:not([data-votes]) {
 	color: var(--muted);
 }
 
-/* ---- tables (modlog, admin, feeds, queue) ---- */
+/* ---- tables ---- */
 main table {
 	width: 100%;
 	border-collapse: collapse;
 	background: var(--surface);
-	border: 1px solid var(--border);
-	border-radius: var(--radius);
 	margin: 8px 0;
 }
 main th,
 main td {
 	text-align: left;
-	padding: 6px 10px;
-	border-bottom: 1px solid var(--border);
+	padding: 4px 8px;
+	border-bottom: 1px solid var(--border-soft);
 	vertical-align: top;
 }
 main th {
-	font-size: 0.78rem;
+	font-size: 11px;
 	text-transform: uppercase;
-	letter-spacing: 0.03em;
 	color: var(--muted);
 }
 
 /* ---- pagination ---- */
 [data-pagination] {
 	display: flex;
-	gap: 12px;
+	gap: 10px;
 	align-items: center;
-	margin: 16px 0;
-	font-weight: 600;
+	margin: 14px 0;
+	font-weight: bold;
 }
 [data-pagination] span {
 	color: var(--muted);
@@ -616,25 +596,26 @@ main th {
 	position: absolute;
 	right: 0;
 	top: 100%;
-	margin-top: 4px;
-	min-width: 160px;
+	margin-top: 3px;
+	min-width: 150px;
 	background: var(--surface);
 	border: 1px solid var(--border);
-	border-radius: var(--radius);
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-	padding: 6px;
+	border-radius: 3px;
+	box-shadow: 0 3px 8px rgba(0, 0, 0, 0.18);
+	padding: 4px;
 	display: flex;
 	flex-direction: column;
-	gap: 2px;
+	gap: 1px;
 	z-index: 30;
+	font-weight: normal;
 }
 [data-menu] > div a {
 	color: var(--text);
-	padding: 4px 8px;
-	border-radius: 4px;
+	padding: 3px 8px;
+	border-radius: 3px;
 }
 [data-menu] > div a:hover {
-	background: var(--bg);
+	background: var(--topbar);
 	text-decoration: none;
 }
 
@@ -642,36 +623,39 @@ main th {
 [data-head] {
 	display: flex;
 	align-items: center;
-	gap: 12px;
+	gap: 10px;
 	flex-wrap: wrap;
-	margin-bottom: 12px;
+	margin-bottom: 8px;
 }
 [data-head] h1 {
 	margin: 0;
+	font-size: 16px;
 }
 [data-head] nav {
 	display: flex;
-	gap: 12px;
-	font-size: 0.85rem;
-	font-weight: 600;
+	gap: 10px;
+	font-size: 11px;
+	font-weight: bold;
 }
 [data-sorts] {
 	display: flex;
-	gap: 4px;
+	gap: 0;
 	list-style: none;
 	padding: 0;
-	margin: 0 0 12px;
+	margin: 0 0 6px;
 	flex-wrap: wrap;
+	border-bottom: 1px solid var(--border);
 }
 [data-sorts] a {
 	color: var(--muted);
-	font-weight: 600;
+	font-weight: bold;
 	padding: 4px 10px;
-	border-radius: 999px;
+	display: block;
 }
 [data-sorts] a:hover {
-	background: var(--surface);
+	color: var(--text);
 	text-decoration: none;
+	background: var(--topbar);
 }
 
 /* ---- oauth + misc ---- */
@@ -680,15 +664,15 @@ main th {
 	flex-wrap: wrap;
 	gap: 8px;
 	align-items: center;
-	margin-top: 12px;
+	margin-top: 10px;
 }
 [data-oauth] a {
 	border: 1px solid var(--border);
-	border-radius: var(--radius);
-	padding: 6px 12px;
-	background: var(--surface);
+	border-radius: 3px;
+	padding: 4px 10px;
+	background: linear-gradient(#fff, #f0f0f0);
 	color: var(--text);
-	font-weight: 600;
+	font-weight: bold;
 }
 [data-row] {
 	display: flex;
@@ -698,4 +682,70 @@ main th {
 }
 [data-inline] {
 	display: inline;
+}
+
+/* =====================================================================
+   Mobile: a roomier card layout (the dense desktop rows get cramped on
+   a phone). Posts and comments become bordered cards with bigger text.
+   ===================================================================== */
+@media (max-width: 640px) {
+	body {
+		font-size: 14px;
+		background: #f6f7f8;
+	}
+	body > div {
+		grid-template-columns: 1fr;
+		gap: 12px;
+	}
+	aside {
+		order: 2;
+	}
+	header nav a {
+		padding: 4px 8px;
+	}
+
+	[data-listing] {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+	[data-post] {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		padding: 10px;
+		gap: 10px;
+	}
+	[data-rank] {
+		display: none;
+	}
+	[data-post] h2 {
+		font-size: 16px;
+	}
+	[data-votes] {
+		width: 30px;
+	}
+	button[data-vote] {
+		width: 28px;
+		height: 20px;
+		font-size: 14px;
+	}
+	[data-meta],
+	[data-actions],
+	[data-domain] {
+		font-size: 12px;
+	}
+
+	article {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		padding: 10px;
+	}
+	[data-comment] {
+		font-size: 14px;
+	}
+	[data-md] {
+		font-size: 14px;
+	}
 }
