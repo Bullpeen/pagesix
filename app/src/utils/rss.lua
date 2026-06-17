@@ -1,10 +1,7 @@
 --- Build an RSS 2.0 feed document from a channel + items.
 -- @module utils.rss
 
-local ENT = { ["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;", ['"'] = "&quot;", ["'"] = "&apos;" }
-local function esc(s)
-	return (tostring(s or ""):gsub("[&<>\"']", ENT))
-end
+local esc = require("src.utils.xml").escape
 
 --- @tparam table channel { title, link, description, items = { {title, link, guid, author, description}, ... } }
 -- @treturn string the RSS XML

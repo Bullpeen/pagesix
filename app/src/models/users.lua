@@ -3,6 +3,7 @@
 
 local db = require("lapis.db")
 local Model = require("lapis.db.model").Model
+local Email = require("src.utils.email")
 
 local Users = Model:extend("users", {
 	timestamp = true,
@@ -66,9 +67,11 @@ local Users = Model:extend("users", {
 		end,
 
 		user_email = function(self, value)
-			-- value must contain '@'
-			if value and not string.find(value, "@") then
-				return nil, "Email must contain '@'"
+			-- Email is optional; when one is given it must be a valid address.
+			-- (The previous check returned `nil, msg` -- a falsy first value, so
+			-- Lapis never treated it as an error and nothing was validated.)
+			if value and value ~= "" and not Email.is_valid(value) then
+				return "Enter a valid email address"
 			end
 		end,
 	},

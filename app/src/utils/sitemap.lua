@@ -1,10 +1,7 @@
 --- Build a sitemaps.org urlset XML document.
 -- @module utils.sitemap
 
-local ENT = { ["&"] = "&amp;", ["<"] = "&lt;", [">"] = "&gt;", ['"'] = "&quot;", ["'"] = "&apos;" }
-local function esc(s)
-	return (tostring(s or ""):gsub("[&<>\"']", ENT))
-end
+local esc = require("src.utils.xml").escape
 
 --- @tparam table urls array of { loc = "https://...", lastmod = "2024-01-02" }
 --   (lastmod is optional; only the date part, if present, is emitted)
