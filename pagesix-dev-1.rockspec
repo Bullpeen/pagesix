@@ -46,12 +46,14 @@ dependencies = {
   "lua-cjson",
   "lua-resty-http",
   "lua-resty-mail",
-  "lua-silva",            -- parse URLs, https://luarocks.org/modules/fperrad/lua-silva
+  -- NB: dropped "lua-silva" here -- it was commented "parse URLs" but is
+  -- actually a shell-glob/PCRE matcher (and was never installed or required).
+  -- URL parsing uses luasocket's socket.url instead (see src/utils/url.lua).
   "luaexpat",             -- Simple API for XML parser, https://luarocks.org/modules/lunarmodules/luaexpat
   "feedparser",           -- rss, atom parser
   "luaossl",
   "luasec",
-  "luasocket",
+  "luasocket",            -- sockets; also socket.url, our URL parser
   "markdown",             -- md to html, https://luarocks.org/modules/mpeterv/markdown
   "penlight",
   "redis-lua",

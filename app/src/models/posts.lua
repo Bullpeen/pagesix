@@ -3,6 +3,7 @@
 
 local model = require("lapis.db.model")
 local db = require("lapis.db")
+local Url = require("src.utils.url")
 local Model, enum = model.Model, model.enum
 
 local Posts = Model:extend("posts", {
@@ -143,7 +144,7 @@ function Posts:get_listing(filters)
 
 	for _, post in ipairs(rows) do
 		post.permalink = "/r/" .. post.subreddit .. "/comments/" .. post.id
-		post.domain = post.url and post.url:match("^%w+://([^/]+)") or ""
+		post.domain = Url.domain(post.url)
 	end
 
 	return rows
@@ -182,7 +183,7 @@ function Posts:search(query)
 
 	for _, post in ipairs(rows) do
 		post.permalink = "/r/" .. post.subreddit .. "/comments/" .. post.id
-		post.domain = post.url and post.url:match("^%w+://([^/]+)") or ""
+		post.domain = Url.domain(post.url)
 	end
 
 	return rows
