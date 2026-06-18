@@ -8,6 +8,40 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Reddit-flavoured JSON API (`/api`) + sqlean `uuid` stable ids
+- **The API is real and enabled.** `src/api.lua` went from ~150 disabled stub
+  endpoints to a working JSON API, wired into `app.lua`. Everything lives under
+  `/api/` so it never collides with the HTML app's `/(:sort)` / `/r/...` routes,
+  and every response is a Reddit "Thing" (`t1` comment / `t2` account / `t3`
+  link / `t5` subreddit) or `Listing`, shaped by `utils/api_serialize` (base36
+  ids + `t?_<id>` fullnames, cursor pagination via `after`/`before`/`limit`).
+  All reads and writes go through the existing models — nothing is re-queried by
+  hand where a model method already does it.
+  - **Reads:** `/api/v1/me`, `/api/v1/me/karma`, `/api/me/saved`,
+    `/api/listing(/:sort)`, `/api/r/:sub(/:sort)`, `/api/r/:sub/about`,
+    `/api/comments/:id` (link + nested comment tree), `/api/info?id=`,
+    `/api/search`, `/api/subreddits(/:where)`, `/api/subreddits/search`,
+    `/api/user/:name/about`, `/api/username_available`. Sorts reuse
+    `utils/sort`, `?t=` reuses `utils/timewindow`, search reuses the FTS5 +
+    fuzzy `Posts:search`.
+  - **Writes** (session + the global CSRF filter, also accepts an
+    `X-Csrf-Token` header): `/api/vote` (a new explicit `Votes:set`),
+    `/api/save`/`unsave`, `/api/hide`/`unhide`, `/api/subscribe`, `/api/submit`,
+    `/api/comment`, `/api/del`, `/api/editusertext` — each enforcing the same
+    spam / rate-limit / approval-queue / ownership rules as the web actions.
+- **sqlean `uuid` adopted for stable external ids** (the module
+  `docs/sqlean-plan.md` earmarked for this phase). Every public-facing row now
+  carries an opaque `public_id` UUID (migration `[109]` on
+  `posts`/`comments`/`users`/`forum`, backfilled), exposed as a Thing's `uuid`.
+  `utils/uuid` mints v4 UUIDs preferring sqlean's `uuid4()` and falling back to
+  `openssl.rand` so the test suite and `lapis migrate` (no `.so` loaded) still
+  work; ids are minted lazily on first serialization so listing projections that
+  don't select the column don't clobber a stored value.
+- **Out of scope for this slice:** OAuth **bearer-token** auth (API writes reuse
+  the browser's session + CSRF for now), and the Reddit surfaces with no backing
+  data (multis, wiki, modmail, gold/awards, friends, trophies, prefs, captcha).
+  Covered by `api_spec` + `api_serialize_spec` + `uuid_spec`. (317 specs.)
+
 ### Stored `posts.domain` + sqlean `fuzzy`/`regexp` put to work
 - **`posts.domain` is now a real, indexed column** (migration `[108]`), the
   normalized link host computed once at write time by `Posts:create` (via

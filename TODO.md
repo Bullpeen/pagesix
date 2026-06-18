@@ -8,14 +8,15 @@ hot/new/top/controversial/best/rising and `?t=` time windows + pagination;
 full-text search (FTS5); open a post; vote on posts & comments; submit
 link/self posts; post threaded comments/replies with Markdown; edit/delete own
 posts & comments; subscribe/unsubscribe; saved/hidden posts; user profiles +
-karma; reply notifications (`/inbox`); RSS in/out feeds; bcrypt + CSRF auth.
+karma; reply notifications (`/inbox`); RSS in/out feeds; bcrypt + CSRF auth; a
+Reddit-flavoured JSON API under `/api`.
 
 Forum-generalization layer (all shipped): role-based moderation via a privilege
 matrix (`owner`/`moderator`/`member` + site `admin`); an Admin Control Panel
 (`/admin`); cached user reputation + trust levels; a new-user post-approval
 queue (`/r/:sub/queue`) with rate limiting; tags (`/t/:tag`); `@mentions`;
 accept-answer Q&A mode; and OAuth login. The Docker image boots and serves;
-**274-spec Busted suite + luacheck pass**.
+**317-spec Busted suite + luacheck pass**.
 
 ## Next up
 - [x] **Auth/password hardening** (issue #6): bcrypt password hashing
@@ -280,7 +281,7 @@ dependency-driven (foundations first); full plan in
     `-- TODO rename` marker.
 
 ## Test & quality
-- **274 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
+- **317 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
   coverage, and **luacheck** (0 warnings / 0 errors).
 - CI per push: super-linter, **stylua** (`--check app`), **luacheck**
   (`luacheck app`), **busted + luacov** (with an 80% coverage gate), and a
