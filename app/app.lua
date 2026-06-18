@@ -159,7 +159,7 @@ app:match("/test/:comment_id[%d]", r2(require("actions.comment")))
 
 app:match("/console", console.make()) -- only available in Development builds
 
--- require("src.api")(app) -- API endpoints
+require("src.api")(app) -- JSON API endpoints (Reddit-flavoured, under /api)
 require("src.auth")(app) -- User-authenticated endpoints
 require("src.admin")(app) -- Admin Control Panel (site-admin only)
 

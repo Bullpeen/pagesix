@@ -15,7 +15,7 @@ matrix (`owner`/`moderator`/`member` + site `admin`); an Admin Control Panel
 (`/admin`); cached user reputation + trust levels; a new-user post-approval
 queue (`/r/:sub/queue`) with rate limiting; tags (`/t/:tag`); `@mentions`;
 accept-answer Q&A mode; and OAuth login. The Docker image boots and serves;
-**219-spec Busted suite + luacheck pass**.
+**274-spec Busted suite + luacheck pass**.
 
 ## Next up
 - [x] **Auth/password hardening** (issue #6): bcrypt password hashing
@@ -137,9 +137,30 @@ dependency-driven (foundations first); full plan in
       /post/:id/crosspost` re-shares into another sub via
       `posts.crosspost_parent_id` with source attribution. (Video embeds still
       out of scope.)
-- **API — deferred to a future phase.** `src/api.lua` is ~150 stub endpoints,
-  disabled in `app.lua`. Intentionally on hold until the web browsing
-  experience is locked in.
+- [x] **JSON API (first slice)** — `src/api.lua` is now a real, enabled
+      Reddit-flavoured JSON API (no longer the ~150-endpoint stub). Everything is
+      namespaced under `/api/` so it never collides with the HTML app's
+      `/(:sort)` / `/r/...` routes, and every response is a Reddit "Thing"
+      (`t1`/`t2`/`t3`/`t5`) or `Listing` envelope built by `utils/api_serialize`
+      (base36 ids + `t?_<id>` fullnames, plus an opaque stable `uuid`). All reads
+      and writes go through the existing models — nothing is re-queried by hand.
+      - *Reads:* `/api/v1/me`, `/api/v1/me/karma`, `/api/me/saved`,
+        `/api/listing(/:sort)`, `/api/r/:sub(/:sort)`, `/api/r/:sub/about`,
+        `/api/comments/:id` (link + nested comment tree), `/api/info?id=`,
+        `/api/search`, `/api/subreddits(/:where)`, `/api/subreddits/search`,
+        `/api/user/:name/about`, `/api/username_available`. Sorts reuse
+        `utils/sort`; `?t=` reuses `utils/timewindow`; FTS5 + fuzzy reuse
+        `Posts:search`; cursor pagination via `?after`/`?before`/`?limit`.
+      - *Writes (session + the global CSRF filter, accepts `X-Csrf-Token`):*
+        `/api/vote` (new explicit `Votes:set`), `/api/save`/`unsave`,
+        `/api/hide`/`unhide`, `/api/subscribe`, `/api/submit`, `/api/comment`,
+        `/api/del`, `/api/editusertext` — each enforcing the same spam / rate
+        limit / approval-queue / ownership rules as the web actions.
+      - Covered by `api_spec.lua` (16 cases) on top of the existing suite.
+      - *Backlog (not in this slice):* OAuth **bearer-token** auth (writes
+        currently reuse the browser's session + CSRF), and the Reddit surfaces
+        with no backing data (multis, wiki, modmail, gold/awards, friends,
+        trophies, prefs, captcha).
 - [x] **robots.txt / sitemap / well-known** — app-served `/robots.txt`,
       `/sitemap.xml` (subreddits + recent posts), and `/.well-known/security.txt`
       (RFC 9116). Output RSS feeds already done above.
@@ -197,7 +218,10 @@ dependency-driven (foundations first); full plan in
   - `text` — **not adopted**: `text_substring`/`split` are doable in Lua.
   - `stats` / `math` — **not adopted**: `hot`/`rising` math stays in `sort.lua`;
     revisit if SQL-side ranking becomes a bottleneck.
-  - `uuid` — **deferred to the API phase**: stable external ids.
+  - `uuid` — **adopted (API phase)**: each public row carries an opaque, stable
+    `public_id` UUID (migration `[109]`, exposed as a Thing's `uuid`), minted by
+    `utils/uuid` which prefers sqlean's `uuid4()` and falls back to
+    `openssl.rand` so the test suite / `lapis migrate` (no `.so`) still work.
   - `define` — **not adopted**: no reusable SQL function needed once the
     `url_host` generated column was dropped.
   - `ipaddr`, `vsv`, `unicode`, `time`, `besttype` — **not needed** for this
@@ -256,7 +280,7 @@ dependency-driven (foundations first); full plan in
     `-- TODO rename` marker.
 
 ## Test & quality
-- **219 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
+- **274 specs** (model/SQL + full HTTP integration via `simulate_request`), luacov
   coverage, and **luacheck** (0 warnings / 0 errors).
 - CI per push: super-linter, **stylua** (`--check app`), **luacheck**
   (`luacheck app`), **busted + luacov** (with an 80% coverage gate), and a

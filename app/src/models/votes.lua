@@ -47,6 +47,45 @@ function Votes:cast(user_id, post_id, comment_id, upvote)
 	})
 end
 
+--- Set a user's vote on a post (or comment) to an explicit direction.
+-- Unlike cast() (which toggles for the web UI), this sets the exact state the
+-- API's `dir` field asks for: 1 = upvote, -1 = downvote, 0 = no vote (remove).
+-- Idempotent -- re-sending the same dir is a no-op.
+-- @tparam number user_id
+-- @tparam number post_id
+-- @tparam number|nil comment_id nil for a post vote
+-- @tparam number dir 1 (up), -1 (down), or 0 (remove)
+-- @treturn table|nil the vote row, or nil when removed / unchanged-to-absent
+function Votes:set(user_id, post_id, comment_id, dir)
+	local existing = self:find({
+		user_id = user_id,
+		post_id = post_id,
+		comment_id = comment_id or db.NULL,
+	})
+
+	if dir == 0 then
+		if existing then
+			existing:delete()
+		end
+		return nil
+	end
+
+	local upvote = dir == 1 and 1 or 0
+	if existing then
+		if tonumber(existing.upvote) ~= upvote then
+			existing:update({ upvote = upvote })
+		end
+		return existing
+	end
+
+	return self:create({
+		user_id = user_id,
+		post_id = post_id,
+		comment_id = comment_id,
+		upvote = upvote,
+	})
+end
+
 --- Net score (upvotes - downvotes) for a post's own votes (comment_id IS NULL).
 -- @tparam number post_id
 -- @treturn number
