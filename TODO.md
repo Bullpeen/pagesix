@@ -170,29 +170,36 @@ dependency-driven (foundations first); full plan in
       and the FK/partial indexes above already serve the hot path. The dead
       `v_hot_*` / `v_forum` views have now been **removed** (see code-comments
       section).
-- [ ] Generated column for `posts.domain` (`GENERATED ALWAYS AS
-      (url_host(url))`) instead of computing it in Lua — needs a host-extract
-      SQL function (sqlean `regexp`/`define`, below).
-- [ ] **sqlean** extensions — evaluated module-by-module
-      (<https://github.com/nalgeon/sqlean>); see **`docs/sqlean-plan.md`** for
-      the concrete integration plan (verified that `lsqlite3:load_extension`
-      works at the C-API level; a `lsqlite3.open` wrapper in `init_by_lua` is
-      the per-connection hook; `crypto` is unnecessary since `hex(randomblob())`
-      is built-in). All require per-platform `.so`s bundled in the image, so
-      they're a single future infra task. Per-module verdict:
-  - `regexp` — **useful**: `regexp_substr(url, ...)` to extract `posts.domain`
-    host in SQL (feeds the generated column above) + content normalization.
-  - `fuzzy` — **useful**: `dlevenshtein`/`soundex` for typo-tolerant search
-    ranking on top of FTS5.
-  - `crypto` — **not needed**: the only planned consumer was the password-reset
-    flow, which now ships using `openssl.rand` for its tokens (see migration
-    `[17]` / `models/password_resets`).
-  - `text` — **minor**: `text_substring`/`split` helpers; mostly doable in Lua.
-  - `stats` / `math` — **minor**: could move the `hot`/`rising` score math into
-    SQL ranking, but `sort.lua` already does it; revisit if sorting becomes a
-    bottleneck.
-  - `uuid` — **maybe**: stable external ids for the future API phase.
-  - `define` — **maybe**: wrap the `url_host` logic as a reusable SQL function.
+- [x] **Stored `posts.domain`** — a normalized link host is now a real column
+      (migration `[108]`), populated once at write time by `Posts:create` (via
+      `utils/url`'s socket.url parser) and backfilled for existing rows. The
+      `GENERATED ALWAYS AS (...)` form was **evaluated and declined**: socket.url
+      parses hosts more correctly than any SQL regex, and an extension-backed
+      generated column faults every INSERT (STORED) or SELECT (VIRTUAL) on a
+      connection without the sqlean `.so` loaded — i.e. the test suite and
+      `lapis migrate`. The stored column also fixes the `/domain/:host` filter,
+      which was a substring `url LIKE '%host%'` that conflated `notexample.com`
+      and `?ref=host`; it is now an exact, indexed match.
+- [x] **sqlean** extensions — the bundle (`/usr/local/lib/sqlite/sqlean.so`,
+      pinned `0.28.3` in the Dockerfile) is loaded into Lapis's live connection
+      per worker by `src/utils/sqlite_ext.lua`; see **`docs/sqlean-plan.md`** for
+      the final per-module decisions. Confirmed against the actual `.so` that the
+      bundle exposes both the unprefixed aliases (`jaro_winkler`, `dlevenshtein`,
+      `regexp_replace`, …) and the `fuzzy_*` names. Per-module verdict:
+  - `fuzzy` — **adopted**: `jaro_winkler` powers typo-tolerant **subreddit
+    search** (`Forum:search`) and a word-level **post-search fallback**
+    (`Posts:search` → `fuzzy_title_search`, used only when FTS5 finds nothing).
+  - `regexp` — **adopted (light)**: `regexp_replace` normalizes punctuation when
+    splitting titles into words for the fuzzy post-search fallback. Not used for
+    `posts.domain` — socket.url parses hosts more correctly (see above).
+  - `crypto` — **not needed**: secure tokens use `openssl.rand` (migration `[17]`
+    / `models/password_resets`); `hex(randomblob())` covers the rest.
+  - `text` — **not adopted**: `text_substring`/`split` are doable in Lua.
+  - `stats` / `math` — **not adopted**: `hot`/`rising` math stays in `sort.lua`;
+    revisit if SQL-side ranking becomes a bottleneck.
+  - `uuid` — **deferred to the API phase**: stable external ids.
+  - `define` — **not adopted**: no reusable SQL function needed once the
+    `url_host` generated column was dropped.
   - `ipaddr`, `vsv`, `unicode`, `time`, `besttype` — **not needed** for this
     workload.
 

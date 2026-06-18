@@ -8,6 +8,29 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Stored `posts.domain` + sqlean `fuzzy`/`regexp` put to work
+- **`posts.domain` is now a real, indexed column** (migration `[108]`), the
+  normalized link host computed once at write time by `Posts:create` (via
+  `utils/url`'s socket.url parser) and backfilled for existing rows. This
+  replaces recomputing the host in Lua on every listing read **and fixes the
+  `/domain/:host` filter**, which was a substring `url LIKE '%host%'` that
+  wrongly matched `notexample.com` and `?ref=host`; it is now an exact match.
+  The `GENERATED ALWAYS AS (...)` form was evaluated and declined — socket.url
+  parses hosts better than any SQL regex, and an extension-backed generated
+  column faults every INSERT/SELECT on a connection without the sqlean `.so`
+  (the test suite, `lapis migrate`).
+- **Typo-tolerant post search.** When the FTS5 query returns nothing and the
+  sqlean bundle is loaded, `Posts:search` falls back to a word-level fuzzy pass
+  (`regexp_replace` to normalize + split titles, `jaro_winkler ≥ 0.85` per word)
+  so "programing" still finds "…programming…". FTS5 stays the default; the
+  fallback only widens an empty result, so behaviour is unchanged without the
+  extension. Complements the existing fuzzy **subreddit** search.
+- **sqlean module evaluation finalized** (`docs/sqlean-plan.md`): `fuzzy` and a
+  light touch of `regexp` adopted; `crypto` dropped (tokens use `openssl.rand`);
+  `text`/`stats`/`math` left in Lua; `uuid` deferred to the API phase. Verified
+  against the bundled `0.28.3` `.so` that it exposes the unprefixed aliases
+  (`jaro_winkler`, `dlevenshtein`, `regexp_replace`) the code relies on.
+
 ### UI clean slate: new CSS + Datastar, drop the vendored Reddit front-end
 - **New classless stylesheet** — replaced the 14k-line vendored `saidit.css`
   (plus `compact`/`highlight`/`mobile` and the `.less`/`.scss` soup) with a single
