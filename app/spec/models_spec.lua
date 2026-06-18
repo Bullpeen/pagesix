@@ -183,6 +183,67 @@ describe("pagesix models", function()
 		assert.same("github.com", gh[1].domain)
 	end)
 
+	it("stores the normalized host on create and matches it exactly", function()
+		local user = make_user("ivan")
+		local sub = Forum:create({ name = "exactdomains", creator_id = user.id })
+		-- Posts:create stamps posts.domain from the url (www stripped, lowercased).
+		Posts:create({
+			user_id = user.id,
+			sub_id = sub.id,
+			title = "real example",
+			url = "https://www.Example.com/page",
+		})
+		-- A different host that merely *contains* "example.com" as a substring:
+		-- the old `url LIKE '%example.com%'` filter wrongly matched these.
+		Posts:create({
+			user_id = user.id,
+			sub_id = sub.id,
+			title = "look-alike host",
+			url = "https://notexample.com/x",
+		})
+		Posts:create({
+			user_id = user.id,
+			sub_id = sub.id,
+			title = "host in query string",
+			url = "https://tracker.test/r?ref=example.com",
+		})
+		-- A self post (no url) stores no domain.
+		Posts:create({
+			user_id = user.id,
+			sub_id = sub.id,
+			title = "just text",
+			body = "no link here",
+			is_self = 1,
+		})
+
+		local hits = Posts:get_listing({ sub_id = sub.id, domain = "example.com" })
+		assert.same(1, #hits)
+		assert.same("real example", hits[1].title)
+		assert.same("example.com", hits[1].domain)
+	end)
+
+	it("migration [108] backfills domain for rows missing it", function()
+		local db = require("lapis.db")
+		local migrations = require("migrations")
+		local user = make_user("judy")
+		local sub = Forum:create({ name = "backfilltest", creator_id = user.id })
+		local post = Posts:create({
+			user_id = user.id,
+			sub_id = sub.id,
+			title = "bf",
+			url = "https://Backfill.Example/x",
+		})
+		-- Simulate a pre-migration row whose host was never stored.
+		db.update("posts", { domain = db.NULL }, { id = post.id })
+		assert.is_nil(db.select("domain FROM posts WHERE id = ?", post.id)[1].domain)
+		-- Re-running the (idempotent) migration re-derives the normalized host.
+		migrations[108]()
+		assert.same(
+			"backfill.example",
+			db.select("domain FROM posts WHERE id = ?", post.id)[1].domain
+		)
+	end)
+
 	it("Sort orders by 'top' and tolerates rows missing vote fields", function()
 		local rows = {
 			{ id = 1, upvotes = 1, downvotes = 0 },

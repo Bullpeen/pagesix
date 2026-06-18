@@ -179,7 +179,13 @@ return {
 
 			{ "title", types.text },
 			{ "url", types.text({ null = true }) }, -- null for self/text posts
-			-- { "domain", types.TEXT, "GENERATED ALWAYS AS (url_host(url)) VIRTUAL"},
+			-- The normalized link host lives in `domain` (added in migration [108],
+			-- populated in Lua by Posts:create via utils/url). A generated column
+			-- GENERATED ALWAYS AS (regexp_substr(url, ...)) was evaluated and
+			-- declined: socket.url parses hosts more correctly than any SQL regex,
+			-- and an extension-backed generated column would fault every INSERT
+			-- (STORED) or SELECT (VIRTUAL) on a connection without the sqlean .so
+			-- loaded -- i.e. the test suite and `lapis migrate`. See docs/sqlean-plan.md.
 			{ "created_at", types.text },
 			{ "updated_at", types.text },
 
@@ -828,6 +834,30 @@ return {
 			"UNIQUE(provider, provider_user_id)",
 		}, opts)
 		schema.create_index("oauth_identities", "user_id", { if_not_exists = true })
+	end,
+
+	-- Stored, normalized link host for posts. Replaces computing the domain in
+	-- Lua on every listing read and the buggy substring `url LIKE '%host%'`
+	-- domain filter (which matched notexample.com / ?ref=host) with an exact,
+	-- indexed match. Populated by Posts:create (utils/url, socket.url-backed);
+	-- backfilled here for existing link posts. Self/relative posts keep NULL.
+	[108] = function()
+		local Url = require("src.utils.url")
+		local has_col = false
+		for _, c in ipairs(db.query("PRAGMA table_info(posts)")) do
+			if c.name == "domain" then
+				has_col = true
+			end
+		end
+		if not has_col then
+			schema.add_column("posts", "domain", types.text({ null = true }))
+		end
+		schema.create_index("posts", "domain", { if_not_exists = true })
+		-- Backfill is idempotent: recomputing the same host is harmless.
+		for _, p in ipairs(db.select("id, url FROM posts WHERE url IS NOT NULL AND url != ''")) do
+			local d = Url.domain(p.url)
+			db.update("posts", { domain = d ~= "" and d or db.NULL }, { id = p.id })
+		end
 	end,
 
 	-- classify text : https://github.com/leafo/lapis-bayes

@@ -5,7 +5,9 @@ local Posts = require("models.posts")
 
 return {
 	before = function(self)
-		self.domain = self.params.domain or ""
+		-- Normalize to match the stored host (lowercased, leading www. stripped)
+		-- so a hand-typed /domain/WWW.Example.com still resolves.
+		self.domain = (self.params.domain or ""):lower():gsub("^www%.", "")
 
 		-- A bare word with no dot isn't a domain; show nothing rather than
 		-- matching every URL substring.
@@ -15,7 +17,7 @@ return {
 		end
 
 		-- Canonical listing path (same vote/comment aggregates as everywhere
-		-- else); the LIKE filter matches the host inside the stored URL.
+		-- else); the filter is an exact match on the stored posts.domain column.
 		self.posts = Posts:get_listing({ domain = self.domain })
 	end,
 

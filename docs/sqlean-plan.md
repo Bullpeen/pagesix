@@ -1,9 +1,17 @@
 # sqlean integration plan
 
-Plan for adding [sqlean](https://github.com/nalgeon/sqlean) loadable SQLite
-extensions. This is a **future infra task** — the payoff is modest and the cost
-(cross-platform binary bundling + a connection hook) is real, so it's deferred
-until a concrete need (typo-tolerant search is the most likely trigger).
+How we use [sqlean](https://github.com/nalgeon/sqlean) loadable SQLite
+extensions. **Status: implemented.** The bundle is pinned at `0.28.3` in the
+`Dockerfile` and loaded into Lapis's live connection per worker by
+`src/utils/sqlite_ext.lua`. Every feature that uses it has a Lua fallback, so the
+app still boots and the test suite still runs where the `.so` is absent.
+
+Note on function names: the docs at nalgeon/sqlean (even the `0.28.3` tag) only
+list the `fuzzy_*`-prefixed names (`fuzzy_jarowin`, `fuzzy_damlev`), but the
+actual bundled `sqlean.so` *also* registers unprefixed aliases — `jaro_winkler`,
+`dlevenshtein`, `levenshtein`, `soundex`, plus `regexp_like`/`regexp_substr`/
+`regexp_replace`. We use the unprefixed names (verified by introspecting
+`pragma_function_list` on the bundled `.so`).
 
 ## What we verified
 
@@ -16,69 +24,62 @@ until a concrete need (typo-tolerant search is the most likely trigger).
 - **`crypto` is unnecessary.** Secure tokens come from the built-in
   `hex(randomblob(32))` — no extension needed. This removes `crypto` from scope.
 
-## Module verdict (recap of TODO)
+## Module verdict (final)
 
 | Module | Verdict | Use |
 | --- | --- | --- |
-| `regexp` | useful | `regexp_substr(url, ...)` to extract `posts.domain` host in SQL |
-| `fuzzy` | useful | `dlevenshtein`/`soundex` typo-tolerant search ranking over FTS5 |
-| `crypto` | drop | built-in `randomblob`/`hex` already covers tokens |
-| `text`, `stats`, `math` | minor | doable in Lua / already in `sort.lua` |
-| `uuid`, `define` | maybe | external ids (future API), wrap `url_host` as a SQL func |
+| `fuzzy` | **adopted** | `jaro_winkler` for typo-tolerant subreddit search (`Forum:search`) and a word-level post-search fallback (`Posts:search`) |
+| `regexp` | **adopted (light)** | `regexp_replace` normalizes title punctuation when splitting words for the fuzzy post-search fallback |
+| `crypto` | dropped | tokens use `openssl.rand`; `randomblob`/`hex` cover the rest |
+| `text`, `stats`, `math` | not adopted | doable in Lua / already in `sort.lua` |
+| `uuid` | deferred | stable external ids, for the future API phase |
+| `define` | not adopted | no reusable SQL func needed (the `url_host` column was dropped) |
 | `ipaddr`, `vsv`, `unicode`, `time`, `besttype` | skip | not this workload |
 
 ## Implementation steps
 
-### 1. Bundle the binaries (Dockerfile)
-- Pin a sqlean release; download the Linux x86-64 build (production target is
-  amd64) into `/usr/local/lib/sqlean/`, verifying a checksum.
-- Only fetch the modules we use (`regexp.so`, `fuzzy.so`) to keep the image
-  small.
-- Dev note: on arm64 macOS, grab the matching macOS build or rely on Docker.
+### 1. Bundle the binary (Dockerfile) — done
+The `Dockerfile` downloads the pinned `0.28.3` Linux x86-64 single-file bundle
+(`sqlean.so`, all modules) to `/usr/local/lib/sqlite/`. One bundle is simpler
+than cherry-picking per-module `.so`s and the size cost is negligible. The build
+target is amd64; on arm64 macOS run the suite under Docker (see below).
 
-### 2. Load on every connection (`init_by_lua`, once per worker)
-Wrap `lsqlite3.open` so every connection Lapis opens auto-loads the modules.
-This is connection-correct and needs no patch to Lapis itself:
+### 2. Load onto Lapis's connection (per worker) — done
+`src/utils/sqlite_ext.lua` loads the bundle onto the *same* lsqlite3 connection
+Lapis runs queries on. Lapis keeps that connection as a private module upvalue
+(`active_connection`) with no accessor, so the loader reaches it via
+`debug.getupvalue` off one of the backend's closures, then calls
+`conn:load_extension(path)`. It is invoked from `app.lua`'s `before_filter`, so
+each nginx worker loads on its first request. `SQLITE_EXTENSIONS` overrides the
+path list (empty = disabled). The loader never raises; every consumer below is
+guarded by `sqlite_ext.load()` returning false and falls back to plain SQL/Lua.
 
-```lua
--- in config/init, before any DB use
-local lsqlite3 = require("lsqlite3")
-local real_open = lsqlite3.open
-local SQLEAN = "/usr/local/lib/sqlean/"
-lsqlite3.open = function(...)
-    local conn = real_open(...)
-    if conn then
-        for _, mod in ipairs({ "regexp", "fuzzy" }) do
-            -- default entrypoint sqlite3_<mod>_init matches the filename
-            pcall(function() conn:load_extension(SQLEAN .. mod) end)
-        end
-    end
-    return conn
-end
-```
+### 3. The consumers (each behind a capability check) — done
+- **`posts.domain`** — *not* a generated column. We store a normalized host in a
+  real column (migration `[108]`) computed in Lua by `Posts:create` (socket.url),
+  and backfilled. The generated-column form was declined: socket.url parses hosts
+  more correctly than `regexp_substr`, and a generated column calling an extension
+  function faults every INSERT (STORED) or SELECT (VIRTUAL) on a connection
+  without the `.so` — i.e. the test suite and `lapis migrate`.
+- **Subreddit search** (`Forum:search`) — `jaro_winkler` ranks typo-tolerant
+  name matches; falls back to a plain `LIKE` substring match.
+- **Post search** (`Posts:search` → `fuzzy_title_search`) — when FTS5 returns
+  nothing, a word-level fuzzy pass: each title is normalized with
+  `regexp_replace` and split into words (a recursive CTE), the query is split
+  into words, and a post matches when some title word is `jaro_winkler`-close
+  (≥ 0.85) to some query word. Word-level (not whole-string) matching is what
+  makes it work on multi-word titles. Gated behind an empty FTS result, capped
+  at 50 rows.
 
-Guard with a capability flag (`pcall` already degrades gracefully if a `.so` is
-absent) so the app still boots without the binaries — every feature below must
-have a Lua fallback.
+### 4. Tests + CI — done
+- `sqlite_ext_spec`, `forum_search_spec`, and `posts_search_spec` assert the
+  loaded behaviour; the extension-dependent examples mark themselves **pending**
+  when the `.so` is absent so the generic-Lua `test` job still runs green.
+- The `docker` CI job builds the production image (which carries the bundle) and
+  runs the full suite, so the loaded path is exercised end to end.
 
-### 3. Use the modules (incremental, each behind a capability check)
-- **`posts.domain`** — optionally a generated column
-  `GENERATED ALWAYS AS (regexp_substr(url, '://([^/]+)')) VIRTUAL`. Caveat:
-  generated columns referencing an extension function require the extension
-  loaded at both definition and query time; safer to keep the current Lua
-  computation in `get_listing` and only add this if profiling shows it matters.
-- **Search** — when an FTS5 query returns few hits, widen with a `dlevenshtein`
-  pass on titles. Keep the FTS5 path as the default and fallback.
+## Outcome
 
-### 4. Tests + CI
-- A spec asserting `load_extension` succeeds and `regexp_substr` /
-  `dlevenshtein` return expected values, **skipped** when the `.so` is absent so
-  the suite still runs on machines without the binaries.
-- CI already builds the Docker image (which would carry the `.so`s), so the
-  integration smoke covers the loaded path.
-
-## Recommendation
-
-Defer until typo-tolerant search is actually prioritized. At that point do steps
-1–2 + the `fuzzy` search fallback only; treat the `regexp` domain column as a
-separate, optional follow-up. `crypto` is off the table (built-ins suffice).
+`fuzzy` (+ a touch of `regexp`) is the payoff; `crypto` stays off the table
+(built-ins suffice); `uuid` waits for the API phase. Everything else in the
+bundle is loaded but unused — harmless, and there if a future need appears.
