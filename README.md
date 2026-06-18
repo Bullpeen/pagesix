@@ -22,10 +22,36 @@ A better social link-sharing site.
   - [ ] `/login`, `/logout`, `/password`
   - [ ] `prefs`, `settings`
 - [x] RSS feed import/sync (per-subreddit; live importer + in-process scheduler)
-- [ ] API (https://reddit.com/dev/api/)
+- [x] API ([Reddit-flavoured JSON](https://reddit.com/dev/api/); see below)
 
 See [`TODO.md`](TODO.md) for the living roadmap, including the forum-generalization
 work (RBAC, admin panel, tags, @mentions, reputation, …).
+
+## API
+
+A Reddit-flavoured JSON API lives under `/api`. Responses are Reddit "Thing"
+envelopes — `{ "kind": "t3", "data": { … } }` for a link (`t1` comment, `t2`
+account, `t5` subreddit) — and `{ "kind": "Listing", "data": { "children": […],
+"after": …, "before": … } }` for a page. Each Thing carries Reddit's base36 `id`
+/ `t?_<id>` fullname plus an opaque, stable `uuid` (a `public_id` minted with
+sqlean's `uuid4()`).
+
+- **Reads** (public): `GET /api/listing(/:sort)`, `/api/r/:sub(/:sort)`,
+  `/api/r/:sub/about`, `/api/comments/:id` (link + nested comment tree),
+  `/api/info?id=t3_…,t1_…`, `/api/search?q=`, `/api/subreddits(/:where)`,
+  `/api/subreddits/search?q=`, `/api/user/:name/about`,
+  `/api/username_available?user=`. Sorts (`hot`/`new`/`top`/`best`/
+  `controversial`/`rising`), `?t=` time windows, and `?after`/`?before`/`?limit`
+  cursor pagination are supported.
+- **Account** (logged in): `GET /api/v1/me`, `/api/v1/me/karma`,
+  `/api/me/saved`.
+- **Writes** (logged in): `POST /api/vote` `{id, dir}`, `/api/save`,
+  `/api/unsave`, `/api/hide`, `/api/unhide`, `/api/subscribe`, `/api/submit`,
+  `/api/comment`, `/api/del`, `/api/editusertext`.
+
+Writes authenticate with the browser session and the same CSRF token as the web
+forms (sent as the `csrf_token` field or an `X-Csrf-Token` header); OAuth
+bearer-token auth is a future addition.
 
 ## Development
 
