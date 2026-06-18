@@ -204,6 +204,14 @@ dependency-driven (foundations first); full plan in
     workload.
 
 ## From code comments (TODO/FIXME in the source)
+- [x] **Link flair** — replaced the dead `<% -- TODO ...linkflairlabel... %>`
+      placeholder in `fragments/posts.etlua` with a real feature: posts carry an
+      optional author-set `link_flair` label (nullable column on `posts`). Submit
+      trims/blank-drops it and caps it at 64 chars (`actions/submit.lua`, with a
+      `flair` field in `fragments/form_submit.etlua`); `get_listing`/`search`
+      select it; the listing and post-page (`fragments/post.etlua`) render a
+      `linkflairlabel` span (existing reddit CSS styles it). Covered by model +
+      HTTP integration specs.
 - [x] **Real "controversial" ranking** — replaced the crude `|up - down|`
       distance with the Reddit formula `(up + down) ^ (min/max)`
       (`controversy_score` in `sort.lua`); one-sided/unvoted posts score 0.

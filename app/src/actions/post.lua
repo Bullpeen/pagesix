@@ -93,6 +93,7 @@ return {
 			self.title = post_data["title"]
 			self.url = post_data["url"]
 			self.thumbnail = post_data["thumbnail"]
+			self.link_flair = post_data["link_flair"]
 			if tonumber(post_data["is_self"]) == 1 then
 				self.is_self = true
 				self.body_html = require("src.utils.markdown")(post_data["body"])

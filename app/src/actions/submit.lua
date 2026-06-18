@@ -20,7 +20,8 @@ return {
 		return { render = "submit" }
 	end,
 
-	-- Form fields (see views/fragments/form_submit.etlua): url, title, subreddit.
+	-- Form fields (see views/fragments/form_submit.etlua): url, title, subreddit,
+	-- and an optional flair label.
 	POST = function(self)
 		-- /submit is behind auth (src/auth.lua), so a user must be signed in.
 		local user = self.session.current_user
@@ -69,6 +70,18 @@ return {
 		-- Brand-new users' posts are held for a moderator (approved = 0).
 		local held = Queue.should_hold(user, sub)
 
+		-- Optional short "link flair" label set by the author. Trim surrounding
+		-- whitespace, drop it if blank, and cap the length so it stays a label.
+		local flair = self.params.flair
+		if flair then
+			flair = flair:gsub("^%s+", ""):gsub("%s+$", "")
+			if flair == "" then
+				flair = nil
+			elseif #flair > 64 then
+				flair = flair:sub(1, 64)
+			end
+		end
+
 		local link = (url ~= "") and url or nil
 		local post, err = Posts:create({
 			user_id = user.id,
@@ -80,6 +93,7 @@ return {
 			thumbnail = media.thumbnail_for(link),
 			approved = held and 0 or 1,
 			is_question = self.params.is_question and 1 or 0,
+			link_flair = flair,
 		})
 
 		if not post then

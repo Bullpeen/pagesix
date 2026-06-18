@@ -14,6 +14,7 @@
 					<h2>
 						<% if post.stickied and tonumber(post.stickied) == 1 then %><span data-badge="sticky">stickied</span> <% end %>
 						<% if post.is_question and tonumber(post.is_question) == 1 then %><span data-badge="<%= post.accepted_comment_id and "solved" or "question" %>"><%= post.accepted_comment_id and "solved" or "question" %></span> <% end %>
+						<% if post.link_flair and post.link_flair ~= "" then %><span data-flair><%= post.link_flair %></span> <% end %>
 						<a href="<%= post.url or post.permalink %>"><%= post.title %></a>
 						<% if post.domain and post.domain ~= "" then %><span data-domain>(<a href="/domain/<%= post.domain %>"><%= post.domain %></a>)</span><% end %>
 					</h2>

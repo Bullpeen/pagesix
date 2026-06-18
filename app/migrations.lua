@@ -201,6 +201,10 @@ return {
 			{ "thumbnail", types.text({ null = true }) },
 			{ "crosspost_parent_id", types.integer({ null = true }) },
 
+			-- Optional short author-set label shown beside the post title
+			-- (Reddit's "link flair"); null when the author left it blank.
+			{ "link_flair", types.text({ null = true }) },
+
 			"FOREIGN KEY(sub_id) REFERENCES forum(id)",
 			"FOREIGN KEY(user_id) REFERENCES users(id)",
 			"FOREIGN KEY(crosspost_parent_id) REFERENCES posts(id)",
