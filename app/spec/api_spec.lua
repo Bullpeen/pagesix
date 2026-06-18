@@ -52,16 +52,20 @@ describe("api", function()
 		return status, cjson.decode(body)
 	end
 
-	local sub, post, comment, demo
+	local sub, post, comment, demo, mod
 
 	setup(function()
 		require("spec.schema_helper")()
 		demo =
 			Users:create({ user_name = "apidemo", user_pass = "password", user_email = "a@e.com" })
+		-- A second moderator so post-creating error/edge tests don't eat into
+		-- demo's per-user post rate-limit budget (10 / 600s).
+		mod = Users:create({ user_name = "apimod", user_pass = "password", user_email = "m@e.com" })
 		sub = Forum:create({ name = "apisub", creator_id = demo.id, description = "API sub" })
-		-- Make the author a moderator so submit/comment posts aren't held in the
+		-- Make the authors moderators so submit/comment posts aren't held in the
 		-- new-user approval queue (mirrors integration_spec's flair_user).
 		Forum:add_moderator(sub.id, demo.id)
+		Forum:add_moderator(sub.id, mod.id)
 		post = Posts:create({
 			user_id = demo.id,
 			sub_id = sub.id,
@@ -305,6 +309,221 @@ describe("api", function()
 			assert.same("new body", Posts:find(p.id).body)
 			assert.same(200, (POST("/api/del", { id = fn }, "apidemo")))
 			assert.same(1, tonumber(Posts:find(p.id).deleted))
+		end)
+	end)
+
+	describe("index + not-found responses", function()
+		it("serves a friendly /api index", function()
+			local status, json = body_of("/api")
+			assert.same(200, status)
+			assert.truthy(json.name)
+		end)
+
+		it("404s an unknown subreddit about", function()
+			assert.same(404, (GET("/api/r/nope/about")))
+		end)
+
+		it("404s an unknown user", function()
+			assert.same(404, (GET("/api/user/ghost/about")))
+		end)
+
+		it("404s an unknown post's comments", function()
+			assert.same(404, (GET("/api/comments/999999")))
+		end)
+
+		it("400s username_available without a user", function()
+			assert.same(400, (GET("/api/username_available")))
+		end)
+
+		it("401s saved when logged out", function()
+			assert.same(401, (GET("/api/me/saved")))
+		end)
+	end)
+
+	describe("vote edge cases (auth)", function()
+		it("casts and clears a comment vote", function()
+			local fn = S.fullname("comment", comment.id)
+			POST("/api/vote", { id = fn, dir = 1 }, "apidemo")
+			assert.same(1, Votes:comment_score(comment.id))
+			POST("/api/vote", { id = fn, dir = 0 }, "apidemo")
+			assert.same(0, Votes:comment_score(comment.id))
+		end)
+
+		it("400s a non-votable thing kind", function()
+			assert.same(
+				400,
+				(POST("/api/vote", { id = S.fullname("subreddit", sub.id), dir = 1 }, "apidemo"))
+			)
+		end)
+
+		it("404s a vote on a missing post", function()
+			assert.same(
+				404,
+				(POST("/api/vote", { id = S.fullname("link", 999999), dir = 1 }, "apidemo"))
+			)
+		end)
+	end)
+
+	describe("save / subscribe edge cases (auth)", function()
+		it("400s save of a non-link thing", function()
+			assert.same(
+				400,
+				(POST("/api/save", { id = S.fullname("comment", comment.id) }, "apidemo"))
+			)
+		end)
+
+		it("404s save of a missing post", function()
+			assert.same(404, (POST("/api/save", { id = S.fullname("link", 999999) }, "apidemo")))
+		end)
+
+		it("404s subscribe to an unknown subreddit", function()
+			assert.same(
+				404,
+				(POST("/api/subscribe", { sr_name = "nope", action = "sub" }, "apidemo"))
+			)
+		end)
+	end)
+
+	describe("submit / comment edge cases (auth)", function()
+		it("401s submit when logged out", function()
+			assert.same(401, (POST("/api/submit", { sr = "apisub", title = "x", text = "y" })))
+		end)
+
+		it("404s submit to an unknown subreddit", function()
+			assert.same(
+				404,
+				(POST("/api/submit", { sr = "nope", title = "x", text = "y" }, "apidemo"))
+			)
+		end)
+
+		it("400s submit with neither url nor text", function()
+			assert.same(
+				400,
+				(POST("/api/submit", { sr = "apisub", kind = "link", title = "x" }, "apimod"))
+			)
+		end)
+
+		it("submits a link post", function()
+			local status, json = body_of_post(POST("/api/submit", {
+				sr = "apisub",
+				kind = "link",
+				title = "API link post",
+				url = "https://link.example/a",
+			}, "apimod"))
+			assert.same(201, status)
+			assert.same("t3", json.thing.kind)
+			assert.is_false(json.thing.data.is_self)
+			assert.same("https://link.example/a", json.thing.data.url)
+		end)
+
+		it("401s comment when logged out", function()
+			assert.same(
+				401,
+				(POST("/api/comment", { parent = S.fullname("link", post.id), text = "x" }))
+			)
+		end)
+
+		it("404s comment on a missing parent", function()
+			assert.same(
+				404,
+				(
+					POST(
+						"/api/comment",
+						{ parent = S.fullname("link", 999999), text = "x" },
+						"apidemo"
+					)
+				)
+			)
+		end)
+
+		it("403s comment on a locked thread", function()
+			local locked = Posts:create({
+				user_id = mod.id,
+				sub_id = sub.id,
+				title = "locked thread",
+				url = "https://locked.example",
+			})
+			locked:update({ comments_locked = 1 })
+			assert.same(
+				403,
+				(
+					POST(
+						"/api/comment",
+						{ parent = S.fullname("link", locked.id), text = "hi" },
+						"apidemo"
+					)
+				)
+			)
+		end)
+
+		it("replies to a comment (parent_id is a t1 fullname)", function()
+			local status, json = body_of_post(POST("/api/comment", {
+				parent = S.fullname("comment", comment.id),
+				text = "a nested api reply",
+			}, "apidemo"))
+			assert.same(201, status)
+			assert.same(S.fullname("comment", comment.id), json.thing.data.parent_id)
+		end)
+	end)
+
+	describe("del / editusertext ownership (auth)", function()
+		it("is a no-op deleting someone else's post", function()
+			assert.same(200, (POST("/api/del", { id = S.fullname("link", post.id) }, "apimod")))
+			assert.not_same(1, tonumber(Posts:find(post.id).deleted))
+		end)
+
+		it("400s del of an unknown thing id", function()
+			assert.same(400, (POST("/api/del", { id = "garbage" }, "apidemo")))
+		end)
+
+		it("403s editing someone else's post", function()
+			assert.same(
+				403,
+				(
+					POST(
+						"/api/editusertext",
+						{ thing_id = S.fullname("link", post.id), text = "x" },
+						"apimod"
+					)
+				)
+			)
+		end)
+
+		it("422s editing a non-self (link) post", function()
+			assert.same(
+				422,
+				(
+					POST(
+						"/api/editusertext",
+						{ thing_id = S.fullname("link", post.id), text = "x" },
+						"apidemo"
+					)
+				)
+			)
+		end)
+
+		it("edits your own comment", function()
+			local c =
+				Comments:create({ post_id = post.id, user_id = demo.id, body = "editable comment" })
+			assert.same(
+				200,
+				(
+					POST(
+						"/api/editusertext",
+						{ thing_id = S.fullname("comment", c.id), text = "edited comment" },
+						"apidemo"
+					)
+				)
+			)
+			assert.same("edited comment", Comments:find(c.id).body)
+		end)
+	end)
+
+	describe("pagination", function()
+		it("limits the page and exposes an after cursor", function()
+			local _, json = body_of("/api/listing?limit=1")
+			assert.same(1, #json.data.children)
+			assert.truthy(json.data.after)
 		end)
 	end)
 end)
