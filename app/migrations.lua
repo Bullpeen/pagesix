@@ -864,6 +864,33 @@ return {
 		end
 	end,
 
+	-- Stable external ids for the API (docs/sqlean-plan.md earmarked `uuid` for
+	-- this phase). Each public-facing row gets an opaque `public_id` UUID so the
+	-- JSON API can reference it without leaking the guessable auto-increment id.
+	-- Nullable + backfilled here (rather than a NOT NULL default of uuid4()):
+	-- an extension-backed default would fault every INSERT on a connection
+	-- without the sqlean .so loaded -- i.e. the test suite and `lapis migrate`.
+	-- New rows are filled lazily on first serialization (utils.api_serialize);
+	-- this backfills everything that already exists.
+	[109] = function()
+		local uuid = require("src.utils.uuid")
+		for _, tbl in ipairs({ "posts", "comments", "users", "forum" }) do
+			local has_col = false
+			for _, c in ipairs(db.query("PRAGMA table_info(" .. tbl .. ")")) do
+				if c.name == "public_id" then
+					has_col = true
+				end
+			end
+			if not has_col then
+				schema.add_column(tbl, "public_id", types.text({ null = true }))
+			end
+			schema.create_index(tbl, "public_id", { unique = true, if_not_exists = true })
+			for _, row in ipairs(db.select("id FROM " .. tbl .. " WHERE public_id IS NULL")) do
+				db.update(tbl, { public_id = uuid.generate() }, { id = row.id })
+			end
+		end
+	end,
+
 	-- classify text : https://github.com/leafo/lapis-bayes
 	[1439944992] = require("lapis.bayes.schema").run_migrations,
 }
