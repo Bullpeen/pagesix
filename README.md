@@ -2,30 +2,18 @@
 
 A better social link-sharing site.
 
-## TODO
+## Status
 
-- [ ] model relationships defined:
-  * 1 User -> 1 Comment
-  * many comments -> 1 Post
-  * many posts -> 1 Subreddit
-  * many subreddits -> 1 Subreddits listing
-- [ ] add [Constraints](https://leafo.net/lapis/reference/models.html#constraints) to models (?)
-- [ ] add table indexes (hot-sorted subreddit posts, homepage, user accounts)
-- [ ] user accounts w/[CSRF](https://leafo.net/lapis/reference/utilities.html#csrf-protection )
-- [ ] Individual Pages
-  - [ ] `homepage`
-  - [ ] `/subreddits/` `/subreddits/mine` listings pages
-  - [ ] `subreddit` landing page
-    - [ ] Sorting parameter (`/r/.../top/?t=year`, `/popular`, `new`, `rising`, `controversial`)
-    - [ ] use [Pagination](https://leafo.net/lapis/reference/models.html#pagination)
-  - [ ] `/r/.../submit` (per-subreddit)
-  - [ ] `/login`, `/logout`, `/password`
-  - [ ] `prefs`, `settings`
-- [x] RSS feed import/sync (per-subreddit; live importer + in-process scheduler)
-- [x] API ([Reddit-flavoured JSON](https://reddit.com/dev/api/); see below)
+A working, test-covered Reddit clone: browsing with all the sorts + time
+windows, FTS5 search, voting, link/self posts, threaded comments, edit/delete,
+subscriptions, saved/hidden posts, profiles + karma, reply notifications,
+RSS in/out, bcrypt + CSRF auth, a forum-generalization layer (RBAC, an Admin
+Control Panel, reputation, an approval queue, tags, @mentions, OAuth), a
+[Reddit-flavoured JSON API](#api), and ops endpoints ([`/health`](#operations--observability)
++ Prometheus [`/metrics`](#operations--observability)).
 
-See [`TODO.md`](TODO.md) for the living roadmap, including the forum-generalization
-work (RBAC, admin panel, tags, @mentions, reputation, …).
+[`TODO.md`](TODO.md) is the living roadmap and changelog of what's shipped;
+[`CHANGELOG.md`](CHANGELOG.md) has the narrative history.
 
 ## API
 
@@ -52,6 +40,24 @@ sqlean's `uuid4()`).
 Writes authenticate with the browser session and the same CSRF token as the web
 forms (sent as the `csrf_token` field or an `X-Csrf-Token` header); OAuth
 bearer-token auth is a future addition.
+
+## Operations & observability
+
+- **`GET /health`** — JSON liveness/readiness probe: `{ "status": "ok", "db":
+  "ok", … }` with `200`, or `503` if a trivial DB query fails.
+- **`GET /metrics`** — Prometheus text exposition (v0.0.4). Content gauges
+  (`pagesix_users`, `pagesix_posts`, `pagesix_comments`, `pagesix_votes`,
+  `pagesix_subreddits`, `pagesix_posts_pending`, …) plus
+  `pagesix_http_requests_total{status="2xx"}` counters accumulated in a
+  cross-worker `metrics` shared dict.
+- **Dashboards with graphs** — the Admin panel has a `/admin/stats` page
+  (site-wide activity over 30 days + top subreddits) and each community's
+  moderators get `/r/:sub/stats` (per-sub activity + top contributors). Charts
+  are server-rendered inline SVG (no client JS), drawn from the
+  `v_daily_activity` view and `utils/stats`.
+
+See [`docs/sqlite-features.md`](docs/sqlite-features.md) for where SQLite
+triggers/views (and why not stored procedures) back this logic.
 
 ## Development
 

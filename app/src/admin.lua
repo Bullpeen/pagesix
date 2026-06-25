@@ -8,6 +8,7 @@ local function admin(app)
 	app:match("admin", "/admin", r2(require("actions.admin")))
 	app:match("admin_users", "/admin/users", r2(require("actions.admin_users")))
 	app:match("admin_settings", "/admin/settings", r2(require("actions.admin_settings")))
+	app:match("admin_stats", "/admin/stats", r2(require("actions.admin_stats")))
 	return app
 end
 

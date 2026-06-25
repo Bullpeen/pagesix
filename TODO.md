@@ -9,7 +9,8 @@ full-text search (FTS5); open a post; vote on posts & comments; submit
 link/self posts; post threaded comments/replies with Markdown; edit/delete own
 posts & comments; subscribe/unsubscribe; saved/hidden posts; user profiles +
 karma; reply notifications (`/inbox`); RSS in/out feeds; bcrypt + CSRF auth; a
-Reddit-flavoured JSON API under `/api`.
+Reddit-flavoured JSON API under `/api`; admin/mod dashboards with graphs,
+Prometheus `/metrics`, and a `/health` probe.
 
 Forum-generalization layer (all shipped): role-based moderation via a privilege
 matrix (`owner`/`moderator`/`member` + site `admin`); an Admin Control Panel
@@ -162,6 +163,16 @@ dependency-driven (foundations first); full plan in
         currently reuse the browser's session + CSRF), and the Reddit surfaces
         with no backing data (multis, wiki, modmail, gold/awards, friends,
         trophies, prefs, captcha).
+- [x] **Observability + dashboards** — a `utils/stats` layer (site/sub totals,
+      a zero-padded daily-activity series off the `v_daily_activity` view,
+      top-subreddit/contributor leaderboards) feeds three surfaces: an
+      `/admin/stats` page (site activity + top subreddits), a mod-gated
+      `/r/:sub/stats` page (per-sub activity + top contributors), and a
+      Prometheus `/metrics` exporter (content gauges + cross-worker
+      `pagesix_http_requests_total` counters via a `metrics` shared dict). A
+      `/health` JSON probe returns `200`/`503` on a DB ping. Graphs are
+      server-rendered inline SVG (`utils/chart`, no client JS).
+      (`stats_spec`/`chart_spec`/`metrics_spec`/`ops_spec`.)
 - [x] **robots.txt / sitemap / well-known** — app-served `/robots.txt`,
       `/sitemap.xml` (subreddits + recent posts), and `/.well-known/security.txt`
       (RFC 9116). Output RSS feeds already done above.
@@ -187,11 +198,14 @@ dependency-driven (foundations first); full plan in
       full index. **Composite index** `comments(post_id, parent_comment_id)`
       (migration `[5]`) for the thread CTE anchor
       (`WHERE post_id = ? AND parent_comment_id IS NULL`).
-- [x] **Views**: we use no SQL `VIEW`s — the main listing is dynamic
-      (sort/time/hidden/saved vary per request), so a view can't capture it,
-      and the FK/partial indexes above already serve the hot path. The dead
-      `v_hot_*` / `v_forum` views have now been **removed** (see code-comments
-      section).
+- [x] **Views**: the *listing* path uses none — it's dynamic
+      (sort/time/hidden/saved vary per request), so a view can't capture it, and
+      the FK/partial indexes above already serve the hot path; the dead
+      `v_hot_*` / `v_forum` views were **removed**. A view *is* now used for the
+      read-side stats rollup: **`v_daily_activity`** (migration `[110]`) buckets
+      posts/comments/signups by day for the dashboards + `/metrics`. See the
+      feature evaluation in `docs/sqlite-features.md` (triggers/views/no stored
+      procedures).
 - [x] **Stored `posts.domain`** — a normalized link host is now a real column
       (migration `[108]`), populated once at write time by `Posts:create` (via
       `utils/url`'s socket.url parser) and backfilled for existing rows. The

@@ -1,0 +1,32 @@
+<div data-head>
+	<h1>/r/<%= subreddit %> &mdash; stats</h1>
+</div>
+<nav data-row>
+	<a href="/r/<%= subreddit %>">posts</a>
+	<a href="/r/<%= subreddit %>/queue">queue</a>
+	<a href="/r/<%= subreddit %>/modlog">modlog</a>
+	<a href="/r/<%= subreddit %>/stats">stats</a>
+</nav>
+
+<h2>Totals</h2>
+<table>
+	<tbody>
+		<tr><th>Posts</th><td><%= sub_totals.posts %></td></tr>
+		<tr><th>Comments</th><td><%= sub_totals.comments %></td></tr>
+		<tr><th>Subscribers</th><td><%= sub_totals.subscribers %></td></tr>
+		<tr><th>Pending posts</th><td><%= sub_totals.pending %></td></tr>
+	</tbody>
+</table>
+
+<h2>Activity &mdash; last <%= days %> days (<%= range.from %> &rarr; <%= range.to %>)</h2>
+<figure>
+	<figcaption>Posts per day</figcaption>
+	<%- charts.posts %>
+</figure>
+<figure>
+	<figcaption>Comments per day</figcaption>
+	<%- charts.comments %>
+</figure>
+
+<h2>Top contributors</h2>
+<%- charts.contributors %>

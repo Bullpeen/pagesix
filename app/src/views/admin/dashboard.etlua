@@ -3,6 +3,7 @@
 	<a href="/admin">dashboard</a>
 	<a href="/admin/users">users</a>
 	<a href="/admin/settings">settings</a>
+	<a href="/admin/stats">stats</a>
 </nav>
 
 <h2>Site overview</h2>
