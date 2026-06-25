@@ -1,6 +1,12 @@
 <div data-head>
 	<h1>/r/<%= subreddit %> &mdash; approval queue</h1>
 </div>
+<nav data-row>
+	<a href="/r/<%= subreddit %>">posts</a>
+	<a href="/r/<%= subreddit %>/queue">queue</a>
+	<a href="/r/<%= subreddit %>/modlog">modlog</a>
+	<a href="/r/<%= subreddit %>/stats">stats</a>
+</nav>
 <p data-muted>Posts and comments from new users, held for review.</p>
 
 <h2>Posts (<%= #pending_posts %>)</h2>

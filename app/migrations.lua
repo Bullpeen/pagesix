@@ -891,6 +891,32 @@ return {
 		end
 	end,
 
+	-- Daily-activity rollup as a SQL VIEW, powering the admin/mod stats graphs
+	-- and the /metrics + /health endpoints. A view (not a trigger-maintained
+	-- table) is the right tool here: the data is a read-side aggregation, so a
+	-- view keeps it always-consistent with zero write-path cost and no extra
+	-- columns -- unlike the dynamic per-request listings (sort/time/hidden vary),
+	-- which is why those were left as parameterized queries. See
+	-- docs/sqlite-features.md. `date(created_at)` buckets the UTC timestamp text.
+	[110] = function()
+		db.query([[
+			CREATE VIEW IF NOT EXISTS v_daily_activity AS
+			WITH activity(day, kind) AS (
+				SELECT date(created_at), 'post'    FROM posts    WHERE deleted = 0
+				UNION ALL
+				SELECT date(created_at), 'comment' FROM comments WHERE deleted = 0
+				UNION ALL
+				SELECT date(created_at), 'signup'  FROM users
+			)
+			SELECT day,
+				SUM(CASE WHEN kind = 'post'    THEN 1 ELSE 0 END) AS posts,
+				SUM(CASE WHEN kind = 'comment' THEN 1 ELSE 0 END) AS comments,
+				SUM(CASE WHEN kind = 'signup'  THEN 1 ELSE 0 END) AS signups
+			FROM activity
+			GROUP BY day
+		]])
+	end,
+
 	-- classify text : https://github.com/leafo/lapis-bayes
 	[1439944992] = require("lapis.bayes.schema").run_migrations,
 }

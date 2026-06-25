@@ -8,6 +8,34 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Observability: dashboards with graphs, Prometheus `/metrics`, `/health`
+- **Stats layer** (`utils/stats`) — site and per-subreddit totals, a zero-padded
+  daily-activity series (posts/comments/signups), and top-subreddit /
+  top-contributor leaderboards. The daily series reads a new SQL **view**,
+  `v_daily_activity` (migration `[110]`), which buckets activity by
+  `date(created_at)`. This is a deliberate, scoped reintroduction of views: the
+  dynamic *listings* still use parameterized queries (a view can't capture their
+  per-request sort/time/hidden filters), but a read-only aggregation is exactly
+  what a view is for. See the new `docs/sqlite-features.md`, which records the
+  verdicts on triggers (FTS sync — adopted; counters — declined), views
+  (aggregations — adopted), and stored procedures (SQLite has none; logic lives
+  in models).
+- **Admin + moderator dashboards with graphs.** `/admin/stats` shows site
+  activity over 30 days plus the top subreddits; each community's moderators get
+  `/r/:sub/stats` (per-sub activity + top contributors), gated by the same RBAC
+  `approve` privilege as the queue. Charts are **server-rendered inline SVG**
+  (`utils/chart`) — no client JS, in keeping with the classless/Datastar-only
+  front-end.
+- **Prometheus `/metrics`.** Text exposition (v0.0.4) with content gauges
+  (`pagesix_users`, `pagesix_posts`, `pagesix_comments`, `pagesix_votes`,
+  `pagesix_subreddits`, `pagesix_posts_pending`, …) and
+  `pagesix_http_requests_total{status="…"}` counters accumulated in a new
+  cross-worker `metrics` shared dict (incremented in `after_dispatch`). Degrades
+  cleanly with no nginx (the test suite emits gauges only).
+- **`/health`.** JSON liveness/readiness probe: `200` + `{status:"ok"}` when a
+  trivial DB query succeeds, `503` otherwise. Covered by
+  `stats`/`chart`/`metrics`/`ops` specs.
+
 ### Reddit-flavoured JSON API (`/api`) + sqlean `uuid` stable ids
 - **The API is real and enabled.** `src/api.lua` went from ~150 disabled stub
   endpoints to a working JSON API, wired into `app.lua`. Everything lives under

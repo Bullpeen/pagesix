@@ -1,0 +1,43 @@
+<h1>Admin Control Panel</h1>
+<nav data-row>
+	<a href="/admin">dashboard</a>
+	<a href="/admin/users">users</a>
+	<a href="/admin/settings">settings</a>
+	<a href="/admin/stats">stats</a>
+</nav>
+
+<h2>Activity &mdash; last <%= days %> days (<%= range.from %> &rarr; <%= range.to %>)</h2>
+<figure>
+	<figcaption>Posts per day</figcaption>
+	<%- charts.posts %>
+</figure>
+<figure>
+	<figcaption>Comments per day</figcaption>
+	<%- charts.comments %>
+</figure>
+<figure>
+	<figcaption>Signups per day</figcaption>
+	<%- charts.signups %>
+</figure>
+
+<h2>Top subreddits</h2>
+<%- charts.top_subreddits %>
+
+<h2>Totals</h2>
+<table>
+	<tbody>
+		<tr><th>Users</th><td><%= totals.users %></td></tr>
+		<tr><th>Admins</th><td><%= totals.admins %></td></tr>
+		<tr><th>Subreddits</th><td><%= totals.subreddits %></td></tr>
+		<tr><th>Posts</th><td><%= totals.posts %></td></tr>
+		<tr><th>Comments</th><td><%= totals.comments %></td></tr>
+		<tr><th>Votes</th><td><%= totals.votes %></td></tr>
+		<tr><th>Pending posts</th><td><%= totals.pending_posts %></td></tr>
+		<tr><th>Pending comments</th><td><%= totals.pending_comments %></td></tr>
+	</tbody>
+</table>
+
+<p data-muted>
+	Machine-readable: <a href="/metrics">/metrics</a> (Prometheus) &middot;
+	<a href="/health">/health</a>
+</p>

@@ -40,6 +40,13 @@ app:before_filter(function(self)
 	after_dispatch(function()
 		-- https://leafo.net/lapis/reference/configuration.html#performance-measurement
 		-- print(to_json(ngx.ctx.performance))
+
+		-- Count the handled request by status class for the /metrics exporter.
+		-- No-op (and never fatal) without the cross-worker `metrics` shared dict
+		-- -- e.g. under the test harness, which has no nginx.
+		if ngx and ngx.status then
+			pcall(require("src.utils.metrics").observe, ngx.status)
+		end
 	end)
 
 	-- CSRF protection for every state-changing request. Lapis keys the token to
@@ -142,6 +149,8 @@ app:match("r_random", "/r/random", r2(require("actions.r_random")))
 app:match("modlog", "/r/:subreddit/modlog", r2(require("actions.modlog")))
 -- Moderator approval queue (literal `queue` segment beats the :sort param below).
 app:match("queue", "/r/:subreddit/queue", r2(require("actions.queue")))
+-- Moderator stats (literal `stats` segment beats the :sort param below).
+app:match("sub_stats", "/r/:subreddit/stats", r2(require("actions.sub_stats")))
 app:match("subreddit", "/r/:subreddit(/:sort)", r2(require("actions.r_subreddit")))
 
 app:match("post", "/r/:subreddit/comments/:post_id[%d](/:title_stub)", r2(require("actions.post")))
@@ -162,5 +171,6 @@ app:match("/console", console.make()) -- only available in Development builds
 require("src.api")(app) -- JSON API endpoints (Reddit-flavoured, under /api)
 require("src.auth")(app) -- User-authenticated endpoints
 require("src.admin")(app) -- Admin Control Panel (site-admin only)
+require("src.ops")(app) -- /health + /metrics (ops endpoints)
 
 return app
