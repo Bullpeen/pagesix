@@ -59,6 +59,24 @@ bearer-token auth is a future addition.
 See [`docs/sqlite-features.md`](docs/sqlite-features.md) for where SQLite
 triggers/views (and why not stored procedures) back this logic.
 
+### Configuration
+
+Set through the environment (see `app/config.lua`):
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `LAPIS_ENV` | yes | `development`, `test`, or `production`. |
+| `SESSION_SECRET` | **in production** | Signs session cookies and CSRF tokens. `LAPIS_SECRET` is accepted as the older name for the same thing. Generate with `openssl rand -hex 32`. |
+| `ADMIN_USERNAMES` | no | Comma-separated usernames allowed into `/admin` on first visit (one-time bootstrap; afterwards admins grant the role from `/admin/users`). |
+| `GITHUB_CLIENT_ID` / `_SECRET` | no | Enables GitHub OAuth login when set. |
+| `GOOGLE_CLIENT_ID` / `_SECRET` | no | Enables Google OAuth login when set. |
+| `SQLITE_EXTENSIONS` | no | Colon-separated `.so` paths, overriding the bundled sqlean. Empty disables extension loading. |
+| `PAGESIX_SEED_DIR` | no | Directory to read seed data (e.g. `initial_subs.json`) from. |
+
+Production **refuses to boot** without a session secret rather than starting and
+failing on the first signed cookie. Development falls back to a fixed insecure
+value, so no setup is needed to run locally.
+
 ## Development
 
 From the root directory:

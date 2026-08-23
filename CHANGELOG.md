@@ -8,6 +8,22 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Production refuses to boot without a session secret
+- `config.lua` read `os.getenv("LAPIS_SECRET")` with no fallback and no check.
+  Unset, the secret was `nil` -- and `openssl.hmac` raises on a nil key, so a
+  misconfigured production deploy started cleanly and then **500'd on every
+  request** that touched a session cookie or CSRF token (i.e. all of them).
+- The two config blocks also disagreed on the variable name: development read
+  `SESSION_SECRET`, production read `LAPIS_SECRET`. Either now works in either
+  environment, `SESSION_SECRET` is the documented one, and an empty value counts
+  as unset.
+- New `utils/secret` resolves the key at config load and raises a message naming
+  the variable to set. Only the environment being started is checked -- every
+  `config()` block is evaluated on every boot, so the production block must not
+  trip while running locally.
+- The README gained a **Configuration** table: every environment variable the
+  app reads, and which are required.
+
 ### Maintenance sweep: dependency bumps, logging, and three latent bugs
 - **Unknown URLs answer `404` instead of `500`.** `app:handle_404` re-raised
   (Lapis's default), so the 500 error page was served for every unrouted path
