@@ -17,6 +17,14 @@ test-covered Reddit clone. Highlights, newest first:
   redirect home became a 500.
 - **`users.user_pass` rejects a missing password.** The constraint `print`ed and
   fell through, so a row with no password at all could be inserted.
+- **The synthetic `anonymous_coward` account is actually created.** Migration
+  `[10]` built it with `user_pass = ""`, which the min-length constraint
+  rejected -- `Users:create` returned nil, the migration ignored the result, and
+  the account never existed in any environment. It now gets an unusable bcrypt
+  digest (nobody holds the plaintext, so `Password.verify` can never match), the
+  create is asserted rather than dropped, and migration `[111]` backfills
+  databases that recorded `[10]` while it was failing. The name lives on the
+  model as `Users.ANONYMOUS`, with `Users:anonymous()` to fetch the row.
 - **`utils/log`** — one tagged logger (`ngx.log` under OpenResty, stderr
   elsewhere), replacing the `print` calls in `actions/post` and `utils/misc`
   (stdout is not captured by nginx, so those messages went nowhere) and the two

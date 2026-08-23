@@ -44,6 +44,32 @@ local function seed_path(name)
 	return nil
 end
 
+--- Create the synthetic `anonymous_coward` account if it is not there yet.
+-- It exists to own authorless content, so it is seeded early -- before any row
+-- could point at it. Nothing attributes to it yet. It must never be logged into:
+-- its password is the hash of a value nobody holds, which `Password.verify`
+-- can therefore never match. (The original version passed `user_pass = ""`,
+-- which the model's min-length constraint rejected -- so `Users:create` returned
+-- nil, the migration ignored it, and the account was silently never created.)
+-- Idempotent, and safe to call from more than one migration.
+-- @treturn table the anonymous user row
+local function ensure_anonymous_user()
+	local existing = Users:find({ user_name = Users.ANONYMOUS })
+	if existing then
+		return existing
+	end
+	local Password = require("src.utils.password")
+	local unusable = Password.hash("anonymous-" .. tostring(os.time()) .. tostring(os.clock()))
+	local user, err = Users:create({
+		user_name = Users.ANONYMOUS,
+		user_email = "anonymous@localhost",
+		user_pass = unusable,
+	})
+	-- Fail loudly: a silent miss here is exactly the bug this replaces.
+	assert(user, "could not create " .. Users.ANONYMOUS .. ": " .. tostring(err))
+	return user
+end
+
 local opts = {}
 opts["strict"] = true
 opts["if_not_exists"] = true
@@ -375,13 +401,9 @@ return {
 		schema.create_index("notifications", "user_id", { if_not_exists = true })
 	end,
 
-	-- create first User
+	-- create the synthetic `anonymous_coward` user (see ensure_anonymous_user)
 	[10] = function()
-		Users:create({
-			user_name = "anonymous_coward",
-			user_email = "anonymous@localhost",
-			user_pass = "",
-		})
+		ensure_anonymous_user()
 	end,
 
 	-- moderators join table (replaces the forum.moderator_ids CSV)
@@ -917,6 +939,13 @@ return {
 			FROM activity
 			GROUP BY day
 		]])
+	end,
+
+	-- Backfill `anonymous_coward` on databases that already recorded migration
+	-- [10] as applied back when it silently failed. Fresh databases get the
+	-- account from [10] and this is a no-op.
+	[111] = function()
+		ensure_anonymous_user()
 	end,
 
 	-- classify text : https://github.com/leafo/lapis-bayes
