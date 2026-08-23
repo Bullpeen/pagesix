@@ -1512,5 +1512,20 @@ describe("pagesix integration", function()
 			assert.same(302, status)
 			assert.is_not_nil(headers.location)
 		end)
+
+		it("answers 404 (not 500) for an unrouted path", function()
+			-- handle_404 used to re-raise, so unknown URLs rendered the 500 error
+			-- page and told crawlers the server was broken.
+			local status, body = GET("/definitely/not/a/route")
+			assert.same(404, status)
+			assert.truthy(body:find("Not Found", 1, true))
+		end)
+
+		it("redirects a post URL with an unknown subreddit instead of erroring", function()
+			-- The `before` filter logged the miss by concatenating a nil param,
+			-- which raised and turned the redirect into a 500.
+			local status = GET("/r/nosuchsub/comments/1")
+			assert.same(302, status)
+		end)
 	end)
 end)

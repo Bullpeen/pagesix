@@ -8,6 +8,39 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Maintenance sweep: dependency bumps, logging, and three latent bugs
+- **Unknown URLs answer `404` instead of `500`.** `app:handle_404` re-raised
+  (Lapis's default), so the 500 error page was served for every unrouted path
+  and the `return { status = 404, ... }` below it was unreachable.
+- **A post URL with a missing `:subreddit` param no longer raises.** The `before`
+  filter logged the miss by concatenating the nil param, so the intended
+  redirect home became a 500.
+- **`users.user_pass` rejects a missing password.** The constraint `print`ed and
+  fell through, so a row with no password at all could be inserted.
+- **The synthetic `anonymous_coward` account is actually created.** Migration
+  `[10]` built it with `user_pass = ""`, which the min-length constraint
+  rejected -- `Users:create` returned nil, the migration ignored the result, and
+  the account never existed in any environment. It now gets an unusable bcrypt
+  digest (nobody holds the plaintext, so `Password.verify` can never match), the
+  create is asserted rather than dropped, and migration `[111]` backfills
+  databases that recorded `[10]` while it was failing. The name lives on the
+  model as `Users.ANONYMOUS`, with `Users:anonymous()` to fetch the row.
+- **`utils/log`** — one tagged logger (`ngx.log` under OpenResty, stderr
+  elsewhere), replacing the `print` calls in `actions/post` and `utils/misc`
+  (stdout is not captured by nginx, so those messages went nowhere) and the two
+  hand-rolled copies in `utils/sqlite_ext` and `utils/feed_scheduler`.
+- **RNG seeding** now mixes `os.time()` with the clock; seeding from
+  `os.clock()` alone at require time gave every process a near-identical seed.
+- **Dependencies:** lapis `>= 1.19.0`, lapis-annotate `~> 2.1`, lapis-bayes
+  `~> 1.6`, web_sanitize `~> 1.7`, tableshape `>= 2.7`, sqlean `0.28.4`;
+  `actions/checkout@v7`, `hadolint-action@v3.4.0`, and the `leafo/gh-actions-*`
+  actions pinned to release tags instead of `@master`.
+- **`.pre-commit-config.yaml` was never valid** — it lacked the top-level
+  `repos:` key, so pre-commit rejected the file outright. Fixed and the StyLua
+  rev bumped to `v2.5.2`, matching the version now pinned in CI.
+- **CI hygiene:** `permissions: contents: read` and `concurrency` (cancel
+  superseded runs) on both workflows; dependabot groups action bumps into one PR.
+
 ### Observability: dashboards with graphs, Prometheus `/metrics`, `/health`
 - **Stats layer** (`utils/stats`) — site and per-subreddit totals, a zero-padded
   daily-activity series (posts/comments/signups), and top-subreddit /

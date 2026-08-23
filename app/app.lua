@@ -95,8 +95,10 @@ function app:default_route()
 end
 
 function app:handle_404()
-	error("Failed to find route: " .. self.req.request_uri .. "\n")
-	return { status = 404, layout = true, "Not Found!" }
+	-- This used to call `error(...)` first (Lapis's default), which handle_error
+	-- turns into a 500 page -- so every unknown URL answered 500 and the return
+	-- below it never ran. Answer a real 404; default_route has logged the path.
+	return { status = 404, "Not Found!" }
 end
 
 app:enable("etlua")
@@ -160,13 +162,9 @@ app:match(
 	r2(require("actions.comment"))
 )
 
-app:match("/test/:comment_id[%d]", r2(require("actions.comment")))
-
--- app:match("about", "/about", function(self) end) -- stub
--- app:match("contact", "/contact", function(self) end) -- stub
--- app:match("help", "/help", function(self) end) -- stub
-
-app:match("/console", console.make()) -- only available in Development builds
+-- lapis.console.make() answers 404 outside the development environment, so this
+-- route is inert in test/production.
+app:match("/console", console.make())
 
 require("src.api")(app) -- JSON API endpoints (Reddit-flavoured, under /api)
 require("src.auth")(app) -- User-authenticated endpoints

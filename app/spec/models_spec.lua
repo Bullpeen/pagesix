@@ -186,6 +186,17 @@ describe("pagesix models", function()
 		assert.is_truthy(make_user("grace"))
 	end)
 
+	it("rejects a user row with no password at all", function()
+		-- The constraint used to `print` and fall through, so a passwordless row
+		-- was inserted happily.
+		local user, err = Users:create({
+			user_name = "nopass",
+			user_email = "nopass@example.com",
+		})
+		assert.is_nil(user)
+		assert.same("Password is required", err)
+	end)
+
 	it("get_listing filters by link domain", function()
 		local user = make_user("heidi")
 		local sub = Forum:create({ name = "technology", creator_id = user.id })

@@ -62,7 +62,10 @@ local Users = Model:extend("users", {
 					)
 				end
 			else
-				print("ERROR, value is empty")
+				-- A missing value is an error, like user_name above. Returning
+				-- nothing here (after a `print` nobody sees) let a row with no
+				-- password at all be inserted.
+				return "Password is required"
 			end
 		end,
 
@@ -98,6 +101,18 @@ local Users = Model:extend("users", {
 		},
 	},
 })
+
+--- Name of the synthetic account reserved for authorless content. Seeded by
+-- migration [10] (and backfilled by [111]) with an unusable password, so it can
+-- never be logged into. Named here so migrations and app code share one
+-- spelling of it.
+Users.ANONYMOUS = "anonymous_coward"
+
+--- The synthetic anonymous account, or nil if the seed migration has not run.
+-- @treturn table|nil
+function Users:anonymous()
+	return self:find({ user_name = Users.ANONYMOUS })
+end
 
 --- Karma: net score (upvotes - downvotes) of all votes cast on this user's
 -- posts and comments.

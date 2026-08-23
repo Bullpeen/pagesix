@@ -4,6 +4,7 @@
 local Comments = require("models.comments")
 local Forum = require("src.models.forum")
 local Posts = require("src.models.posts")
+local log = require("src.utils.log").tag("post")
 local paginate_thread = require("src.utils.paginate_thread")
 
 -- Root comments per page on a post.
@@ -11,28 +12,24 @@ local COMMENTS_PER_PAGE = 25
 
 return {
 	before = function(self)
-		-- self.params.subreddit
-		-- self.params.post_id
-		-- ? self.params.title_stub
-
-		-- Check if subreddit is nil or empty
+		-- Check if subreddit is nil or empty. (`sub_name` is nil here, so it must
+		-- not be concatenated raw -- doing so raised, turning the intended
+		-- redirect into a 500.)
 		local sub_name = self.params.subreddit
 		if sub_name == nil or sub_name == "" then
-			print("Subreddit is unknown: " .. sub_name)
+			log.notice("missing subreddit param")
 			return self:write({ redirect_to = self:url_for("homepage") })
 		end
 
-		-- print("Looking up " .. self.params.subreddit)
-		local subreddit = Forum:find({ name = self.params.subreddit })
-		-- require 'pl.pretty'.dump(subreddit)
+		local subreddit = Forum:find({ name = sub_name })
 		if subreddit == nil then
-			print("Subreddit is unknown: " .. sub_name)
+			log.notice("unknown subreddit: " .. sub_name)
 			return self:write({ redirect_to = self:url_for("homepage") })
 		end
 
 		local post_data, err = Posts:find(self.params.post_id)
 		if err then
-			print("WHOOPS!" .. err)
+			log.error("post lookup failed: " .. tostring(err))
 		end
 		if not post_data then
 			return self:write({ redirect_to = self:url_for("homepage") })
@@ -56,9 +53,6 @@ return {
 
 		self.tags = require("src.models.tags"):for_post(post_data.id)
 		self.score = require("src.models.votes"):post_score(post_data.id)
-
-		-- print("Post data:")
-		-- require 'pl.pretty'.dump(post_data[1])
 
 		self.subreddit = self.params.subreddit
 		self.post_id = self.params.post_id

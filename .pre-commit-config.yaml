@@ -1,4 +1,9 @@
-- repo: https://github.com/JohnnyMorganz/StyLua
-  rev: v0.20.0
-  hooks:
-    - id: stylua  # or stylua-system / stylua-github
+# `repos:` is required -- without it pre-commit rejects the file outright
+# ("expected a top level mapping"), so the hook never ran.
+repos:
+  # Keep this rev in step with the stylua version pinned in
+  # .github/workflows/spec.yml, or CI and the hook will disagree.
+  - repo: https://github.com/JohnnyMorganz/StyLua
+    rev: v2.5.2
+    hooks:
+      - id: stylua # or stylua-system / stylua-github
