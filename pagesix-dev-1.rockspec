@@ -21,16 +21,18 @@ dependencies = {
   "luabitop",
   "moonscript",
 
-  "lapis >= 1.18.0",   -- latest; faster url_for, db.clause OR-combining, simulate_request
+  "lapis >= 1.19.0",   -- latest; faster url_for, db.clause OR-combining, simulate_request
 
+  -- NB: `~> x.y` is luarocks' pessimistic operator -- it means ">= x.y, < x.(y+1)",
+  -- so these have to be bumped by hand to pick up a new minor release.
   "http ~> 0.4",
-  "lapis-annotate ~> 2.0",
-  "lapis-bayes ~> 1.3",
+  "lapis-annotate ~> 2.1",
+  "lapis-bayes ~> 1.6",
   "lapis-console ~> 1.2",
   "lapis-redis ~> 1.0",
   "luajit-geoip ~> 2.1",
-  "tableshape >= 2.6",    -- Test the shape or structure of a Lua table, https://luarocks.org/modules/leafo/tableshape
-  "web_sanitize ~> 1.5",  -- Lua library for sanitizing untrusted HTML, https://luarocks.org/modules/leafo/web_sanitize
+  "tableshape >= 2.7",    -- Test the shape or structure of a Lua table, https://luarocks.org/modules/leafo/tableshape
+  "web_sanitize ~> 1.7",  -- Lua library for sanitizing untrusted HTML, https://luarocks.org/modules/leafo/web_sanitize
 
   "basexx",               -- base2, base16, base32, base64, base85 encoding & decoding
   "cmark",                -- markdown

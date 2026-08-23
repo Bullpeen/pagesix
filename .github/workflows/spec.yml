@@ -2,16 +2,26 @@ name: "spec"
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
+# A newer push to the same branch/PR makes the in-flight run irrelevant.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  # stylua formatting check (config in .stylua.toml, ignores in .styluaignore)
+  # stylua formatting check (config in .stylua.toml, ignores in .styluaignore).
+  # The version is pinned (not `latest`) so CI, the pre-commit hook, and local
+  # runs all format identically -- see .pre-commit-config.yaml.
   format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: JohnnyMorganz/stylua-action@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          version: latest
+          version: 2.5.2
           args: --check app
 
   # this runs the test suite inside the production docker image (the
@@ -20,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: build
         run: docker build -t pagesix-test .
@@ -47,13 +57,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: leafo/gh-actions-lua@master
+      - uses: leafo/gh-actions-lua@v13
         with:
           luaVersion: ${{ matrix.luaVersion }}
 
-      - uses: leafo/gh-actions-luarocks@master
+      - uses: leafo/gh-actions-luarocks@v6
 
       - name: build
         run: |

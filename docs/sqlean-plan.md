@@ -1,12 +1,12 @@
 # sqlean integration plan
 
 How we use [sqlean](https://github.com/nalgeon/sqlean) loadable SQLite
-extensions. **Status: implemented.** The bundle is pinned at `0.28.3` in the
+extensions. **Status: implemented.** The bundle is pinned at `0.28.4` in the
 `Dockerfile` and loaded into Lapis's live connection per worker by
 `src/utils/sqlite_ext.lua`. Every feature that uses it has a Lua fallback, so the
 app still boots and the test suite still runs where the `.so` is absent.
 
-Note on function names: the docs at nalgeon/sqlean (even the `0.28.3` tag) only
+Note on function names: the docs at nalgeon/sqlean (even the `0.28.4` tag) only
 list the `fuzzy_*`-prefixed names (`fuzzy_jarowin`, `fuzzy_damlev`), but the
 actual bundled `sqlean.so` *also* registers unprefixed aliases — `jaro_winkler`,
 `dlevenshtein`, `levenshtein`, `soundex`, plus `regexp_like`/`regexp_substr`/
@@ -39,7 +39,7 @@ actual bundled `sqlean.so` *also* registers unprefixed aliases — `jaro_winkler
 ## Implementation steps
 
 ### 1. Bundle the binary (Dockerfile) — done
-The `Dockerfile` downloads the pinned `0.28.3` Linux x86-64 single-file bundle
+The `Dockerfile` downloads the pinned `0.28.4` Linux x86-64 single-file bundle
 (`sqlean.so`, all modules) to `/usr/local/lib/sqlite/`. One bundle is simpler
 than cherry-picking per-module `.so`s and the size cost is negligible. The build
 target is amd64; on arm64 macOS run the suite under Docker (see below).
