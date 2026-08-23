@@ -11,6 +11,7 @@
 -- block (see config.lua); it is a no-op outside OpenResty (CLI, tests).
 
 local feed_import = require("src.utils.feed_import")
+local log = require("src.utils.log").tag("feed_scheduler")
 
 local M = {}
 
@@ -23,12 +24,6 @@ M.defaults = {
 }
 
 local started = false -- per-worker guard: register the timer at most once
-
-local function log(level, msg)
-	if ngx and ngx.log and level then
-		ngx.log(level, "[feed_scheduler] " .. msg)
-	end
-end
 
 --- Effective config: the `feed_scheduler` block merged over the defaults.
 function M.config()
@@ -80,14 +75,11 @@ function M.run_once(opts)
 	M.release_lock(opts)
 
 	if not ok then
-		log(ngx and ngx.ERR, "refresh failed: " .. tostring(imported))
+		log.error("refresh failed: " .. tostring(imported))
 		return nil
 	end
 	if (checked or 0) > 0 then
-		log(
-			ngx and ngx.NOTICE,
-			string.format("checked %d feed(s), imported %d post(s)", checked, imported or 0)
-		)
+		log.notice(string.format("checked %d feed(s), imported %d post(s)", checked, imported or 0))
 	end
 	return imported or 0
 end
@@ -100,7 +92,7 @@ function M.tick(premature)
 	end
 	local ok, err = pcall(M.run_once)
 	if not ok then
-		log(ngx and ngx.ERR, "tick error: " .. tostring(err))
+		log.error("tick error: " .. tostring(err))
 	end
 end
 
@@ -121,14 +113,11 @@ function M.start()
 
 	local ok, err = ngx.timer.every(opts.interval, M.tick)
 	if not ok then
-		log(ngx.ERR, "failed to register timer: " .. tostring(err))
+		log.error("failed to register timer: " .. tostring(err))
 		return false
 	end
 	started = true
-	log(
-		ngx.NOTICE,
-		string.format("started (every %ds, base %ds)", opts.interval, opts.base_interval)
-	)
+	log.notice(string.format("started (every %ds, base %ds)", opts.interval, opts.base_interval))
 	return true
 end
 

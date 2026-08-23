@@ -1,39 +1,15 @@
 --- Misc utils
 -- @module utils.misc
 
+local log = require("src.utils.log").tag("misc")
+
 local Misc = {}
 Misc.__index = Misc
 
-math.randomseed(os.clock() * 100000000000)
-
-local io = require("io")
-
-function Misc:File_exists(path)
-	local file = io.open(path, "rb") -- r read mode and b binary mode
-	if not file then
-		return nil
-	end
-end
-
-function Misc:read_file(path)
-	local file = io.open(path, "rb") -- r read mode and b binary mode
-	if not file then
-		return nil
-	end
-
-	local content = file:read("*a") -- *a or *all reads the whole file
-	file:close()
-
-	return content
-end
-
--- function Misc:Validate_email(input)
--- 	if input:match(".+@.+%..+") then
--- 		return true
--- 	else
--- 		return false, "%s is not a valid email"
--- 	end
--- end
+-- Seed once per process. `os.clock()` alone is CPU time -- at require time it is
+-- always a hair above zero, so every process got near-identical seeds and the
+-- generators below produced the same "random" data run after run.
+math.randomseed(os.time() + math.floor(os.clock() * 1000000))
 
 function Misc:rss_feed(subreddit, url)
 	local http = require("socket.http")
@@ -50,7 +26,7 @@ function Misc:rss_feed(subreddit, url)
 	-- need not correspond to forum.id.
 	local sub = Forum:find({ name = subreddit })
 	if not sub then
-		print("rss_feed: unknown subreddit " .. tostring(subreddit))
+		log.warn("rss_feed: unknown subreddit " .. tostring(subreddit))
 		return
 	end
 
@@ -73,11 +49,13 @@ function Misc:rss_feed(subreddit, url)
 				user_id = users[math.random(#users)].id,
 			})
 			if not s then
-				print("error creating post from feed: " .. tostring(e))
+				log.error("error creating post from feed: " .. tostring(e))
 			end
 		end
 	else
-		print("! RSS request failed for " .. tostring(url) .. ". Status: " .. tostring(status))
+		log.error(
+			"RSS request failed for " .. tostring(url) .. " (status " .. tostring(status) .. ")"
+		)
 	end
 end
 
@@ -95,7 +73,6 @@ function Misc:generate_posts(subreddit_id, n)
 		return
 	end
 
-	-- print("!!! generating " .. n .. " posts")
 	for i = 1, n do
 		local p_tbl = {
 			title = Lorem:sentence(),
@@ -106,7 +83,7 @@ function Misc:generate_posts(subreddit_id, n)
 
 		local s, e = Posts:create(p_tbl)
 		if not s then
-			print("error creating post: " .. tostring(e))
+			log.error("error creating post: " .. tostring(e))
 			break
 		end
 	end
@@ -129,15 +106,9 @@ function Misc:generate_comments(post_id, n)
 			body = Lorem:paragraph(),
 		}
 
-		-- set a variable 25% chance of creating a top-level comment
-		-- local coin = math.random(1, 4)
-		-- if coin > 3 then
-		-- 	tbl.parent_comment_id = math.random(1, i)
-		-- end
-
 		local s, e = Comments:create(tbl)
 		if not s then
-			print("error creating comment: " .. tostring(e))
+			log.error("error creating comment: " .. tostring(e))
 			break
 		end
 	end

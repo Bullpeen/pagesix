@@ -62,7 +62,10 @@ local Users = Model:extend("users", {
 					)
 				end
 			else
-				print("ERROR, value is empty")
+				-- A missing value is an error, like user_name above. Returning
+				-- nothing here (after a `print` nobody sees) let a row with no
+				-- password at all be inserted.
+				return "Password is required"
 			end
 		end,
 

@@ -13,6 +13,8 @@
 -- library. lsqlite3's `conn:load_extension(path)` both flips on the loader and
 -- loads the library, returning `true` on success or `false, errmsg` on failure.
 
+local warn = require("src.utils.log").tag("sqlite_ext").warn
+
 local M = {}
 
 -- Default extensions to load when SQLITE_EXTENSIONS is unset. The Dockerfile
@@ -32,15 +34,6 @@ local function configured_paths()
 		paths[#paths + 1] = path
 	end
 	return paths
-end
-
-local function warn(msg)
-	msg = "[sqlite_ext] " .. msg
-	if ngx and ngx.log then
-		ngx.log(ngx.ERR, msg) -- luacheck: ignore
-	else
-		io.stderr:write(msg .. "\n")
-	end
 end
 
 -- True when `value` is an lsqlite3 connection handle (userdata exposing a

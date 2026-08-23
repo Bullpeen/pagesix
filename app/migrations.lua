@@ -15,7 +15,9 @@ local Posts = require("src.models.posts")
 local Subscriptions = require("src.models.subscriptions")
 local Users = require("src.models.users")
 
-math.randomseed(os.clock() * 100000000000)
+-- See the note in src/utils/misc.lua: os.clock() at startup is ~0, so seeding
+-- from it alone made every run's "random" seed data identical.
+math.randomseed(os.time() + math.floor(os.clock() * 1000000))
 
 -- Locate a seed-data file (e.g. initial_subs.json) across the layouts we run in.
 -- The file ships under the app tree at `app/data/`, but `lapis migrate` runs
