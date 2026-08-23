@@ -2,6 +2,12 @@
 -- @script pagesix.config
 
 local config = require("lapis.config")
+local secret = require("src.utils.secret")
+
+-- The environment actually being started. Every config() block below is
+-- evaluated on every boot, so `secret.resolve` only refuses to start when the
+-- *active* environment is the one missing its signing key.
+local active_env = secret.active_env()
 
 -- Maximum file size
 local body_size = "1m"
@@ -92,7 +98,9 @@ config("development", {
 	num_workers = "1",
 	name = "[DEVEL] Page Six",
 	session_name = "dev_app_session",
-	secret = os.getenv("SESSION_SECRET") or "dev-insecure-secret-change-me",
+	secret = secret.resolve("development", active_env, {
+		fallback = "dev-insecure-secret-change-me",
+	}),
 	admin_usernames = admin_usernames(),
 	oauth = oauth_providers(),
 	measure_performance = true,
@@ -145,7 +153,8 @@ config("production", {
 	num_workers = "3",
 	name = "Page Six",
 	session_name = "prod_app_session",
-	secret = os.getenv("LAPIS_SECRET"),
+	-- No fallback: refuses to boot rather than serve unsigned/erroring cookies.
+	secret = secret.resolve("production", active_env),
 	admin_usernames = admin_usernames(),
 	oauth = oauth_providers(),
 	logging = {
