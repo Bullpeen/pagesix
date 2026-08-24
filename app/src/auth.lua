@@ -48,6 +48,7 @@ local function auth(app)
 	)
 	app:match("crosspost", "/post/:post_id[%d]/crosspost", r2(require("actions.crosspost")))
 	app:match("inbox", "/inbox", r2(require("actions.inbox")))
+	app:match("account_delete", "/account/delete", r2(require("actions.account_delete")))
 
 	-- app:match("prefs", "/prefs", function(self) end) -- stub
 

@@ -114,6 +114,103 @@ function Users:anonymous()
 	return self:find({ user_name = Users.ANONYMOUS })
 end
 
+--- The synthetic anonymous account, creating it if it is not there yet.
+-- Idempotent. Its password is the bcrypt digest of a value nobody holds, so
+-- `Password.verify` can never match it and the account cannot be logged into.
+-- Called from migrations [10]/[111] and from `delete_account`, which needs the
+-- row to exist before it can reassign anything to it.
+-- @treturn table the anonymous user row
+function Users:ensure_anonymous()
+	local existing = self:anonymous()
+	if existing then
+		return existing
+	end
+	local Password = require("src.utils.password")
+	local unusable = Password.hash("anonymous-" .. tostring(os.time()) .. tostring(os.clock()))
+	local user, err = self:create({
+		user_name = Users.ANONYMOUS,
+		user_email = "anonymous@localhost",
+		user_pass = unusable,
+	})
+	-- Fail loudly: silently dropping this is the bug migration [10] shipped with.
+	assert(user, "could not create " .. Users.ANONYMOUS .. ": " .. tostring(err))
+	return user
+end
+
+-- Rows that belong to the person rather than to the site: destroyed outright
+-- when an account is deleted. `user_profiles` keys off `users.id` directly.
+local PERSONAL_TABLES = {
+	{ "subscriptions", "user_id" },
+	{ "saved_posts", "user_id" },
+	{ "hidden_posts", "user_id" },
+	{ "notifications", "user_id" },
+	{ "password_resets", "user_id" },
+	{ "oauth_identities", "user_id" },
+	{ "roles", "user_id" },
+	{ "site_roles", "user_id" },
+	{ "moderators", "user_id" },
+	{ "user_profiles", "id" },
+}
+
+-- Authored/attributed rows: kept, but reassigned to the anonymous account so
+-- threads, communities and the moderation log stay readable. `votes` is handled
+-- separately (see below) because of its uniqueness constraint.
+local REASSIGNED_TABLES = {
+	{ "posts", "user_id" },
+	{ "comments", "user_id" },
+	{ "forum", "creator_id" },
+	{ "modlog", "mod_id" },
+}
+
+--- Permanently delete an account.
+--
+-- Authored content survives, reassigned to `Users.ANONYMOUS`: deleting an
+-- account should not blow holes in other people's comment threads or orphan a
+-- community. Everything personal -- subscriptions, saved/hidden posts, the
+-- inbox, credentials, OAuth links, roles -- is destroyed.
+--
+-- Votes are reassigned rather than deleted so scores do not silently shift when
+-- someone leaves; `UPDATE OR IGNORE` skips any row that would collide with a
+-- vote the anonymous account already holds, and the leftovers are removed.
+--
+-- Runs in a transaction: every foreign key into `users` is NO ACTION, so a
+-- partial run would leave the row undeletable.
+--
+-- @tparam number user_id
+-- @treturn boolean|nil true on success, nil + message otherwise
+function Users:delete_account(user_id)
+	local user = self:find(user_id)
+	if not user then
+		return nil, "No such user"
+	end
+	if user.user_name == Users.ANONYMOUS then
+		return nil, "The anonymous account cannot be deleted"
+	end
+
+	local anon = self:ensure_anonymous()
+	db.query("BEGIN")
+	local ok, err = pcall(function()
+		for _, spec in ipairs(REASSIGNED_TABLES) do
+			db.update(spec[1], { [spec[2]] = anon.id }, { [spec[2]] = user.id })
+		end
+		-- Keep the vote where the anonymous account has none for that target;
+		-- drop the row where it already does (UNIQUE(user_id, post_id, comment_id)).
+		db.query("UPDATE OR IGNORE votes SET user_id = ? WHERE user_id = ?", anon.id, user.id)
+		db.query("DELETE FROM votes WHERE user_id = ?", user.id)
+
+		for _, spec in ipairs(PERSONAL_TABLES) do
+			db.delete(spec[1], { [spec[2]] = user.id })
+		end
+		db.delete("users", { id = user.id })
+	end)
+	if not ok then
+		db.query("ROLLBACK")
+		return nil, tostring(err)
+	end
+	db.query("COMMIT")
+	return true
+end
+
 --- Karma: net score (upvotes - downvotes) of all votes cast on this user's
 -- posts and comments.
 -- @tparam number user_id
