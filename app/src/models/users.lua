@@ -80,22 +80,27 @@ local Users = Model:extend("users", {
 	},
 
 	relations = {
-		{ "user_profile", has_one = "UserProfiles" },
 		{ "subscriptions", has_many = "Subscriptions" },
 		{ "posts", has_many = "Posts" },
 		{ "votes", has_many = "Votes" },
 		{ "comments", has_many = "Comments" },
+		-- Live (not soft-deleted) authored rows. These filtered on
+		-- `deleted_at = nil`, which was two mistakes at once: posts and comments
+		-- carry an integer `deleted` flag and have no `deleted_at` column, and a
+		-- `nil` value in a Lua table means the key is simply absent -- so the
+		-- clause was empty and nothing was filtered. `deleted = 0` is the real
+		-- condition. (`db.NULL` is what expresses "IS NULL" to Lapis.)
 		{
 			"authored_posts",
 			has_many = "Posts",
-			where = { deleted_at = nil },
+			where = { deleted = 0 },
 			order = "id desc",
 			key = "user_id",
 		},
 		{
 			"authored_comments",
 			has_many = "Comments",
-			where = { deleted_at = nil },
+			where = { deleted = 0 },
 			order = "id desc",
 			key = "user_id",
 		},
@@ -138,7 +143,8 @@ function Users:ensure_anonymous()
 end
 
 -- Rows that belong to the person rather than to the site: destroyed outright
--- when an account is deleted. `user_profiles` keys off `users.id` directly.
+-- when an account is deleted. (`moderators` and `user_profiles` were on this
+-- list until migration [113] dropped both tables.)
 local PERSONAL_TABLES = {
 	{ "subscriptions", "user_id" },
 	{ "saved_posts", "user_id" },
@@ -148,8 +154,6 @@ local PERSONAL_TABLES = {
 	{ "oauth_identities", "user_id" },
 	{ "roles", "user_id" },
 	{ "site_roles", "user_id" },
-	{ "moderators", "user_id" },
-	{ "user_profiles", "id" },
 }
 
 -- Authored/attributed rows: kept, but reassigned to the anonymous account so

@@ -31,6 +31,30 @@ function Roles:assign(subreddit_id, user_id, role)
 	return self:create({ subreddit_id = subreddit_id, user_id = user_id, role = role })
 end
 
+--- Usernames who moderate a forum: its owners and moderators, owners first.
+-- The subreddit sidebar reads this. (Before the RBAC migration this lived in
+-- the `moderators` join table, dropped in migration [113].)
+-- @tparam number subreddit_id
+-- @treturn table array of user names
+function Roles:moderators(subreddit_id)
+	if not subreddit_id then
+		return {}
+	end
+	local db = require("lapis.db")
+	local rows = db.select(
+		[[u.user_name AS name FROM roles r
+			INNER JOIN users u ON r.user_id = u.id
+			WHERE r.subreddit_id = ? AND r.role IN ('owner', 'moderator')
+			ORDER BY CASE r.role WHEN 'owner' THEN 0 ELSE 1 END, u.user_name]],
+		tonumber(subreddit_id)
+	)
+	local names = {}
+	for _, row in ipairs(rows) do
+		names[#names + 1] = row.name
+	end
+	return names
+end
+
 --- The role string a user holds in a forum, or nil if they hold none.
 -- @tparam number subreddit_id
 -- @tparam number user_id

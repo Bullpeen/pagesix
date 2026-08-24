@@ -22,6 +22,9 @@ return {
 		end
 
 		self.subreddit = sub.name
+		-- The sidebar's Moderators list. It rendered nothing until now because
+		-- no action ever set this.
+		self.moderators = require("src.models.roles"):moderators(sub.id)
 		local since = require("src.utils.timewindow")(self.params.t)
 		-- `sticky_first` puts the moderator-pinned posts at the top of the
 		-- ORDER BY, keeping their relative order within the chosen sort -- the

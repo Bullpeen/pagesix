@@ -52,7 +52,8 @@ local Forum = Model:extend("forum", {
 
 	relations = {
 		{ "creator", belongs_to = "Users" },
-		{ "moderators", has_many = "Users" },
+		-- No `moderators` relation: it is not a foreign key on `users` but a
+		-- role row in `roles` (see Roles:moderators).
 		{ "subscribers", has_many = "Subscriptions" },
 		{ "posts", has_many = "Posts" },
 	},

@@ -8,6 +8,28 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Dead schema and silently-broken relations removed
+- **Dropped `moderators`** (migration `[113]`). `[100]` moved its rows into
+  `roles` and `Forum:add_moderator` has written to `roles` ever since, so the
+  table had been inert. `[100]`'s legacy backfill now skips the step when the
+  table is absent rather than raising if it is ever re-run.
+- **Dropped `user_profiles`** — created in `[1]`, never read or written by any
+  code path, so empty by construction.
+- **Dropped two redundant vote indexes.** `votes_post_id_idx` and
+  `votes_comment_id_idx` are leading-column prefixes of wider indexes SQLite
+  uses for the same lookups; keeping them only taxed writes.
+- **Two relations filtered nothing.** `authored_posts`/`authored_comments` asked
+  for `deleted_at = nil` — two mistakes at once: posts and comments have no
+  `deleted_at` column (their soft-delete flag is the integer `deleted`), and a
+  `nil` value in a Lua table means the key is simply absent, so the clause was
+  empty. Now `deleted = 0`, with specs.
+- **The subreddit sidebar's Moderators list now renders.** The block existed but
+  no action ever assigned `moderators`, so it was always skipped. `Roles:moderators`
+  supplies it — owners first, then moderators.
+- Removed `Forum`'s malformed `{ "moderators", has_many = "Users" }` relation
+  (moderation is a `roles` row, not a foreign key on `users`) and the
+  now-unused `models/moderators.lua`.
+
 ### Listings rank and page in SQL
 - **Every listing page used to read the whole table.** `Posts:get_listing` had
   no `LIMIT`; `utils/sort` ranked the rows in Lua and `utils/paginate` sliced 25
