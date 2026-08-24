@@ -8,6 +8,24 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### CHECK constraints on the enum-ish columns
+- Every table was already `STRICT`, so column *types* were enforced — but no
+  `CHECK` existed anywhere, so **values** were not. `votes.upvote = 7` was
+  storable, and since the score reads
+  `CASE WHEN upvote = 1 THEN 1 ELSE -1 END`, any stray value silently counted as
+  a downvote.
+- Migration `[114]` constrains `votes.upvote`, `notifications.kind` and `seen`,
+  `roles.role`, and `site_roles.role`.
+- SQLite has no `ALTER TABLE ... ADD CONSTRAINT`, so each table is rebuilt
+  (rename / create / copy / drop, as `[105]` did). All four are leaf tables, so
+  no foreign key can be orphaned; every index is recreated afterwards, including
+  `[112]`'s partial uniques on `votes`, and the spec asserts they are back and
+  still enforcing.
+- `upvote` is normalized during the copy (anything that is not 1 becomes 0),
+  which is exactly how the app already read it. `posts`/`comments` were left
+  alone: they carry the FTS5 triggers, and their unconstrained columns are
+  cosmetic flags. Recorded in `docs/sqlite-features.md`.
+
 ### API serialization no longer costs a query per row
 - **`public_id` was minted lazily**, so every API row that had never been
   serialized cost an extra `SELECT` (and an `UPDATE`) inside

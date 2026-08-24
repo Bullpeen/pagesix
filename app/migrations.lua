@@ -980,6 +980,137 @@ return {
 		db.query("DROP INDEX IF EXISTS votes_comment_id_idx")
 	end,
 
+	-- CHECK constraints on the columns whose domain was only ever enforced in
+	-- Lua. Every table is already STRICT, so types are guaranteed but *values*
+	-- were not: nothing stopped `upvote = 7` or `role = 'wizard'` reaching the
+	-- database, and `votes.upvote` in particular is read as
+	-- `CASE WHEN upvote = 1 THEN 1 ELSE -1 END`, so any stray value silently
+	-- counted as a downvote.
+	--
+	-- SQLite has no `ALTER TABLE ... ADD CONSTRAINT`, so each table is rebuilt
+	-- (the same rename/create/copy/drop shape migration [105] used). All four
+	-- are leaf tables -- no foreign key points *at* them -- so the rebuild
+	-- cannot orphan a reference. Indexes live on the table, so every one has to
+	-- be recreated afterwards, including [112]'s partial uniques.
+	--
+	-- The copies carry all rows. `upvote` is normalized on the way through
+	-- (anything that is not 1 becomes 0), which is exactly how the app already
+	-- reads it. The text enums are copied as-is: every writer uses a fixed
+	-- literal, so a violation would mean data this schema never should have
+	-- held, and failing loudly beats silently dropping a role or notification.
+	[114] = function()
+		local rebuild = function(name, columns, copy, indexes)
+			db.query("ALTER TABLE " .. name .. " RENAME TO " .. name .. "_old")
+			schema.create_table(name, columns, opts)
+			db.query(
+				("INSERT INTO %s (%s) SELECT %s FROM %s_old"):format(
+					name,
+					table.concat(copy.into, ", "),
+					table.concat(copy.from, ", "),
+					name
+				)
+			)
+			db.query("DROP TABLE " .. name .. "_old")
+			for _, sql in ipairs(indexes) do
+				db.query(sql)
+			end
+		end
+
+		rebuild("votes", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer },
+			{ "post_id", types.integer },
+			{ "comment_id", types.integer({ null = true }) },
+			{ "upvote", types.integer({ default = true }) },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+			"FOREIGN KEY(post_id) REFERENCES posts(id)",
+			"FOREIGN KEY(comment_id) REFERENCES comments(id)",
+			"UNIQUE(user_id, post_id, comment_id)",
+			"CHECK (upvote IN (0, 1))",
+		}, {
+			into = {
+				"id",
+				"user_id",
+				"post_id",
+				"comment_id",
+				"upvote",
+				"created_at",
+				"updated_at",
+			},
+			from = {
+				"id",
+				"user_id",
+				"post_id",
+				"comment_id",
+				"CASE WHEN upvote = 1 THEN 1 ELSE 0 END",
+				"created_at",
+				"updated_at",
+			},
+		}, {
+			[[CREATE INDEX votes_user_id_idx ON votes (user_id)]],
+			[[CREATE INDEX votes_post_id_comment_id_upvote_idx
+				ON votes (post_id, comment_id, upvote)]],
+			[[CREATE INDEX votes_comment_id_upvote_idx ON votes (comment_id, upvote)]],
+			[[CREATE UNIQUE INDEX votes_user_post_uniq
+				ON votes (user_id, post_id) WHERE comment_id IS NULL]],
+			[[CREATE UNIQUE INDEX votes_user_comment_uniq
+				ON votes (user_id, comment_id) WHERE comment_id IS NOT NULL]],
+		})
+
+		local role_columns = { "id", "user_id", "role", "created_at", "updated_at" }
+		rebuild("site_roles", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer },
+			{ "role", types.text },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+			"UNIQUE(user_id, role)",
+			"CHECK (role IN ('admin'))",
+		}, { into = role_columns, from = role_columns }, {
+			[[CREATE INDEX site_roles_user_id_idx ON site_roles (user_id)]],
+		})
+
+		local forum_role_columns =
+			{ "id", "subreddit_id", "user_id", "role", "created_at", "updated_at" }
+		rebuild("roles", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "subreddit_id", types.integer },
+			{ "user_id", types.integer },
+			{ "role", types.text },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(subreddit_id) REFERENCES forum(id)",
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+			"UNIQUE(subreddit_id, user_id)",
+			"CHECK (role IN ('owner', 'moderator', 'member'))",
+		}, { into = forum_role_columns, from = forum_role_columns }, {
+			[[CREATE INDEX roles_subreddit_id_user_id_idx ON roles (subreddit_id, user_id)]],
+		})
+
+		local notification_columns =
+			{ "id", "user_id", "comment_id", "post_id", "kind", "seen", "created_at", "updated_at" }
+		rebuild("notifications", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer },
+			{ "comment_id", types.integer({ null = true }) },
+			{ "post_id", types.integer({ null = true }) },
+			{ "kind", types.text },
+			{ "seen", types.integer({ default = false }) },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+			"FOREIGN KEY(comment_id) REFERENCES comments(id)",
+			"FOREIGN KEY(post_id) REFERENCES posts(id)",
+			"CHECK (kind IN ('post_reply', 'comment_reply', 'mention'))",
+			"CHECK (seen IN (0, 1))",
+		}, { into = notification_columns, from = notification_columns }, {
+			[[CREATE INDEX notifications_user_id_idx ON notifications (user_id)]],
+		})
+	end,
+
 	-- classify text : https://github.com/leafo/lapis-bayes
 	[1439944992] = require("lapis.bayes.schema").run_migrations,
 }
