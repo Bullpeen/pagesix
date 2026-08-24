@@ -690,8 +690,16 @@ return {
 		for _, forum in ipairs(Forum:select()) do
 			Roles:assign(forum.id, forum.creator_id, "owner")
 		end
-		for _, m in ipairs(db.select("subreddit_id, user_id FROM moderators")) do
-			Roles:assign(m.subreddit_id, m.user_id, "moderator")
+		-- Migration [113] drops `moderators` once this backfill has moved its
+		-- rows into `roles`. Lapis runs each migration once, so [100] never runs
+		-- after [113] in practice -- but re-running a migration should not raise,
+		-- and with the table gone there is nothing left to read.
+		local legacy =
+			db.select("name FROM sqlite_master WHERE type = 'table' AND name = 'moderators'")
+		if legacy[1] then
+			for _, m in ipairs(db.select("subreddit_id, user_id FROM moderators")) do
+				Roles:assign(m.subreddit_id, m.user_id, "moderator")
+			end
 		end
 	end,
 
@@ -951,6 +959,25 @@ return {
 			CREATE UNIQUE INDEX IF NOT EXISTS votes_user_comment_uniq
 			ON votes (user_id, comment_id) WHERE comment_id IS NOT NULL
 		]])
+	end,
+
+	-- Drop schema nothing reads any more.
+	--
+	-- `moderators` was superseded by `roles` in [100], which backfilled every
+	-- row it held; `Forum:add_moderator` has written to `roles` ever since, so
+	-- the table has been inert (its data lives on in `roles`). `user_profiles`
+	-- was created in [1] and has no writer at all -- no code path has ever
+	-- inserted a row, so it is empty by construction.
+	--
+	-- The two vote indexes are leading-column prefixes of wider ones
+	-- (`votes_post_id_comment_id_upvote_idx`, `votes_comment_id_upvote_idx`),
+	-- which SQLite will use for the same lookups; keeping them only taxed every
+	-- write.
+	[113] = function()
+		db.query("DROP TABLE IF EXISTS moderators")
+		db.query("DROP TABLE IF EXISTS user_profiles")
+		db.query("DROP INDEX IF EXISTS votes_post_id_idx")
+		db.query("DROP INDEX IF EXISTS votes_comment_id_idx")
 	end,
 
 	-- classify text : https://github.com/leafo/lapis-bayes

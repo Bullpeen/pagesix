@@ -3,13 +3,13 @@
 -- the Forum:can_moderate back-compat shim and the migration backfill.
 
 local use_test_env = require("lapis.spec").use_test_env
+local db = require("lapis.db")
 
 describe("rbac privileges", function()
 	use_test_env()
 
 	local Users = require("models.users")
 	local Forum = require("src.models.forum")
-	local Moderators = require("src.models.moderators")
 	local Roles = require("src.models.roles")
 	local SiteRoles = require("src.models.site_roles")
 	local Privileges = require("src.utils.privileges")
@@ -121,18 +121,24 @@ describe("rbac privileges", function()
 		assert.same(1, Roles:count("subreddit_id = ? AND user_id = ?", sub.id, u.id))
 	end)
 
-	it("migration [100] backfills creators (owner) and moderators (moderator)", function()
+	it("migration [100] backfills creators as owners, and re-runs safely", function()
 		local owner = make_user("p_bf_owner")
-		local legacy_mod = make_user("p_bf_mod")
 		local sub = Forum:create({ name = "p_backfill", creator_id = owner.id })
-		-- Seed a legacy moderators-table row with no corresponding role row.
-		Moderators:create({ subreddit_id = sub.id, user_id = legacy_mod.id })
 
-		-- Re-running the migration is idempotent (create table if_not_exists,
-		-- assign create-if-absent) and should pick up the legacy row.
+		-- Re-running is idempotent (create table if_not_exists, assign
+		-- create-if-absent). Its legacy `moderators` backfill is now a no-op:
+		-- migration [113] drops that table once its rows have moved into
+		-- `roles`, and [100] skips the step when the table is absent rather
+		-- than raising.
+		migrations[100]()
 		migrations[100]()
 
 		assert.same("owner", Roles:role_for(sub.id, owner.id))
-		assert.same("moderator", Roles:role_for(sub.id, legacy_mod.id))
+	end)
+
+	it("the superseded moderators table is gone", function()
+		local present =
+			db.select("name FROM sqlite_master WHERE type = 'table' AND name = 'moderators'")
+		assert.same(0, #present)
 	end)
 end)

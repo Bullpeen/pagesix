@@ -22,11 +22,11 @@
 	</section>
 <% end %>
 
-<% if moderators and moderators ~= "" then %>
+<% if moderators and #moderators > 0 then %>
 	<section>
 		<h2>Moderators</h2>
 		<ul style="list-style:none;padding:0;margin:0">
-			<% for mod in pairs(moderators) do %>
+			<% for _, mod in ipairs(moderators) do %>
 				<li><a href="/user/<%= mod %>"><%= mod %></a></li>
 			<% end %>
 		</ul>
