@@ -41,6 +41,50 @@ That objection does **not** apply to *static aggregations*, so we now use one:
   activity has no equivalent view — it needs a `sub_id` bind parameter, which a
   view can't take — so `Stats.for_sub` aggregates directly.
 
+## Partial indexes — adopted, including for uniqueness
+
+A partial index (`CREATE INDEX ... WHERE <predicate>`) covers only the rows
+matching its predicate. We use them two ways:
+
+- **Hot-path filtering.** `posts_sub_id_created_at_idx` is built
+  `WHERE deleted = 0 AND locked = 0`, so the listing scan never walks rows it
+  would immediately discard.
+- **Uniqueness over a nullable column (adopted, migration `[112]`).** `votes`
+  was created with `UNIQUE(user_id, post_id, comment_id)`, which *reads* like
+  "one vote per user per target" but is not: **SQLite treats NULLs as distinct
+  in a UNIQUE index**, so for a post vote (`comment_id IS NULL`) the constraint
+  never fires and one user could accumulate any number of votes on a post. The
+  model's find-then-insert masked it single-threaded; production runs three
+  nginx workers, where both can see "no existing row" and insert.
+
+  The fix is two partial unique indexes, one per case, each over only the rows
+  where the columns are non-NULL:
+
+  ```sql
+  CREATE UNIQUE INDEX votes_user_post_uniq
+    ON votes (user_id, post_id)    WHERE comment_id IS NULL;
+  CREATE UNIQUE INDEX votes_user_comment_uniq
+    ON votes (user_id, comment_id) WHERE comment_id IS NOT NULL;
+  ```
+
+  General rule for this schema: **a UNIQUE constraint that includes a nullable
+  column does not constrain the rows where that column is NULL.** Reach for a
+  partial unique index instead.
+
+## UPSERT — adopted where a read-then-write would race
+
+`INSERT ... ON CONFLICT (...) DO UPDATE` performs the whole decision in one
+statement, so concurrent workers cannot both pass a "does it exist?" check and
+both insert. `Votes:cast`/`Votes:set` use it (`models/votes.lua`); the conflict
+target repeats the partial index's `WHERE` clause, which SQLite requires in
+order to match a partial index.
+
+This is the preferred shape for any "create it, or update the one that's there"
+path in this codebase. Several remain on find-then-write (`Roles:assign`,
+`Subscriptions:toggle`, saved/hidden toggles); they are lower-stakes than votes
+because a duplicate there is idempotent rather than score-changing, but the same
+treatment applies when they are next touched.
+
 ## Stored procedures — not available
 
 SQLite has **no** stored procedures or server-side functions in the SQL/PSM

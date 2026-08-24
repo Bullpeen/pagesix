@@ -8,6 +8,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### One vote per user per target, actually enforced
+- **`UNIQUE(user_id, post_id, comment_id)` never fired for post votes.** SQLite
+  treats NULLs as distinct in a UNIQUE index, so with `comment_id IS NULL` the
+  constraint did nothing and a user could hold any number of votes on one post,
+  each counted in its score. Migration `[112]` collapses any duplicates already
+  stored and replaces the guarantee with two **partial unique indexes**, one for
+  post votes and one for comment votes.
+- **`Votes:cast`/`Votes:set` now UPSERT.** They did find-then-insert, which is
+  check-then-act: production runs three nginx workers, so two concurrent votes
+  on the same target could both see "no existing row" and both insert. A single
+  `INSERT ... ON CONFLICT DO UPDATE` closes that.
+- `docs/sqlite-features.md` records both, plus the general rule: a UNIQUE
+  constraint including a nullable column does not constrain the NULL rows.
+
 ### Account deletion
 - **`/account/delete`** — a user can delete their own account. Linked from their
   own profile; requires typing the username, plus the account password unless

@@ -922,6 +922,37 @@ return {
 		Users:ensure_anonymous()
 	end,
 
+	-- One vote per user per target, actually enforced.
+	--
+	-- `votes` was created with UNIQUE(user_id, post_id, comment_id), which reads
+	-- like it guarantees that. It does not: SQLite treats NULLs as distinct in a
+	-- UNIQUE index, so for a *post* vote (comment_id IS NULL) the constraint
+	-- never fires and a user could hold any number of votes on one post. The
+	-- model's find-then-insert hid it single-threaded, but production runs three
+	-- nginx workers, where two concurrent votes both see "no existing row".
+	--
+	-- Two partial indexes say what the original meant: NULL never participates,
+	-- so each case gets its own index over only the rows it applies to.
+	[112] = function()
+		-- Collapse any duplicates already stored, keeping the earliest row --
+		-- otherwise the unique indexes below cannot be built.
+		db.query([[
+			DELETE FROM votes WHERE id NOT IN (
+				SELECT MIN(id) FROM votes WHERE comment_id IS NULL GROUP BY user_id, post_id
+				UNION ALL
+				SELECT MIN(id) FROM votes WHERE comment_id IS NOT NULL GROUP BY user_id, comment_id
+			)
+		]])
+		db.query([[
+			CREATE UNIQUE INDEX IF NOT EXISTS votes_user_post_uniq
+			ON votes (user_id, post_id) WHERE comment_id IS NULL
+		]])
+		db.query([[
+			CREATE UNIQUE INDEX IF NOT EXISTS votes_user_comment_uniq
+			ON votes (user_id, comment_id) WHERE comment_id IS NOT NULL
+		]])
+	end,
+
 	-- classify text : https://github.com/leafo/lapis-bayes
 	[1439944992] = require("lapis.bayes.schema").run_migrations,
 }
