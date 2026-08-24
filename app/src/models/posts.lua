@@ -87,6 +87,9 @@ function Posts:create(values, ...)
 	return Model.create(self, values, ...)
 end
 
+-- New rows arrive with their external id already set (see utils/public_id).
+require("src.utils.public_id").mint_on_create(Posts)
+
 --- Get posts in a thread
 -- @tparam number post_id Post ID
 -- @tparam number offset Offset
@@ -141,7 +144,7 @@ function Posts:get_listing(filters)
 	filters = filters or {}
 
 	local query = [[
-		a.id, a.title, a.url, a.body, a.is_self, a.over_18, a.locked, a.sub_id, a.thumbnail, a.domain,
+		a.id, a.public_id, a.title, a.url, a.body, a.is_self, a.over_18, a.locked, a.sub_id, a.thumbnail, a.domain,
 			a.link_flair, a.stickied, a.comments_locked, a.is_question, a.accepted_comment_id,
 			a.created_at AS age, a.created_at,
 			c.user_name AS author,
@@ -225,7 +228,7 @@ end
 -- Shared projection for search results: the same vote/comment aggregates and
 -- enrichable columns get_listing returns, including the stored `domain`.
 local SEARCH_SELECT = [[
-	a.id, a.title, a.url, a.body, a.is_self, a.over_18, a.locked, a.sub_id, a.thumbnail, a.domain,
+	a.id, a.public_id, a.title, a.url, a.body, a.is_self, a.over_18, a.locked, a.sub_id, a.thumbnail, a.domain,
 		a.link_flair,
 		a.created_at AS age, a.created_at,
 		c.user_name AS author,

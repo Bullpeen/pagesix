@@ -42,6 +42,7 @@ return function()
 		111, -- idempotent backfill of [10]; a no-op here, but keeps this list honest
 		112, -- partial unique indexes on votes
 		113, -- drops the superseded moderators / user_profiles tables
+		114, -- CHECK constraints on the enum-ish columns
 	}) do
 		if migrations[k] then
 			migrations[k]()
