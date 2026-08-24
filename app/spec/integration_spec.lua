@@ -41,9 +41,14 @@ describe("pagesix integration", function()
 		})
 	end
 
+	-- Fixtures the tests below reference by id. Hoisted out of `setup` (they used
+	-- to be locals there) so nothing has to assume "the first row is id 1" -- that
+	-- assumption breaks the moment anything else seeds a row first.
+	local demo_user, main_sub, main_post, first_comment
+
 	setup(function()
 		require("spec.schema_helper")()
-		local u =
+		demo_user =
 			Users:create({ user_name = "demo", user_pass = "password", user_email = "d@e.com" })
 		-- A separate submitter for the flair tests: post submissions are rate
 		-- limited per user (10 / 600s) and `demo` runs close to that ceiling
@@ -53,17 +58,25 @@ describe("pagesix integration", function()
 			user_pass = "password",
 			user_email = "flair@e.com",
 		})
-		local s = Forum:create({ name = "programming", creator_id = u.id, description = "Coding" })
+		main_sub = Forum:create({
+			name = "programming",
+			creator_id = demo_user.id,
+			description = "Coding",
+		})
 		-- Moderators post directly; without this flairuser is brand new and its
 		-- posts would be held in the approval queue (approved = 0) and 404/redirect.
-		Forum:add_moderator(s.id, flair_user.id)
-		local p = Posts:create({
-			user_id = u.id,
-			sub_id = s.id,
+		Forum:add_moderator(main_sub.id, flair_user.id)
+		main_post = Posts:create({
+			user_id = demo_user.id,
+			sub_id = main_sub.id,
 			title = "Hello World",
 			url = "https://example.com/x",
 		})
-		Comments:create({ post_id = p.id, user_id = u.id, body = "first comment" })
+		first_comment = Comments:create({
+			post_id = main_post.id,
+			user_id = demo_user.id,
+			body = "first comment",
+		})
 	end)
 
 	describe("browsing (GET)", function()
@@ -92,28 +105,29 @@ describe("pagesix integration", function()
 		end)
 
 		it("renders a post page with its comment", function()
-			local status, body = GET("/r/programming/comments/1/_")
+			local status, body = GET("/r/programming/comments/" .. main_post.id .. "/_")
 			assert.same(200, status)
 			assert.truthy(body:find("first comment", 1, true))
 		end)
 
 		it("renders a single-comment permalink with its replies and ?context", function()
 			local p = Posts:create({
-				user_id = 1,
-				sub_id = 1,
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
 				title = "perma post",
 				url = "https://perma.example",
 			})
-			local root = Comments:create({ post_id = p.id, user_id = 1, body = "PERMA_ROOT" })
+			local root =
+				Comments:create({ post_id = p.id, user_id = demo_user.id, body = "PERMA_ROOT" })
 			local child = Comments:create({
 				post_id = p.id,
-				user_id = 1,
+				user_id = demo_user.id,
 				body = "PERMA_CHILD",
 				parent_comment_id = root.id,
 			})
 			Comments:create({
 				post_id = p.id,
-				user_id = 1,
+				user_id = demo_user.id,
 				body = "PERMA_REPLY",
 				parent_comment_id = child.id,
 			})
@@ -240,7 +254,7 @@ describe("pagesix integration", function()
 		end)
 
 		it("redirects gated actions to login when signed out", function()
-			local status, _, headers = POST("/vote/post/1/up", {})
+			local status, _, headers = POST("/vote/post/" .. main_post.id .. "/up", {})
 			assert.same(302, status)
 			assert.truthy((headers.location or ""):find("/login", 1, true))
 		end)
@@ -327,30 +341,33 @@ describe("pagesix integration", function()
 
 	describe("voting", function()
 		it("records a post vote for a signed-in user", function()
-			local status = POST("/vote/post/1/up", {}, "demo")
+			local status = POST("/vote/post/" .. main_post.id .. "/up", {}, "demo")
 			assert.same(302, status)
-			assert.truthy(#Votes:select("where post_id = 1 and comment_id is null") >= 1)
+			assert.truthy(
+				#Votes:select("where post_id = ? and comment_id is null", main_post.id) >= 1
+			)
 		end)
 
 		it("records a comment vote", function()
-			local status = POST("/vote/comment/1/up", {}, "demo")
+			local status = POST("/vote/comment/" .. first_comment.id .. "/up", {}, "demo")
 			assert.same(302, status)
-			assert.truthy(#Votes:select("where comment_id = 1") >= 1)
+			assert.truthy(#Votes:select("where comment_id = ?", first_comment.id) >= 1)
 		end)
 
 		it("answers a Datastar vote with an SSE score patch (no redirect)", function()
 			-- Datastar sends its own request header + CSRF via X-Csrf-Token (the
 			-- JSON body carries no form field); the action replies with an SSE
 			-- element patch instead of a 302.
-			local status, body, headers = simulate_request(app, "/vote/post/1/up", {
-				method = "POST",
-				session = { current_user = "demo" },
-				cookies = { [CSRF_COOKIE] = CSRF_KEY },
-				headers = {
-					["datastar-request"] = "true",
-					["x-csrf-token"] = CSRF_TOKEN,
-				},
-			})
+			local status, body, headers =
+				simulate_request(app, "/vote/post/" .. main_post.id .. "/up", {
+					method = "POST",
+					session = { current_user = "demo" },
+					cookies = { [CSRF_COOKIE] = CSRF_KEY },
+					headers = {
+						["datastar-request"] = "true",
+						["x-csrf-token"] = CSRF_TOKEN,
+					},
+				})
 			assert.same(200, status)
 			assert.truthy(headers["content-type"]:find("text/event-stream", 1, true))
 			assert.truthy(body:find("datastar-patch-elements", 1, true))
@@ -360,30 +377,38 @@ describe("pagesix integration", function()
 
 	describe("commenting", function()
 		it("creates a top-level comment", function()
-			local before = #Comments:select("where post_id = 1")
-			local status = POST("/post/1/comment", { body = "a new comment" }, "demo")
+			local before = #Comments:select("where post_id = ?", main_post.id)
+			local status =
+				POST("/post/" .. main_post.id .. "/comment", { body = "a new comment" }, "demo")
 			assert.same(302, status)
-			assert.same(before + 1, #Comments:select("where post_id = 1"))
+			assert.same(before + 1, #Comments:select("where post_id = ?", main_post.id))
 		end)
 
 		it("rejects an empty comment (model constraint)", function()
-			local before = #Comments:select("where post_id = 1")
-			POST("/post/1/comment", { body = "" }, "demo")
-			assert.same(before, #Comments:select("where post_id = 1"))
+			local before = #Comments:select("where post_id = ?", main_post.id)
+			POST("/post/" .. main_post.id .. "/comment", { body = "" }, "demo")
+			assert.same(before, #Comments:select("where post_id = ?", main_post.id))
 		end)
 
 		it("threads a reply under its parent", function()
-			local status =
-				POST("/post/1/comment", { body = "a reply", parent_comment_id = "1" }, "demo")
+			local status = POST(
+				"/post/" .. main_post.id .. "/comment",
+				{ body = "a reply", parent_comment_id = tostring(first_comment.id) },
+				"demo"
+			)
 			assert.same(302, status)
-			local replies = Comments:select("where parent_comment_id = 1")
+			local replies = Comments:select("where parent_comment_id = ?", first_comment.id)
 			assert.truthy(#replies >= 1)
 		end)
 	end)
 
 	describe("editing & deleting comments", function()
 		it("lets the author edit their comment", function()
-			local c = Comments:create({ post_id = 1, user_id = 1, body = "original" })
+			local c = Comments:create({
+				post_id = main_post.id,
+				user_id = demo_user.id,
+				body = "original",
+			})
 			local status = POST("/comment/" .. c.id .. "/edit", { body = "edited body" }, "demo")
 			assert.same(302, status)
 			local updated = Comments:find(c.id)
@@ -393,13 +418,18 @@ describe("pagesix integration", function()
 
 		it("won't let a non-author edit", function()
 			Users:create({ user_name = "intruder", user_pass = "password", user_email = "i@e.com" })
-			local c = Comments:create({ post_id = 1, user_id = 1, body = "mine" })
+			local c =
+				Comments:create({ post_id = main_post.id, user_id = demo_user.id, body = "mine" })
 			POST("/comment/" .. c.id .. "/edit", { body = "hacked" }, "intruder")
 			assert.same("mine", Comments:find(c.id).body)
 		end)
 
 		it("soft-deletes the author's comment", function()
-			local c = Comments:create({ post_id = 1, user_id = 1, body = "to delete" })
+			local c = Comments:create({
+				post_id = main_post.id,
+				user_id = demo_user.id,
+				body = "to delete",
+			})
 			local status = POST("/comment/" .. c.id .. "/delete", {}, "demo")
 			assert.same(302, status)
 			assert.same(1, tonumber(Comments:find(c.id).deleted))
@@ -409,8 +439,8 @@ describe("pagesix integration", function()
 	describe("editing & deleting posts", function()
 		it("lets the author edit a self post", function()
 			local p = Posts:create({
-				user_id = 1,
-				sub_id = 1,
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
 				title = "editable",
 				body = "orig",
 				is_self = 1,
@@ -424,8 +454,8 @@ describe("pagesix integration", function()
 
 		it("soft-deletes the author's post and drops it from listings", function()
 			local p = Posts:create({
-				user_id = 1,
-				sub_id = 1,
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
 				title = "deleteme",
 				url = "https://d.example",
 			})
@@ -446,8 +476,12 @@ describe("pagesix integration", function()
 				user_pass = "password",
 				user_email = "pi@e.com",
 			})
-			local p =
-				Posts:create({ user_id = 1, sub_id = 1, title = "safe", url = "https://s.example" })
+			local p = Posts:create({
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
+				title = "safe",
+				url = "https://s.example",
+			})
 			POST("/post/" .. p.id .. "/delete", {}, "post_intruder")
 			assert.same(0, tonumber(Posts:find(p.id).deleted))
 		end)
@@ -576,7 +610,7 @@ describe("pagesix integration", function()
 		end)
 
 		it("drops a spammy comment", function()
-			POST("/post/1/comment", { body = SPAM }, "demo")
+			POST("/post/" .. main_post.id .. "/comment", { body = SPAM }, "demo")
 			assert.is_nil(Comments:find({ body = SPAM }))
 		end)
 	end)
@@ -611,13 +645,13 @@ describe("pagesix integration", function()
 	describe("crossposts", function()
 		it("reposts into another subreddit with attribution back to the source", function()
 			local orig = Posts:create({
-				user_id = 1,
-				sub_id = 1,
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
 				title = "xpost me",
 				url = "https://x.example/img.png",
 				thumbnail = "https://x.example/img.png",
 			})
-			local target = Forum:create({ name = "xpost_target", creator_id = 1 })
+			local target = Forum:create({ name = "xpost_target", creator_id = demo_user.id })
 
 			local status =
 				POST("/post/" .. orig.id .. "/crosspost", { subreddit = "xpost_target" }, "demo")
@@ -635,13 +669,13 @@ describe("pagesix integration", function()
 
 		it("keeps crosspost chains one level deep", function()
 			local orig = Posts:create({
-				user_id = 1,
-				sub_id = 1,
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
 				title = "chain root",
 				url = "https://x.example/y",
 			})
-			local t1 = Forum:create({ name = "chain_a", creator_id = 1 })
-			local t2 = Forum:create({ name = "chain_b", creator_id = 1 })
+			local t1 = Forum:create({ name = "chain_a", creator_id = demo_user.id })
+			local t2 = Forum:create({ name = "chain_b", creator_id = demo_user.id })
 
 			POST("/post/" .. orig.id .. "/crosspost", { subreddit = "chain_a" }, "demo")
 			local xp1 = Posts:find({ sub_id = t1.id, crosspost_parent_id = orig.id })
@@ -672,8 +706,8 @@ describe("pagesix integration", function()
 		-- "demo" created /r/programming in setup, so demo can moderate it.
 		local function make_post(title)
 			return Posts:create({
-				user_id = 1,
-				sub_id = 1,
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
 				title = title,
 				url = "https://mod.example/" .. title,
 			})
@@ -756,7 +790,7 @@ describe("pagesix integration", function()
 
 		it("imports new entries and dedups on re-run", function()
 			local bot = Feeds:bot()
-			local n1 = feed_import.import_entries(1, bot.id, {
+			local n1 = feed_import.import_entries(main_sub.id, bot.id, {
 				{ title = "X", link = "https://d.example/x", guid = "gx" },
 				{ title = "Y", link = "https://d.example/y", guid = "gy" },
 			})
@@ -764,14 +798,14 @@ describe("pagesix integration", function()
 			assert.is_not_nil(Posts:find({ external_guid = "gx" }))
 
 			-- Re-importing the same guids creates nothing.
-			local n2 = feed_import.import_entries(1, bot.id, {
+			local n2 = feed_import.import_entries(main_sub.id, bot.id, {
 				{ title = "X", link = "https://d.example/x", guid = "gx" },
 			})
 			assert.same(0, n2)
 		end)
 
 		it("refreshes a subreddit's feeds via a stubbed fetch", function()
-			Feeds:add(1, "https://imp.example/feed.xml")
+			Feeds:add(main_sub.id, "https://imp.example/feed.xml")
 			local orig = feed_import.fetch
 			feed_import.fetch = function()
 				return RSS, 200
@@ -786,7 +820,7 @@ describe("pagesix integration", function()
 		end)
 
 		it("records a fetch failure without importing", function()
-			local f = Feeds:add(1, "https://dead.example/feed.xml")
+			local f = Feeds:add(main_sub.id, "https://dead.example/feed.xml")
 			local imported = feed_import.refresh_feed(f, function()
 				return nil, 500
 			end)
@@ -795,7 +829,7 @@ describe("pagesix integration", function()
 		end)
 
 		it("lets a moderator trigger a refresh; ignores non-mods", function()
-			Feeds:add(1, "https://imp2.example/feed.xml")
+			Feeds:add(main_sub.id, "https://imp2.example/feed.xml")
 			local RSS2 = [[<?xml version="1.0"?><rss version="2.0"><channel>
 				<item><title>ModFetched</title><link>https://imp2.example/p</link><guid>mod1</guid></item>
 			</channel></rss>]]
@@ -822,7 +856,7 @@ describe("pagesix integration", function()
 		end)
 
 		it("Feeds:due honors last_fetched_at and exponential backoff", function()
-			local f = Feeds:add(1, "https://due.example/feed.xml")
+			local f = Feeds:add(main_sub.id, "https://due.example/feed.xml")
 			local function due_has(base, id)
 				for _, d in ipairs(Feeds:due(base)) do
 					if tonumber(d.id) == tonumber(id) then
@@ -850,7 +884,7 @@ describe("pagesix integration", function()
 		end)
 
 		it("sends conditional-GET validators and treats 304 as an unchanged success", function()
-			local f = Feeds:add(1, "https://cond.example/feed.xml")
+			local f = Feeds:add(main_sub.id, "https://cond.example/feed.xml")
 
 			-- First fetch: no validators cached yet; response carries them.
 			feed_import.refresh_feed(f, function(_, headers)
@@ -877,7 +911,7 @@ describe("pagesix integration", function()
 		end)
 
 		it("refresh_all imports from every due feed (scheduler entry point)", function()
-			Feeds:add(1, "https://all.example/feed.xml") -- fresh -> due
+			Feeds:add(main_sub.id, "https://all.example/feed.xml") -- fresh -> due
 			local orig = feed_import.fetch
 			feed_import.fetch = function()
 				return [[<rss version="2.0"><channel><item><title>All</title>
@@ -922,17 +956,17 @@ describe("pagesix integration", function()
 
 			-- a non-moderator can't add a feed
 			POST("/r/programming/feeds/add", { url = "https://nm.example/feed.xml" }, "ui_nonmod")
-			assert.is_nil(Feeds:find({ sub_id = 1, url = "https://nm.example/feed.xml" }))
+			assert.is_nil(Feeds:find({ sub_id = main_sub.id, url = "https://nm.example/feed.xml" }))
 
 			-- only http(s) URLs are accepted
 			POST("/r/programming/feeds/add", { url = "not-a-url" }, "demo")
-			assert.is_nil(Feeds:find({ sub_id = 1, url = "not-a-url" }))
+			assert.is_nil(Feeds:find({ sub_id = main_sub.id, url = "not-a-url" }))
 
 			-- mod add succeeds (enabled by default)
 			local s =
 				POST("/r/programming/feeds/add", { url = "https://ui.example/feed.xml" }, "demo")
 			assert.same(302, s)
-			local f = Feeds:find({ sub_id = 1, url = "https://ui.example/feed.xml" })
+			local f = Feeds:find({ sub_id = main_sub.id, url = "https://ui.example/feed.xml" })
 			assert.is_not_nil(f)
 			assert.same(1, tonumber(f.enabled))
 
@@ -1148,7 +1182,7 @@ describe("pagesix integration", function()
 			-- Votes is required at module scope; reuse it.
 			-- a vote on a non-existent post is rejected by the FK constraint
 			local ok = pcall(function()
-				Votes:create({ user_id = 1, post_id = 999999, upvote = 1 })
+				Votes:create({ user_id = demo_user.id, post_id = 999999, upvote = 1 })
 			end)
 			assert.is_false(ok)
 		end)
@@ -1199,13 +1233,13 @@ describe("pagesix integration", function()
 
 		it("saves/unsaves a post and lists it on /saved", function()
 			local p = Posts:create({
-				user_id = 1,
-				sub_id = 1,
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
 				title = "save me please",
 				url = "https://sv.example",
 			})
 			assert.same(302, (POST("/post/" .. p.id .. "/save", {}, "demo")))
-			assert.is_true(SavedPosts:is_saved(1, p.id))
+			assert.is_true(SavedPosts:is_saved(demo_user.id, p.id))
 
 			local s, body = simulate_request(
 				app,
@@ -1216,21 +1250,21 @@ describe("pagesix integration", function()
 			assert.truthy(body:find("save me please", 1, true))
 
 			POST("/post/" .. p.id .. "/save", {}, "demo") -- toggle off
-			assert.is_false(SavedPosts:is_saved(1, p.id))
+			assert.is_false(SavedPosts:is_saved(demo_user.id, p.id))
 		end)
 
 		it("hides a post so it drops from a user's listing", function()
 			local p = Posts:create({
-				user_id = 1,
-				sub_id = 1,
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
 				title = "hide me",
 				url = "https://hd.example",
 			})
 			POST("/post/" .. p.id .. "/hide", {}, "demo")
-			assert.is_true(HiddenPosts:is_hidden(1, p.id))
+			assert.is_true(HiddenPosts:is_hidden(demo_user.id, p.id))
 
 			local hidden_filtered = {}
-			for _, r in ipairs(Posts:get_listing({ exclude_hidden_for = 1 })) do
+			for _, r in ipairs(Posts:get_listing({ exclude_hidden_for = demo_user.id })) do
 				hidden_filtered[r.id] = true
 			end
 			assert.is_nil(hidden_filtered[p.id])
@@ -1259,22 +1293,22 @@ describe("pagesix integration", function()
 
 		it("filters a listing to a time window", function()
 			local old = Posts:create({
-				user_id = 1,
-				sub_id = 1,
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
 				title = "ancient",
 				url = "https://o.example",
 			})
 			old:update({ created_at = "2000-01-01 00:00:00" })
 			local recent = Posts:create({
-				user_id = 1,
-				sub_id = 1,
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
 				title = "fresh window",
 				url = "https://f.example",
 			})
 
 			local since = require("src.utils.timewindow")("day")
 			local ids = {}
-			for _, r in ipairs(Posts:get_listing({ sub_id = 1, since = since })) do
+			for _, r in ipairs(Posts:get_listing({ sub_id = main_sub.id, since = since })) do
 				ids[r.id] = true
 			end
 			assert.is_nil(ids[old.id])
@@ -1297,8 +1331,8 @@ describe("pagesix integration", function()
 		it("paginates the frontpage over HTTP", function()
 			for i = 1, 30 do
 				Posts:create({
-					user_id = 1,
-					sub_id = 1,
+					user_id = demo_user.id,
+					sub_id = main_sub.id,
 					title = "page post " .. i,
 					url = "https://p" .. i .. ".example",
 				})
@@ -1318,8 +1352,8 @@ describe("pagesix integration", function()
 
 		it("paginates a post's comment thread by root over HTTP", function()
 			local post = Posts:create({
-				user_id = 1,
-				sub_id = 1,
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
 				title = "thread paging",
 				url = "https://thread.example",
 			})
@@ -1327,7 +1361,7 @@ describe("pagesix integration", function()
 			for i = 1, 27 do
 				Comments:create({
 					post_id = post.id,
-					user_id = 1,
+					user_id = demo_user.id,
 					body = string.format("rootcomment_%03d", i),
 				})
 			end
@@ -1361,7 +1395,7 @@ describe("pagesix integration", function()
 			for i = 1, 27 do
 				Posts:create({
 					user_id = u.id,
-					sub_id = 1,
+					sub_id = main_sub.id,
 					title = "prof post " .. i,
 					url = "https://pp" .. i .. ".example",
 				})
@@ -1405,7 +1439,7 @@ describe("pagesix integration", function()
 			})
 			local p = Posts:create({
 				user_id = author.id,
-				sub_id = 1,
+				sub_id = main_sub.id,
 				title = "karma post",
 				url = "https://k.example",
 			})
@@ -1426,14 +1460,14 @@ describe("pagesix integration", function()
 
 		it("finds posts by title and body, ranked, excluding non-matches", function()
 			Posts:create({
-				user_id = 1,
-				sub_id = 1,
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
 				title = "Unique Zebra Headline",
 				url = "https://z.example",
 			})
 			Posts:create({
-				user_id = 1,
-				sub_id = 1,
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
 				title = "plain title",
 				body = "contains quokka here",
 				is_self = 1,
@@ -1452,8 +1486,8 @@ describe("pagesix integration", function()
 
 		it("excludes deleted posts from search", function()
 			local p = Posts:create({
-				user_id = 1,
-				sub_id = 1,
+				user_id = demo_user.id,
+				sub_id = main_sub.id,
 				title = "Searchable Platypus",
 				url = "https://p.example",
 			})
@@ -1466,9 +1500,23 @@ describe("pagesix integration", function()
 	describe("subscriptions", function()
 		it("toggles a subscription on and off", function()
 			assert.same(302, (POST("/subscribe/programming", {}, "demo")))
-			assert.same(1, #Subscriptions:select("where user_id = 1 and subreddit_id = 1"))
+			assert.same(
+				1,
+				#Subscriptions:select(
+					"where user_id = ? and subreddit_id = ?",
+					demo_user.id,
+					main_sub.id
+				)
+			)
 			POST("/subscribe/programming", {}, "demo") -- toggle off
-			assert.same(0, #Subscriptions:select("where user_id = 1 and subreddit_id = 1"))
+			assert.same(
+				0,
+				#Subscriptions:select(
+					"where user_id = ? and subreddit_id = ?",
+					demo_user.id,
+					main_sub.id
+				)
+			)
 		end)
 
 		it("lists subscriptions on /subscribed and in the header nav", function()
