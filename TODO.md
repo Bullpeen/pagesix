@@ -8,9 +8,10 @@ hot/new/top/controversial/best/rising and `?t=` time windows + pagination;
 full-text search (FTS5); open a post; vote on posts & comments; submit
 link/self posts; post threaded comments/replies with Markdown; edit/delete own
 posts & comments; subscribe/unsubscribe; saved/hidden posts; user profiles +
-karma; reply notifications (`/inbox`); RSS in/out feeds; bcrypt + CSRF auth; a
-Reddit-flavoured JSON API under `/api`; admin/mod dashboards with graphs,
-Prometheus `/metrics`, and a `/health` probe.
+karma; reply notifications (`/inbox`); RSS in/out feeds; bcrypt + CSRF auth;
+self-service account deletion (`/account/delete`, content reattributed to
+`anonymous_coward`); a Reddit-flavoured JSON API under `/api`; admin/mod
+dashboards with graphs, Prometheus `/metrics`, and a `/health` probe.
 
 Forum-generalization layer (all shipped): role-based moderation via a privilege
 matrix (`owner`/`moderator`/`member` + site `admin`); an Admin Control Panel

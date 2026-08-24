@@ -1,0 +1,29 @@
+<h1>Delete your account</h1>
+
+<p>This cannot be undone. Your account, subscriptions, saved and hidden posts,
+inbox and any linked login providers are destroyed.</p>
+
+<p>Your posts and comments are <strong>not</strong> deleted &mdash; they stay
+where they are, reattributed to <code><%= anonymous_name %></code>, so replies
+and discussions do not lose their context. Delete anything you want gone
+<em>before</em> deleting the account.</p>
+
+<% if form_error then %><p data-alert="danger"><%= form_error %></p><% end %>
+
+<form data-form method="POST" action="/account/delete">
+	<input type="hidden" name="csrf_token" value="<%= csrf_token %>">
+	<label>
+		<span>Type <strong><%= current_user.user_name %></strong> to confirm</span>
+		<input name="confirm" required type="text" autocapitalize="none" autocorrect="off">
+	</label>
+	<% if needs_password then %>
+	<label>
+		<span>Your password</span>
+		<input name="password" required type="password">
+	</label>
+	<% end %>
+	<div data-row>
+		<button data-danger type="submit">Delete my account</button>
+		<a href="/user/<%= current_user.user_name %>">Cancel</a>
+	</div>
+</form>

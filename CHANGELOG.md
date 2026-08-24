@@ -8,6 +8,25 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Account deletion
+- **`/account/delete`** — a user can delete their own account. Linked from their
+  own profile; requires typing the username, plus the account password unless
+  the account signs in through OAuth (those accounts hold the digest of a value
+  nobody knows, so demanding a password would lock them out of leaving).
+- **Content survives, reattributed to `anonymous_coward`** rather than being
+  destroyed: deleting an account should not blow holes in other people's comment
+  threads or orphan a community. Posts, comments, `forum.creator_id` and the
+  moderation log move to the anonymous account; **votes** move too, so scores do
+  not silently shift when someone leaves (`UPDATE OR IGNORE` skips the rare row
+  that would collide with a vote the anonymous account already holds).
+- **Everything personal is destroyed:** subscriptions, saved/hidden posts, the
+  inbox, password-reset tokens, linked OAuth identities, per-sub and site roles,
+  and the profile row.
+- Runs in a transaction — every foreign key into `users` is `NO ACTION`, so a
+  partial run would leave the row undeletable.
+- The anonymous account's creation moved from a local helper in `migrations.lua`
+  to `Users:ensure_anonymous()`, so deletion can guarantee its target exists.
+
 ### Production refuses to boot without a session secret
 - `config.lua` read `os.getenv("LAPIS_SECRET")` with no fallback and no check.
   Unset, the secret was `nil` -- and `openssl.hmac` raises on a nil key, so a
