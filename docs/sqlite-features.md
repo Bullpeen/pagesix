@@ -143,10 +143,31 @@ counter-triggers above), which is a different trade.
 
 `utils/paginate_db` asks for `per_page + 1` rows and treats the extra one as
 "there is a next page", so a listing stays a single query with no companion
-`COUNT(*)`. `utils/paginate` (array slicing) remains for callers that already
-hold a full list — the profile's comment list, and the JSON API, whose
-`after`/`before` cursors are resolved by scanning the ordered rows and so still
-need them all.
+`COUNT(*)`. `utils/paginate` (array slicing) remains for the profile's comment
+list, which legitimately holds a full array.
+
+### The JSON API's cursors
+
+`/api` speaks Reddit's `after`/`before` **fullnames**, and `api_serialize.paginate`
+finds the cursor row by scanning the ordered rows it was handed — so it can only
+reach a row the caller actually fetched. Rather than fetch everything, the
+endpoints size their window to the request (`S.window`):
+
+- **no cursor** (every first page, and the common case): the page plus one
+  lookahead row.
+- **with a cursor**: `S.MAX_DEPTH` (1000) rows, which caps how deep a cursor can
+  address.
+
+Capping is honest for this data rather than a shortcut. True keyset pagination
+would need `WHERE (rank, id) < (cursor_rank, cursor_id)`, and for `hot` /
+`controversial` / `rising` the rank is computed from live vote counts — it moves
+between requests, so a cursor into a ranked listing is inherently approximate no
+matter how it is implemented. Search engines and Reddit itself cap deep paging
+for the same reason.
+
+A cursor that is not in the window (past the cap, or a row since deleted) now
+returns an **empty page**. It used to silently restart at the top, which left a
+client paging in a loop without ever learning it had reached the end.
 
 ## Partial indexes — adopted, including for uniqueness
 

@@ -8,6 +8,25 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### The JSON API stops reading the whole table for a page
+- **Listing endpoints fetched every matching row** and then ranked them in Lua,
+  even after the web listings moved to SQL. They now pass `sort` to
+  `Posts:get_listing` (so the database orders them) and size their fetch to the
+  request: the page plus one lookahead row when there is no cursor, opening to
+  `S.MAX_DEPTH` (1000) when there is, since `api_serialize.paginate` locates a
+  cursor by scanning the rows it was handed.
+- `/api/subreddits` gained a `LIMIT` and a total order (`s.id DESC`) so its
+  window is stable between requests.
+- **An unknown cursor now returns an empty page.** It used to silently restart at
+  the first page, which left a client paging in a loop with no way to notice it
+  had reached the end.
+- Capping the depth is deliberate: for `hot`/`controversial`/`rising` the rank is
+  computed from live vote counts, so it moves between requests and a cursor into
+  a ranked listing is approximate however it is implemented. Recorded in
+  `docs/sqlite-features.md`.
+- `utils/sort` is no longer used by the API — only by the specs that check the
+  SQL ordering agrees with it.
+
 ### Referential actions, and one soft-delete convention
 - **Personal rows now cascade off `users`** (migration `[115]`):
   `subscriptions`, `saved_posts`, `hidden_posts`, `notifications`,
