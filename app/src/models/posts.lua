@@ -6,6 +6,10 @@ local db = require("lapis.db")
 local Url = require("src.utils.url")
 local Model, enum = model.Model, model.enum
 
+-- We target the 5.1 ABI (LuaJIT/OpenResty), where `unpack` is a global; the
+-- `table.unpack` fallback keeps this loadable under 5.2+ as well.
+local unpack = unpack or table.unpack -- luacheck: ignore 143
+
 local Posts = Model:extend("posts", {
 	timestamp = true,
 
@@ -93,14 +97,41 @@ end
 -- 	return post:get_comments(offset, limit)
 -- end
 
---- Listing rows for a frontpage / subreddit, with the vote and comment
--- aggregates the templates and the Sort util expect.
+-- Ranking expressed as SQL, so the database can order and slice instead of
+-- handing every matching row to Lua. Each expression is *order-equivalent* to
+-- the comparator `utils/sort` applies in memory:
 --
--- This replaces the dependency on the pre-seeded v_hot_* SQL views: it works
--- on a freshly-migrated database, includes posts with zero votes, and is not
--- tied to any single sort order (callers pass the rows through Sort:sort).
--- @tparam[opt] number|table filters a subreddit id (legacy), or a table of
---   { sub_id = ..., user_id = ... } to restrict the listing
+--   * `best` / `top` / `rising` are the same arithmetic.
+--   * `hot` drops the outer `log()`: log is monotonically increasing and its
+--     argument here is always > 0, so the ordering is identical without it.
+--   * `controversial` is Reddit's `(up + down) ^ (min/max)`, zero unless both
+--     sides voted -- SQLite's `pow()` (math functions, 3.35+).
+--
+-- ORDER BY reads the `upvotes`/`downvotes` output aliases rather than repeating
+-- the correlated subqueries that produce them.
+local ORDER_BY = {
+	new = "a.created_at DESC",
+	best = "upvotes DESC",
+	top = "(upvotes - downvotes) DESC",
+	rising = [[((upvotes - downvotes)
+		/ MAX((strftime('%s', 'now') - strftime('%s', a.created_at)) / 3600.0, 1)) DESC]],
+	hot = "(ABS(upvotes - downvotes) + strftime('%s', a.created_at) / 45000.0) DESC",
+	controversial = [[(CASE WHEN upvotes > 0 AND downvotes > 0
+		THEN POW(upvotes + downvotes, (MIN(upvotes, downvotes) * 1.0) / MAX(upvotes, downvotes))
+		ELSE 0 END) DESC]],
+}
+
+--- Listing rows for a frontpage / subreddit, with the vote and comment
+-- aggregates the templates expect.
+--
+-- Ordering and slicing happen in SQL. Passing `limit` keeps the query bounded;
+-- without it every matching row is returned, which is what the callers that
+-- render a whole small set (e.g. `/saved`) still want.
+--
+-- @tparam[opt] number|table filters a subreddit id (legacy), or a table of:
+--   `sub_id`, `user_id`, `since`, `exclude_hidden_for`, `saved_for`, `domain`,
+--   `tag` to restrict the listing; `sort` (a key of ORDER_BY, default "new"),
+--   `sticky_first` to pin stickied posts, and `limit`/`offset` to page.
 -- @treturn table array of plain post rows
 function Posts:get_listing(filters)
 	-- Backwards compatible: a bare number means sub_id.
@@ -123,42 +154,64 @@ function Posts:get_listing(filters)
 		INNER JOIN forum s ON a.sub_id = s.id
 		WHERE a.locked = 0 AND a.deleted = 0 AND a.approved = 1]]
 
+	-- Filters are appended as bound fragments: no request value is ever
+	-- interpolated into the SQL text.
+	local params = {}
+	local function restrict(sql, value)
+		query = query .. " AND " .. sql
+		params[#params + 1] = value
+	end
+
 	if filters.sub_id then
-		query = query .. " AND a.sub_id = " .. tonumber(filters.sub_id)
+		restrict("a.sub_id = ?", tonumber(filters.sub_id))
 	end
 	if filters.user_id then
-		query = query .. " AND a.user_id = " .. tonumber(filters.user_id)
+		restrict("a.user_id = ?", tonumber(filters.user_id))
 	end
 	if filters.since then
-		query = query .. " AND a.created_at >= " .. db.escape_literal(filters.since)
+		restrict("a.created_at >= ?", filters.since)
 	end
 	if filters.exclude_hidden_for then
-		query = query
-			.. " AND a.id NOT IN (SELECT post_id FROM hidden_posts WHERE user_id = "
-			.. tonumber(filters.exclude_hidden_for)
-			.. ")"
+		restrict(
+			"a.id NOT IN (SELECT post_id FROM hidden_posts WHERE user_id = ?)",
+			tonumber(filters.exclude_hidden_for)
+		)
 	end
 	if filters.saved_for then
-		query = query
-			.. " AND a.id IN (SELECT post_id FROM saved_posts WHERE user_id = "
-			.. tonumber(filters.saved_for)
-			.. ")"
+		restrict(
+			"a.id IN (SELECT post_id FROM saved_posts WHERE user_id = ?)",
+			tonumber(filters.saved_for)
+		)
 	end
 	if filters.domain then
 		-- Exact match on the stored, normalized host (migration [108]) -- not a
 		-- substring of the raw url, which conflated notexample.com / ?ref=host.
-		query = query .. " AND a.domain = " .. db.escape_literal(filters.domain)
+		restrict("a.domain = ?", filters.domain)
 	end
 	if filters.tag then
-		query = query
-			.. " AND a.id IN (SELECT pt.post_id FROM post_tags pt"
-			.. " INNER JOIN tags t ON pt.tag_id = t.id WHERE t.name = "
-			.. db.escape_literal(filters.tag)
-			.. ")"
+		restrict(
+			"a.id IN (SELECT pt.post_id FROM post_tags pt"
+				.. " INNER JOIN tags t ON pt.tag_id = t.id WHERE t.name = ?)",
+			filters.tag
+		)
 	end
-	query = query .. " ORDER BY a.created_at DESC"
 
-	local rows = db.select(query)
+	-- `a.id DESC` breaks ties deterministically. Without it, equal-ranked rows
+	-- could swap between requests and LIMIT/OFFSET paging would repeat or skip
+	-- them -- the in-memory `table.sort` this replaces was likewise unstable.
+	local order = ORDER_BY[filters.sort] or ORDER_BY.new
+	if filters.sticky_first then
+		order = "a.stickied DESC, " .. order
+	end
+	query = query .. " ORDER BY " .. order .. ", a.id DESC"
+
+	if filters.limit then
+		query = query .. " LIMIT ? OFFSET ?"
+		params[#params + 1] = tonumber(filters.limit)
+		params[#params + 1] = tonumber(filters.offset) or 0
+	end
+
+	local rows = db.select(query, unpack(params))
 
 	for _, post in ipairs(rows) do
 		post.permalink = "/r/" .. post.subreddit .. "/comments/" .. post.id

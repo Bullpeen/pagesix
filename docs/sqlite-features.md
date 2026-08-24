@@ -41,6 +41,53 @@ That objection does **not** apply to *static aggregations*, so we now use one:
   activity has no equivalent view — it needs a `sub_id` bind parameter, which a
   view can't take — so `Stats.for_sub` aggregates directly.
 
+## Ranking and paging — adopted in SQL for the web listings
+
+Listings used to fetch **every** matching post, rank them with `utils/sort`'s
+comparators in Lua, and slice 25 out of the resulting array (`utils/paginate`).
+Page 1 of a subreddit cost the same as page 40, and the cost grew with the
+table.
+
+`Posts:get_listing` now takes `sort`, `limit` and `offset` and does the work in
+SQL (`ORDER_BY` in `models/posts.lua`). Each expression is *order-equivalent* to
+the comparator it replaces, not a re-invention:
+
+| sort | SQL | note |
+| --- | --- | --- |
+| `new` | `created_at DESC` | |
+| `best` | `upvotes DESC` | |
+| `top` | `(upvotes - downvotes) DESC` | |
+| `rising` | net score ÷ hours since posting | |
+| `hot` | `ABS(up - down) + strftime('%s', created_at)/45000.0` | drops the outer `log()` — it is monotonic and its argument is always > 0, so the order is unchanged |
+| `controversial` | `POW(up + down, MIN/MAX)`, else 0 | needs SQLite's math functions (3.35+) |
+
+`ORDER BY` reads the `upvotes`/`downvotes` **output aliases** instead of
+repeating the correlated subqueries that compute them. Every ordering ends
+`, a.id DESC`: without a total order, equal-ranked rows can swap between
+requests and `LIMIT`/`OFFSET` paging then repeats or skips them. (The
+`table.sort` this replaced was itself unstable, so tie order was already
+arbitrary — just invisibly so.)
+
+**What this does and does not buy.** Checked with `EXPLAIN QUERY PLAN`:
+
+- `new` is satisfied by `posts_sub_id_created_at_idx` with **no** temp b-tree,
+  so `LIMIT` genuinely stops early.
+- The ranked sorts report `USE TEMP B-TREE FOR ORDER BY`: the vote subqueries
+  are still evaluated for every matching row, and SQLite sorts them internally.
+
+So ranked listings did not become O(page) — the ranking work moved *into*
+SQLite (C, one bounded result set) instead of crossing into Lua as a full table
+of allocated rows. Only the page plus one lookahead row is returned. Making the
+ranked sorts index-driven would mean materializing scores (see the declined
+counter-triggers above), which is a different trade.
+
+`utils/paginate_db` asks for `per_page + 1` rows and treats the extra one as
+"there is a next page", so a listing stays a single query with no companion
+`COUNT(*)`. `utils/paginate` (array slicing) remains for callers that already
+hold a full list — the profile's comment list, and the JSON API, whose
+`after`/`before` cursors are resolved by scanning the ordered rows and so still
+need them all.
+
 ## Partial indexes — adopted, including for uniqueness
 
 A partial index (`CREATE INDEX ... WHERE <predicate>`) covers only the rows
