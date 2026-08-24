@@ -10,6 +10,9 @@ local misc = require("src.utils.misc")
 local schema = require("lapis.db.schema")
 local types = schema.types
 
+-- We target the 5.1 ABI (LuaJIT/OpenResty), where `unpack` is a global.
+local unpack = unpack or table.unpack -- luacheck: ignore 143
+
 local Forum = require("src.models.forum")
 local Posts = require("src.models.posts")
 local Subscriptions = require("src.models.subscriptions")
@@ -47,6 +50,38 @@ end
 local opts = {}
 opts["strict"] = true
 opts["if_not_exists"] = true
+
+--- Rebuild a table in place, so it can gain constraints SQLite cannot ALTER in.
+--
+-- Neither `CHECK` nor a foreign key's `ON DELETE` action can be added to an
+-- existing table -- there is no `ALTER TABLE ... ADD CONSTRAINT` -- so the table
+-- is renamed, recreated with the new definition, copied into, and dropped. This
+-- is the shape migration `[105]` used by hand.
+--
+-- Only safe for **leaf** tables (nothing holds a foreign key pointing at them);
+-- otherwise the drop would orphan a reference. Indexes belong to the table, so
+-- every one has to be recreated here.
+--
+-- @tparam string name table to rebuild
+-- @tparam table columns the new `schema.create_table` definition
+-- @tparam table copy `{ into = {col, ...}, from = {expr, ...} }`
+-- @tparam table indexes CREATE INDEX statements to reapply
+local function rebuild_table(name, columns, copy, indexes)
+	db.query("ALTER TABLE " .. name .. " RENAME TO " .. name .. "_old")
+	schema.create_table(name, columns, opts)
+	db.query(
+		("INSERT INTO %s (%s) SELECT %s FROM %s_old"):format(
+			name,
+			table.concat(copy.into, ", "),
+			table.concat(copy.from, ", "),
+			name
+		)
+	)
+	db.query("DROP TABLE " .. name .. "_old")
+	for _, sql in ipairs(indexes) do
+		db.query(sql)
+	end
+end
 
 -- add each incremental migration whose key is the unix timestamp
 return {
@@ -999,22 +1034,7 @@ return {
 	-- literal, so a violation would mean data this schema never should have
 	-- held, and failing loudly beats silently dropping a role or notification.
 	[114] = function()
-		local rebuild = function(name, columns, copy, indexes)
-			db.query("ALTER TABLE " .. name .. " RENAME TO " .. name .. "_old")
-			schema.create_table(name, columns, opts)
-			db.query(
-				("INSERT INTO %s (%s) SELECT %s FROM %s_old"):format(
-					name,
-					table.concat(copy.into, ", "),
-					table.concat(copy.from, ", "),
-					name
-				)
-			)
-			db.query("DROP TABLE " .. name .. "_old")
-			for _, sql in ipairs(indexes) do
-				db.query(sql)
-			end
-		end
+		local rebuild = rebuild_table
 
 		rebuild("votes", {
 			{ "id", types.integer({ unique = true, primary_key = true }) },
@@ -1109,6 +1129,165 @@ return {
 		}, { into = notification_columns, from = notification_columns }, {
 			[[CREATE INDEX notifications_user_id_idx ON notifications (user_id)]],
 		})
+	end,
+
+	-- `ON DELETE CASCADE` for the rows that belong to a person, and drop the
+	-- dead `users.deleted_at`.
+	--
+	-- Every foreign key into `users` was `NO ACTION`, so `Users:delete_account`
+	-- had to clear each child table by hand before the row could go. That works
+	-- -- it is transactional and tested -- but it puts the policy only in Lua:
+	-- any other deletion path (a fix-up script, a future admin tool) either
+	-- leaves the same rows behind or fails on the foreign key.
+	--
+	-- Cascade covers the tables that are purely personal, so the guarantee lives
+	-- in the schema. It deliberately does **not** extend to authored content:
+	-- posts, comments, votes and the modlog stay `NO ACTION`, because the policy
+	-- there is *reassignment* to the anonymous account, not deletion, and a
+	-- cascade would silently destroy other people's threads.
+	--
+	-- `notifications`, `roles` and `site_roles` were rebuilt one migration ago
+	-- for their CHECK constraints; both rebuilds are one-time, so the repeat
+	-- costs nothing at runtime.
+	--
+	-- `users.deleted_at` has never been read -- account deletion is a hard
+	-- delete (see Users:delete_account) -- so the column goes. Soft deletion in
+	-- this schema means `posts.deleted`/`comments.deleted` for content and
+	-- `forum.deleted_at` for subreddits; nothing soft-deletes a user.
+	[115] = function()
+		local ts = { "created_at", "updated_at" }
+
+		rebuild_table("subscriptions", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer },
+			{ "subreddit_id", types.integer },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE",
+			"FOREIGN KEY(subreddit_id) REFERENCES forum(id)",
+			"UNIQUE(user_id, subreddit_id)",
+		}, {
+			into = { "id", "user_id", "subreddit_id", unpack(ts) },
+			from = { "id", "user_id", "subreddit_id", unpack(ts) },
+		}, {
+			[[CREATE INDEX subscriptions_subreddit_id_idx ON subscriptions (subreddit_id)]],
+		})
+
+		for _, name in ipairs({ "saved_posts", "hidden_posts" }) do
+			rebuild_table(name, {
+				{ "id", types.integer({ unique = true, primary_key = true }) },
+				{ "user_id", types.integer },
+				{ "post_id", types.integer },
+				{ "created_at", types.text },
+				{ "updated_at", types.text },
+				"FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE",
+				"FOREIGN KEY(post_id) REFERENCES posts(id)",
+				"UNIQUE(user_id, post_id)",
+			}, {
+				into = { "id", "user_id", "post_id", unpack(ts) },
+				from = { "id", "user_id", "post_id", unpack(ts) },
+			}, {
+				("CREATE INDEX %s_user_id_idx ON %s (user_id)"):format(name, name),
+			})
+		end
+
+		rebuild_table("password_resets", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer },
+			{ "token", types.text({ unique = true }) },
+			{ "expires_at", types.text },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE",
+		}, {
+			into = { "id", "user_id", "token", "expires_at", unpack(ts) },
+			from = { "id", "user_id", "token", "expires_at", unpack(ts) },
+		}, {
+			[[CREATE UNIQUE INDEX password_resets_token_idx ON password_resets (token)]],
+			[[CREATE INDEX password_resets_user_id_idx ON password_resets (user_id)]],
+		})
+
+		rebuild_table("oauth_identities", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer },
+			{ "provider", types.text },
+			{ "provider_user_id", types.text },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE",
+			"UNIQUE(provider, provider_user_id)",
+		}, {
+			into = { "id", "user_id", "provider", "provider_user_id", unpack(ts) },
+			from = { "id", "user_id", "provider", "provider_user_id", unpack(ts) },
+		}, {
+			[[CREATE INDEX oauth_identities_user_id_idx ON oauth_identities (user_id)]],
+		})
+
+		rebuild_table("site_roles", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer },
+			{ "role", types.text },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE",
+			"UNIQUE(user_id, role)",
+			"CHECK (role IN ('admin'))",
+		}, {
+			into = { "id", "user_id", "role", unpack(ts) },
+			from = { "id", "user_id", "role", unpack(ts) },
+		}, {
+			[[CREATE INDEX site_roles_user_id_idx ON site_roles (user_id)]],
+		})
+
+		rebuild_table("roles", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "subreddit_id", types.integer },
+			{ "user_id", types.integer },
+			{ "role", types.text },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(subreddit_id) REFERENCES forum(id)",
+			"FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE",
+			"UNIQUE(subreddit_id, user_id)",
+			"CHECK (role IN ('owner', 'moderator', 'member'))",
+		}, {
+			into = { "id", "subreddit_id", "user_id", "role", unpack(ts) },
+			from = { "id", "subreddit_id", "user_id", "role", unpack(ts) },
+		}, {
+			[[CREATE INDEX roles_subreddit_id_user_id_idx ON roles (subreddit_id, user_id)]],
+		})
+
+		rebuild_table("notifications", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer },
+			{ "comment_id", types.integer({ null = true }) },
+			{ "post_id", types.integer({ null = true }) },
+			{ "kind", types.text },
+			{ "seen", types.integer({ default = false }) },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			"FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE",
+			"FOREIGN KEY(comment_id) REFERENCES comments(id)",
+			"FOREIGN KEY(post_id) REFERENCES posts(id)",
+			"CHECK (kind IN ('post_reply', 'comment_reply', 'mention'))",
+			"CHECK (seen IN (0, 1))",
+		}, {
+			into = { "id", "user_id", "comment_id", "post_id", "kind", "seen", unpack(ts) },
+			from = { "id", "user_id", "comment_id", "post_id", "kind", "seen", unpack(ts) },
+		}, {
+			[[CREATE INDEX notifications_user_id_idx ON notifications (user_id)]],
+		})
+
+		-- Never read; account deletion is a hard delete.
+		local has_deleted_at = false
+		for _, column in ipairs(db.query("PRAGMA table_info(users)")) do
+			if column.name == "deleted_at" then
+				has_deleted_at = true
+			end
+		end
+		if has_deleted_at then
+			db.query("ALTER TABLE users DROP COLUMN deleted_at")
+		end
 	end,
 
 	-- classify text : https://github.com/leafo/lapis-bayes

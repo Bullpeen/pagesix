@@ -41,6 +41,36 @@ That objection does **not** apply to *static aggregations*, so we now use one:
   activity has no equivalent view — it needs a `sub_id` bind parameter, which a
   view can't take — so `Stats.for_sub` aggregates directly.
 
+## Referential actions — cascade for personal rows, never for content
+
+Every foreign key into `users` was `NO ACTION`, so deleting an account meant
+clearing each child table by hand first. Migration `[115]` splits the schema
+along the line the product already draws:
+
+- **Personal rows cascade** — `subscriptions`, `saved_posts`, `hidden_posts`,
+  `notifications`, `password_resets`, `oauth_identities`, `roles`, `site_roles`.
+  These belong to one person and mean nothing without them.
+- **Authored content stays `NO ACTION`** — `posts`, `comments`, `votes`,
+  `modlog`. Their policy is *reassignment* to the anonymous account, not
+  deletion; a cascade would silently take other people's threads down with the
+  author. With `NO ACTION`, deleting a user who still owns content **fails**,
+  which is the correct outcome: something has to decide where it goes.
+
+Two things to remember:
+
+- **A cascade only fires when `PRAGMA foreign_keys = ON`**, which is a
+  *per-connection* setting (`app.lua`'s `tune_sqlite`, and the spec helper). On
+  a connection that missed it there is no cascade *and* no enforcement. That is
+  why `Users:delete_account` still deletes the personal rows explicitly — the
+  schema is a backstop, not the only copy of the policy.
+- Adding a referential action needs the same table rebuild a `CHECK` does (see
+  below); `notifications`, `roles` and `site_roles` are rebuilt in both `[114]`
+  and `[115]`. Both run once, so the repeat costs nothing at runtime.
+
+**Soft deletion** in this schema means `posts.deleted` / `comments.deleted` for
+content and `forum.deleted_at` for subreddits. Users are *hard* deleted, so the
+never-read `users.deleted_at` column was dropped in `[115]`.
+
 ## STRICT tables + CHECK constraints — adopted together
 
 Every table is `STRICT` (the `strict` option on `schema.create_table`), so a

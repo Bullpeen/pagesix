@@ -145,6 +145,13 @@ end
 -- Rows that belong to the person rather than to the site: destroyed outright
 -- when an account is deleted. (`moderators` and `user_profiles` were on this
 -- list until migration [113] dropped both tables.)
+--
+-- Migration [115] also gives each of these `ON DELETE CASCADE`, so the database
+-- enforces the same thing. Deleting them here as well is deliberate, not
+-- redundant: a cascade only fires when `PRAGMA foreign_keys = ON`, which is set
+-- per connection (app.lua's tune_sqlite, and the spec helper) -- so on a
+-- connection that missed the pragma, cascade would quietly not happen. The
+-- explicit deletes do not depend on it.
 local PERSONAL_TABLES = {
 	{ "subscriptions", "user_id" },
 	{ "saved_posts", "user_id" },

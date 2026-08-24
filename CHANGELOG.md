@@ -8,6 +8,24 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Referential actions, and one soft-delete convention
+- **Personal rows now cascade off `users`** (migration `[115]`):
+  `subscriptions`, `saved_posts`, `hidden_posts`, `notifications`,
+  `password_resets`, `oauth_identities`, `roles`, `site_roles`. Every foreign key
+  into `users` was `NO ACTION`, so the policy lived only in
+  `Users:delete_account` and any other deletion path would leave the rows behind.
+- **Authored content stays `NO ACTION` on purpose.** `posts`, `comments`,
+  `votes` and `modlog` are *reassigned* to the anonymous account, not deleted —
+  a cascade would silently take other people's threads down with the author.
+  Deleting a user who still owns content now fails, which is the right outcome.
+- `Users:delete_account` still clears the personal tables explicitly. That is
+  deliberate: a cascade only fires when `PRAGMA foreign_keys = ON`, which is a
+  per-connection setting, so the schema is a backstop rather than the only copy
+  of the policy.
+- **`users.deleted_at` dropped** — never read, since account deletion is a hard
+  delete. Soft deletion means `posts.deleted`/`comments.deleted` for content and
+  `forum.deleted_at` for subreddits; nothing soft-deletes a user.
+
 ### CHECK constraints on the enum-ish columns
 - Every table was already `STRICT`, so column *types* were enforced — but no
   `CHECK` existed anywhere, so **values** were not. `votes.upvote = 7` was
