@@ -11,9 +11,54 @@ local Votes = Model:extend("votes", {
 		{ "comment", belongs_to = "Comments" },
 		{ "user", belongs_to = "Users" },
 	},
-	-- The schema enforces UNIQUE(user_id, post_id, comment_id); cast() keeps a
-	-- user to a single vote per target.
+	-- One vote per user per target is enforced by two *partial* unique indexes
+	-- (migration [112]), not by the table's UNIQUE(user_id, post_id, comment_id)
+	-- -- that one silently never fires for post votes, because SQLite treats the
+	-- NULL comment_id as distinct. `upsert` below relies on the partial indexes
+	-- as its conflict target.
 })
+
+--- Insert a vote, or update the existing one for the same target.
+--
+-- A single statement, so two workers racing on the same (user, target) cannot
+-- both insert -- which a find-then-insert allowed. The conflict target has to
+-- name the partial index's predicate so SQLite can match it.
+-- @tparam table fields user_id, post_id, comment_id (may be nil), upvote
+-- @treturn table the stored row
+local function upsert(self, fields)
+	local now = db.format_date()
+	if fields.comment_id == nil then
+		db.query(
+			[[INSERT INTO votes (user_id, post_id, comment_id, upvote, created_at, updated_at)
+				VALUES (?, ?, NULL, ?, ?, ?)
+				ON CONFLICT (user_id, post_id) WHERE comment_id IS NULL
+				DO UPDATE SET upvote = excluded.upvote, updated_at = excluded.updated_at]],
+			fields.user_id,
+			fields.post_id,
+			fields.upvote,
+			now,
+			now
+		)
+	else
+		db.query(
+			[[INSERT INTO votes (user_id, post_id, comment_id, upvote, created_at, updated_at)
+				VALUES (?, ?, ?, ?, ?, ?)
+				ON CONFLICT (user_id, comment_id) WHERE comment_id IS NOT NULL
+				DO UPDATE SET upvote = excluded.upvote, updated_at = excluded.updated_at]],
+			fields.user_id,
+			fields.post_id,
+			fields.comment_id,
+			fields.upvote,
+			now,
+			now
+		)
+	end
+	return self:find({
+		user_id = fields.user_id,
+		post_id = fields.post_id,
+		comment_id = fields.comment_id or db.NULL,
+	})
+end
 
 --- Cast, change, or undo a user's vote on a post (or comment).
 -- Voting the same direction twice removes the vote (Reddit-style toggle);
@@ -30,16 +75,12 @@ function Votes:cast(user_id, post_id, comment_id, upvote)
 		comment_id = comment_id or db.NULL,
 	})
 
-	if existing then
-		if tonumber(existing.upvote) == upvote then
-			existing:delete()
-			return nil
-		end
-		existing:update({ upvote = upvote })
-		return existing
+	if existing and tonumber(existing.upvote) == upvote then
+		existing:delete()
+		return nil
 	end
 
-	return self:create({
+	return upsert(self, {
 		user_id = user_id,
 		post_id = post_id,
 		comment_id = comment_id,
@@ -70,19 +111,11 @@ function Votes:set(user_id, post_id, comment_id, dir)
 		return nil
 	end
 
-	local upvote = dir == 1 and 1 or 0
-	if existing then
-		if tonumber(existing.upvote) ~= upvote then
-			existing:update({ upvote = upvote })
-		end
-		return existing
-	end
-
-	return self:create({
+	return upsert(self, {
 		user_id = user_id,
 		post_id = post_id,
 		comment_id = comment_id,
-		upvote = upvote,
+		upvote = dir == 1 and 1 or 0,
 	})
 end
 

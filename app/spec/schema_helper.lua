@@ -40,6 +40,7 @@ return function()
 		109,
 		110,
 		111, -- idempotent backfill of [10]; a no-op here, but keeps this list honest
+		112, -- partial unique indexes on votes
 	}) do
 		if migrations[k] then
 			migrations[k]()

@@ -101,4 +101,61 @@ describe("voting", function()
 		assert.same(0, row.score)
 		assert.same("cvoter", row.author)
 	end)
+
+	describe("one vote per user per target", function()
+		it("refuses a second post vote row at the database level", function()
+			-- The table's UNIQUE(user_id, post_id, comment_id) does NOT cover this:
+			-- comment_id is NULL and SQLite treats NULLs as distinct, so before
+			-- migration [112] both inserts succeeded and the score double-counted.
+			local u, p = make_post("dupe_post")
+			local now = db.format_date()
+			local function raw_insert()
+				return pcall(
+					db.query,
+					[[INSERT INTO votes (user_id, post_id, comment_id, upvote, created_at, updated_at)
+						VALUES (?, ?, NULL, 1, ?, ?)]],
+					u.id,
+					p.id,
+					now,
+					now
+				)
+			end
+			assert.is_true((raw_insert()))
+			assert.is_false((raw_insert()))
+			assert.same(1, #Votes:select("where user_id = ? and post_id = ?", u.id, p.id))
+		end)
+
+		it("refuses a second comment vote row at the database level", function()
+			local u, p = make_post("dupe_comment")
+			local c = Comments:create({ post_id = p.id, user_id = u.id, body = "b" })
+			local now = db.format_date()
+			local function raw_insert()
+				return pcall(
+					db.query,
+					[[INSERT INTO votes (user_id, post_id, comment_id, upvote, created_at, updated_at)
+						VALUES (?, ?, ?, 1, ?, ?)]],
+					u.id,
+					p.id,
+					c.id,
+					now,
+					now
+				)
+			end
+			assert.is_true((raw_insert()))
+			assert.is_false((raw_insert()))
+			assert.same(1, #Votes:select("where user_id = ? and comment_id = ?", u.id, c.id))
+		end)
+
+		it("re-votes through the upsert instead of inserting a second row", function()
+			local u, p = make_post("upsert_post")
+			Votes:set(u.id, p.id, nil, 1)
+			Votes:set(u.id, p.id, nil, -1) -- switch direction
+			Votes:set(u.id, p.id, nil, -1) -- idempotent repeat
+
+			local rows = Votes:select("where user_id = ? and post_id = ?", u.id, p.id)
+			assert.same(1, #rows)
+			assert.same(0, tonumber(rows[1].upvote))
+			assert.same(-1, Votes:post_score(p.id))
+		end)
+	end)
 end)
