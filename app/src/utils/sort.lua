@@ -110,8 +110,18 @@ local comparators = {
 	hot = hot,
 }
 
+--- The comparator for an algo name (defaults to `hot`, as `sort` does).
+-- Exposed so callers -- notably the specs that check `Posts:get_listing`'s SQL
+-- ORDER BY against these definitions -- can ask "does this ranking agree?"
+-- without duplicating the formulas.
+-- @tparam string algo
+-- @treturn function comparator suitable for `table.sort`
+function Sort:comparator(algo)
+	return comparators[algo] or hot
+end
+
 function Sort:sort(items, algo)
-	local cmp = comparators[algo] or hot
+	local cmp = self:comparator(algo)
 
 	local arr = {}
 	for _, n in pairs(items) do

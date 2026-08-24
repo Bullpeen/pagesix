@@ -3,7 +3,10 @@
 
 local Forum = require("src.models.forum")
 local Posts = require("src.models.posts")
-local Sort = require("src.utils.sort")
+local P = require("src.utils.paginate_db")
+
+-- Posts per listing page.
+local PER_PAGE = 25
 
 return {
 	before = function(self)
@@ -20,30 +23,20 @@ return {
 
 		self.subreddit = sub.name
 		local since = require("src.utils.timewindow")(self.params.t)
-		local sorted = Sort:sort(
-			Posts:get_listing({
-				sub_id = sub.id,
-				since = since,
-				exclude_hidden_for = self.current_user and self.current_user.id,
-			}),
-			sort
-		)
-
-		-- Pin moderator-stickied posts to the top of the subreddit listing,
-		-- keeping their relative sorted order; everything else follows.
-		local pinned, rest = {}, {}
-		for _, post in ipairs(sorted) do
-			if tonumber(post.stickied) == 1 then
-				pinned[#pinned + 1] = post
-			else
-				rest[#rest + 1] = post
-			end
-		end
-		for _, post in ipairs(rest) do
-			pinned[#pinned + 1] = post
-		end
-
-		self.posts, self.pagination = require("src.utils.paginate")(pinned, self.params.page)
+		-- `sticky_first` puts the moderator-pinned posts at the top of the
+		-- ORDER BY, keeping their relative order within the chosen sort -- the
+		-- partition that used to be done in Lua after fetching everything.
+		local page, per_page, limit, offset = P.window(self.params.page, PER_PAGE)
+		local rows = Posts:get_listing({
+			sub_id = sub.id,
+			since = since,
+			exclude_hidden_for = self.current_user and self.current_user.id,
+			sort = sort,
+			sticky_first = true,
+			limit = limit,
+			offset = offset,
+		})
+		self.posts, self.pagination = P.finish(rows, page, per_page)
 
 		-- current_user is set by the app before_filter when signed in.
 		if self.current_user then
