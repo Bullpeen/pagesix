@@ -6,3 +6,6 @@
 <p>Reputation <%= reputation %> <span data-trust><%= trust_level %></span></p>
 <% end %>
 <% if created_at then %><p data-muted>User since <%= created_at %>.</p><% end %>
+<% if current_user and current_user.user_name == user_name then %>
+<p data-muted><a href="/account/delete">Delete your account</a></p>
+<% end %>
