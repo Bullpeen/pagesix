@@ -41,6 +41,36 @@ That objection does **not** apply to *static aggregations*, so we now use one:
   activity has no equivalent view — it needs a `sub_id` bind parameter, which a
   view can't take — so `Stats.for_sub` aggregates directly.
 
+## STRICT tables + CHECK constraints — adopted together
+
+Every table is `STRICT` (the `strict` option on `schema.create_table`), so a
+column's declared *type* is enforced rather than advisory. That says nothing
+about a column's *values*, which is what `CHECK` adds — and until migration
+`[114]` we had none, so `votes.upvote = 7` and `roles.role = 'wizard'` were both
+storable. `upvote` was the one that mattered: it is read as
+`CASE WHEN upvote = 1 THEN 1 ELSE -1 END`, so any stray value silently counted
+as a downvote.
+
+Constrained in `[114]`: `votes.upvote`, `notifications.kind` and `seen`,
+`roles.role`, `site_roles.role`.
+
+**Adding one costs a table rebuild.** SQLite has no
+`ALTER TABLE ... ADD CONSTRAINT`, so the table is renamed, recreated with the
+constraint, copied into, and dropped — the shape migration `[105]` already used.
+Two consequences worth remembering next time:
+
+- **Indexes live on the table**, so every index has to be recreated afterwards.
+  `[114]` rebuilds `votes`, which carries five, including `[112]`'s partial
+  uniques. The spec asserts they are all back.
+- **Only leaf tables are cheap to rebuild.** All four here are leaves — no
+  foreign key points *at* them — so the rebuild cannot orphan a reference.
+
+`posts` and `comments` were left alone deliberately: they carry the FTS5 sync
+triggers, so a rebuild has to reattach those too, and their remaining
+unconstrained columns are boolean flags where a stray value is cosmetic rather
+than score-changing. Prefer declaring `CHECK` on **new** tables, where it is
+free.
+
 ## Ranking and paging — adopted in SQL for the web listings
 
 Listings used to fetch **every** matching post, rank them with `utils/sort`'s
