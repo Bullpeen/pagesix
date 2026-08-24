@@ -19,7 +19,6 @@
 
 local db = require("lapis.db")
 local S = require("src.utils.api_serialize")
-local Sort = require("src.utils.sort")
 local timewindow = require("src.utils.timewindow")
 
 local Users = require("models.users")
@@ -35,8 +34,8 @@ local Subscriptions = require("models.subscriptions")
 local POST_RATE, POST_WINDOW = 10, 600
 local COMMENT_RATE, COMMENT_WINDOW = 30, 600
 
--- Sorts that map to a Sort comparator. "new" is intentionally absent: the
--- listing query already returns rows newest-first, so we leave that order be.
+-- Sorts the listing query knows how to order by (Posts.get_listing's ORDER_BY);
+-- anything else falls back to "hot".
 local SORTS = {
 	hot = true,
 	top = true,
@@ -60,17 +59,13 @@ end
 
 -- ---- listing assembly --------------------------------------------------------
 
--- Order a fresh listing by the requested sort (default "hot"); "new" keeps the
--- query's created-desc order.
-local function sorted_listing(rows, sort)
-	if sort == "new" then
-		return rows
-	end
-	return Sort:sort(rows, sort)
-end
-
 -- Build a paginated link Listing from get_listing `filters`, reading
 -- sort/t/limit/after/before from the request.
+--
+-- Ordering happens in SQL (Posts.get_listing's ORDER_BY), and the fetch is
+-- bounded: without a cursor only the page plus a lookahead row is read, and with
+-- one the window opens to S.MAX_DEPTH so `paginate` can find the cursor row.
+-- This used to read every matching row and sort them in Lua.
 local function link_listing(self, filters)
 	local sort = self.params.sort
 	if not SORTS[sort] then
@@ -81,8 +76,10 @@ local function link_listing(self, filters)
 	if user then
 		filters.exclude_hidden_for = user.id
 	end
+	filters.sort = sort
+	filters.limit = S.window(self.params)
 
-	local rows = sorted_listing(Posts:get_listing(filters), sort)
+	local rows = Posts:get_listing(filters)
 	local page, after, before = S.paginate(rows, self.params, "link")
 	local children = {}
 	for _, p in ipairs(page) do
@@ -278,11 +275,13 @@ local function api(app)
 	app:get("/api/subreddits(/:where)", function(self)
 		local order = self.params.where == "new" and "s.created_at DESC"
 			or "subscribers DESC, s.name"
+		-- `s.id DESC` makes the order total so the window is stable between
+		-- requests; the LIMIT keeps the directory from reading every subreddit.
 		local rows = db.select([[
-			s.id, s.name, s.description, s.nsfw, s.created_at,
+			s.id, s.name, s.description, s.nsfw, s.created_at, s.public_id,
 				(SELECT COUNT(*) FROM subscriptions x WHERE x.subreddit_id = s.id) AS subscribers
 			FROM forum s WHERE s.deleted_at IS NULL
-			ORDER BY ]] .. order)
+			ORDER BY ]] .. order .. [[, s.id DESC LIMIT ?]], S.window(self.params))
 		local page, after, before = S.paginate(rows, self.params, "subreddit")
 		local children = {}
 		for _, f in ipairs(page) do

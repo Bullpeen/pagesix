@@ -315,10 +315,40 @@ function M.listing(children, opts)
 	}
 end
 
--- Clamp a requested limit to [1, 100] (Reddit's ceiling), default 25.
-local function clamp_limit(raw)
+--- Clamp a requested limit to [1, 100] (Reddit's ceiling), default 25.
+-- @tparam[opt] string|number raw the request's `limit` param
+-- @treturn number
+function M.clamp_limit(raw)
 	local n = tonumber(raw) or 25
 	return math.max(1, math.min(100, math.floor(n)))
+end
+local clamp_limit = M.clamp_limit
+
+--- How deep a cursor can address into a listing.
+--
+-- `paginate` locates an `after`/`before` cursor by scanning the ordered rows, so
+-- it can only reach a row the caller actually fetched. Callers therefore fetch a
+-- bounded window rather than the whole table (see `M.window`), and this is that
+-- bound: paging stops after 1000 ranked items, the way search engines and
+-- Reddit itself cap deep pagination.
+--
+-- Ranked listings could not offer exact deep cursors anyway -- `hot` and
+-- `controversial` depend on vote counts, so a row's rank moves between requests
+-- and a cursor into them is inherently approximate.
+M.MAX_DEPTH = 1000
+
+--- How many rows a listing endpoint should fetch for this request.
+--
+-- Without a cursor -- the overwhelmingly common case, and every first page --
+-- only the page plus one lookahead row is needed. With a cursor, `paginate` has
+-- to find that row among the ordered rows, so the window opens to `MAX_DEPTH`.
+-- @tparam table params request params ({ after, before, limit })
+-- @treturn number rows to fetch
+function M.window(params)
+	if params.after or params.before then
+		return M.MAX_DEPTH
+	end
+	return clamp_limit(params.limit) + 1
 end
 
 --- Cursor-paginate an array of listing rows (each with a numeric `.id`) by
@@ -347,15 +377,23 @@ function M.paginate(rows, params, kind)
 		return nil
 	end
 
+	-- A cursor that is not among these rows points past the addressable window
+	-- (or at a row that has since gone). Answer with an empty page rather than
+	-- silently restarting at the top, which would leave a client paging in a
+	-- loop without ever learning it had reached the end.
 	local start = 1
-	local after_idx = params.after and index_of(params.after)
-	if after_idx then
-		start = after_idx + 1
-	elseif params.before then
-		local before_idx = index_of(params.before)
-		if before_idx then
-			start = math.max(1, before_idx - limit)
+	if params.after then
+		local idx = index_of(params.after)
+		if not idx then
+			return {}, nil, nil
 		end
+		start = idx + 1
+	elseif params.before then
+		local idx = index_of(params.before)
+		if not idx then
+			return {}, nil, nil
+		end
+		start = math.max(1, idx - limit)
 	end
 
 	local page = {}
