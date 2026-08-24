@@ -8,6 +8,26 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### CHECK constraints reach posts and comments
+- Migration `[116]` constrains the boolean flags on both tables — `locked`,
+  `edited`, `is_self`, `over_18`, `deleted`, `stickied`, `comments_locked`,
+  `approved`, `is_question` on posts; `edited`, `deleted`, `is_submitter`,
+  `stickied`, `approved` on comments. `[114]` had skipped them as the awkward
+  case.
+- **A referenced table cannot be rebuilt the way a leaf can.** With foreign keys
+  on, `ALTER TABLE ... RENAME` rewrites child tables' `REFERENCES` clauses to
+  follow the rename, so moving `posts` aside would have left `comments` pointing
+  at `posts_old`. `rebuild_referenced_table` uses SQLite's documented order
+  instead: build under a temporary name, copy, drop the original, rename into
+  place. A spec asserts `PRAGMA foreign_key_list(comments)` still names `posts`.
+- The three FTS5 sync triggers and `v_daily_activity` are dropped and recreated
+  around the swap, because SQLite re-parses the schema during the rename and a
+  view pointing at the dropped table fails it. The FTS index itself is untouched;
+  specs check both that existing rows are still searchable and that new writes
+  are indexed by the reattached triggers.
+- `PRAGMA foreign_key_check` runs afterwards and the migration asserts on any
+  orphaned row.
+
 ### Exact cursors for the `new` sort
 - **`new` no longer pages by window.** Its key, `(created_at, id)`, never moves
   once a post is written, so the database seeks straight to the cursor row with a

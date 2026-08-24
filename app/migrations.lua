@@ -51,6 +51,44 @@ local opts = {}
 opts["strict"] = true
 opts["if_not_exists"] = true
 
+--- Rebuild a table that other tables point at.
+--
+-- `rebuild_table` renames the original out of the way first, which is fine for a
+-- leaf but wrong here: with foreign keys enabled, `ALTER TABLE ... RENAME`
+-- **rewrites the REFERENCES clauses of child tables** to follow the rename, so
+-- `comments` would end up pointing at `posts_old`. SQLite's documented order
+-- avoids that -- build the replacement under a temporary name, copy, drop the
+-- original, then rename the replacement into its place, so the children's
+-- clauses keep naming the table they always named.
+--
+-- The caller must disable foreign keys around this (a `PRAGMA` that only takes
+-- effect outside a transaction) and re-check them afterwards. Triggers and views
+-- attached to the table have to be dropped first and recreated after: SQLite
+-- re-parses the whole schema during the rename, and a view left pointing at the
+-- dropped table fails that parse.
+--
+-- @tparam string name table to rebuild
+-- @tparam table columns the new `schema.create_table` definition
+-- @tparam table copy `{ into = {col, ...}, from = {expr, ...} }`
+-- @tparam table indexes CREATE INDEX statements to reapply
+local function rebuild_referenced_table(name, columns, copy, indexes)
+	local temp = name .. "_rebuild"
+	schema.create_table(temp, columns, opts)
+	db.query(
+		("INSERT INTO %s (%s) SELECT %s FROM %s"):format(
+			temp,
+			table.concat(copy.into, ", "),
+			table.concat(copy.from, ", "),
+			name
+		)
+	)
+	db.query("DROP TABLE " .. name)
+	db.query("ALTER TABLE " .. temp .. " RENAME TO " .. name)
+	for _, sql in ipairs(indexes) do
+		db.query(sql)
+	end
+end
+
 --- Rebuild a table in place, so it can gain constraints SQLite cannot ALTER in.
 --
 -- Neither `CHECK` nor a foreign key's `ON DELETE` action can be added to an
@@ -1288,6 +1326,197 @@ return {
 		if has_deleted_at then
 			db.query("ALTER TABLE users DROP COLUMN deleted_at")
 		end
+	end,
+
+	-- CHECK constraints on the boolean flags of `posts` and `comments`.
+	--
+	-- Migration [114] constrained the leaf tables and deliberately skipped these
+	-- two, because they are the awkward ones: `posts` is referenced by six other
+	-- tables and by itself, it carries the FTS5 sync triggers, and both tables
+	-- feed the `v_daily_activity` view. Doing it properly means SQLite's
+	-- documented order rather than the rename-first shortcut -- see
+	-- `rebuild_referenced_table`.
+	--
+	-- Rows are copied as-is. Every writer sets these from a Lua boolean, so a
+	-- violation would mean data this schema should never have held, and failing
+	-- loudly beats quietly rewriting someone's posts. Same policy as [114]'s
+	-- text enums.
+	[116] = function()
+		-- Only effective outside a transaction; lapis runs migrations without one
+		-- unless asked (`transaction = "global" | "individual"`).
+		db.query("PRAGMA foreign_keys = OFF")
+
+		-- Dropped now, recreated below: the schema is re-parsed during the
+		-- rename, and a view pointing at the dropped table fails that parse.
+		for _, trigger in ipairs({ "posts_fts_ai", "posts_fts_ad", "posts_fts_au" }) do
+			db.query("DROP TRIGGER IF EXISTS " .. trigger)
+		end
+		db.query("DROP VIEW IF EXISTS v_daily_activity")
+
+		local post_columns = {
+			"id",
+			"user_id",
+			"sub_id",
+			"title",
+			"url",
+			"created_at",
+			"updated_at",
+			"locked",
+			"edited",
+			"is_self",
+			"over_18",
+			"body",
+			"thumbnail",
+			"crosspost_parent_id",
+			"link_flair",
+			"deleted",
+			"stickied",
+			"comments_locked",
+			"external_guid",
+			"approved",
+			"is_question",
+			"accepted_comment_id",
+			"domain",
+			"public_id",
+		}
+		rebuild_referenced_table("posts", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "user_id", types.integer },
+			{ "sub_id", types.integer },
+			{ "title", types.text },
+			{ "url", types.text({ null = true }) },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			{ "locked", types.integer({ default = false }) },
+			{ "edited", types.integer({ default = false }) },
+			{ "is_self", types.integer({ default = false }) },
+			{ "over_18", types.integer({ default = false }) },
+			{ "body", types.text({ null = true }) },
+			{ "thumbnail", types.text({ null = true }) },
+			{ "crosspost_parent_id", types.integer({ null = true }) },
+			{ "link_flair", types.text({ null = true }) },
+			{ "deleted", types.integer({ default = false }) },
+			{ "stickied", types.integer({ default = false }) },
+			{ "comments_locked", types.integer({ default = false }) },
+			{ "external_guid", types.text({ null = true }) },
+			{ "approved", types.integer({ default = 1 }) },
+			{ "is_question", types.integer({ default = false }) },
+			{ "accepted_comment_id", types.integer({ null = true }) },
+			{ "domain", types.text({ null = true }) },
+			{ "public_id", types.text({ null = true }) },
+			"FOREIGN KEY(sub_id) REFERENCES forum(id)",
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+			"FOREIGN KEY(crosspost_parent_id) REFERENCES posts(id)",
+			"CHECK (locked IN (0, 1))",
+			"CHECK (edited IN (0, 1))",
+			"CHECK (is_self IN (0, 1))",
+			"CHECK (over_18 IN (0, 1))",
+			"CHECK (deleted IN (0, 1))",
+			"CHECK (stickied IN (0, 1))",
+			"CHECK (comments_locked IN (0, 1))",
+			"CHECK (approved IN (0, 1))",
+			"CHECK (is_question IN (0, 1))",
+		}, { into = post_columns, from = post_columns }, {
+			[[CREATE INDEX posts_sub_id_idx ON posts (sub_id)]],
+			[[CREATE INDEX posts_user_id_idx ON posts (user_id)]],
+			[[CREATE INDEX posts_created_at_idx ON posts (created_at)]],
+			[[CREATE INDEX posts_deleted_idx ON posts (deleted)]],
+			[[CREATE INDEX posts_sub_id_created_at_idx ON posts (sub_id, created_at)
+				WHERE deleted = 0 AND locked = 0]],
+			[[CREATE INDEX posts_sub_id_stickied_idx ON posts (sub_id, stickied)]],
+			[[CREATE INDEX posts_external_guid_idx ON posts (external_guid)]],
+			[[CREATE INDEX posts_sub_id_approved_idx ON posts (sub_id, approved)]],
+			[[CREATE UNIQUE INDEX posts_public_id_idx ON posts (public_id)]],
+		})
+
+		local comment_columns = {
+			"id",
+			"post_id",
+			"user_id",
+			"parent_comment_id",
+			"body",
+			"created_at",
+			"updated_at",
+			"edited",
+			"deleted",
+			"is_submitter",
+			"stickied",
+			"approved",
+			"public_id",
+		}
+		rebuild_referenced_table("comments", {
+			{ "id", types.integer({ unique = true, primary_key = true }) },
+			{ "post_id", types.integer },
+			{ "user_id", types.integer },
+			{ "parent_comment_id", types.integer({ null = true }) },
+			{ "body", types.text },
+			{ "created_at", types.text },
+			{ "updated_at", types.text },
+			{ "edited", types.integer({ default = false }) },
+			{ "deleted", types.integer({ default = false }) },
+			{ "is_submitter", types.integer({ default = false }) },
+			{ "stickied", types.integer({ default = false }) },
+			{ "approved", types.integer({ default = 1 }) },
+			{ "public_id", types.text({ null = true }) },
+			"FOREIGN KEY(user_id) REFERENCES users(id)",
+			"FOREIGN KEY(post_id) REFERENCES posts(id)",
+			"UNIQUE(user_id, post_id, parent_comment_id)",
+			"CHECK (edited IN (0, 1))",
+			"CHECK (deleted IN (0, 1))",
+			"CHECK (is_submitter IN (0, 1))",
+			"CHECK (stickied IN (0, 1))",
+			"CHECK (approved IN (0, 1))",
+		}, { into = comment_columns, from = comment_columns }, {
+			[[CREATE INDEX comments_post_id_idx ON comments (post_id)]],
+			[[CREATE INDEX comments_parent_comment_id_idx ON comments (parent_comment_id)]],
+			[[CREATE INDEX comments_user_id_idx ON comments (user_id)]],
+			[[CREATE INDEX comments_post_id_parent_comment_id_idx
+				ON comments (post_id, parent_comment_id)]],
+			[[CREATE INDEX comments_post_id_approved_idx ON comments (post_id, approved)]],
+			[[CREATE UNIQUE INDEX comments_public_id_idx ON comments (public_id)]],
+		})
+
+		-- Reattach what was dropped. The FTS index itself was never touched, so
+		-- its contents still match the rows that were copied across.
+		db.query([[
+			CREATE TRIGGER IF NOT EXISTS posts_fts_ai AFTER INSERT ON posts BEGIN
+				INSERT INTO posts_fts(rowid, title, body) VALUES (new.id, new.title, new.body);
+			END]])
+		db.query([[
+			CREATE TRIGGER IF NOT EXISTS posts_fts_ad AFTER DELETE ON posts BEGIN
+				INSERT INTO posts_fts(posts_fts, rowid, title, body)
+					VALUES ('delete', old.id, old.title, old.body);
+			END]])
+		db.query([[
+			CREATE TRIGGER IF NOT EXISTS posts_fts_au AFTER UPDATE ON posts BEGIN
+				INSERT INTO posts_fts(posts_fts, rowid, title, body)
+					VALUES ('delete', old.id, old.title, old.body);
+				INSERT INTO posts_fts(rowid, title, body) VALUES (new.id, new.title, new.body);
+			END]])
+		db.query([[
+			CREATE VIEW IF NOT EXISTS v_daily_activity AS
+			WITH activity(day, kind) AS (
+				SELECT date(created_at), 'post'    FROM posts    WHERE deleted = 0
+				UNION ALL
+				SELECT date(created_at), 'comment' FROM comments WHERE deleted = 0
+				UNION ALL
+				SELECT date(created_at), 'signup'  FROM users
+			)
+			SELECT day,
+				SUM(CASE WHEN kind = 'post'    THEN 1 ELSE 0 END) AS posts,
+				SUM(CASE WHEN kind = 'comment' THEN 1 ELSE 0 END) AS comments,
+				SUM(CASE WHEN kind = 'signup'  THEN 1 ELSE 0 END) AS signups
+			FROM activity
+			GROUP BY day
+		]])
+
+		-- Nothing should have been orphaned; say so loudly if it was.
+		local orphans = db.query("PRAGMA foreign_key_check")
+		assert(
+			not orphans or #orphans == 0,
+			"foreign_key_check found " .. tostring(orphans and #orphans) .. " orphaned row(s)"
+		)
+		db.query("PRAGMA foreign_keys = ON")
 	end,
 
 	-- classify text : https://github.com/leafo/lapis-bayes

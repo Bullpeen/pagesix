@@ -95,11 +95,31 @@ Two consequences worth remembering next time:
 - **Only leaf tables are cheap to rebuild.** All four here are leaves — no
   foreign key points *at* them — so the rebuild cannot orphan a reference.
 
-`posts` and `comments` were left alone deliberately: they carry the FTS5 sync
-triggers, so a rebuild has to reattach those too, and their remaining
-unconstrained columns are boolean flags where a stray value is cosmetic rather
-than score-changing. Prefer declaring `CHECK` on **new** tables, where it is
-free.
+`posts` and `comments` followed in `[116]`, and they are the case that shows why
+the leaf-table recipe is not general:
+
+- **A referenced table must not be renamed out of the way.** With foreign keys
+  enabled, `ALTER TABLE ... RENAME` **rewrites the `REFERENCES` clauses of child
+  tables** to follow the rename — so renaming `posts` aside would leave
+  `comments` pointing at `posts_old`. SQLite's documented order avoids it: build
+  the replacement under a temporary name, copy, drop the original, then rename
+  the replacement into place, so the children keep naming the table they always
+  named. That is `rebuild_referenced_table`, and a spec asserts
+  `PRAGMA foreign_key_list(comments)` still says `posts` afterwards.
+- **Foreign keys have to be off** for the drop, via a `PRAGMA` that is only
+  effective *outside* a transaction. Lapis runs migrations without one unless
+  asked (`transaction = "global" | "individual"`), so this works — but it is a
+  dependency on that default worth knowing about. `PRAGMA foreign_key_check`
+  runs afterwards and the migration asserts on any orphan.
+- **Triggers and views attached to the table must be dropped and recreated.**
+  SQLite re-parses the whole schema during the rename, and a view still pointing
+  at the dropped table fails that parse. `[116]` drops the three FTS5 sync
+  triggers and `v_daily_activity` up front and puts them back afterwards. The
+  FTS index itself is never touched, so its contents still match the copied
+  rows — specs cover both that old rows are still findable and that new writes
+  are still indexed by the reattached triggers.
+
+Prefer declaring `CHECK` on **new** tables, where it is free.
 
 ## Ranking and paging — adopted in SQL for the web listings
 

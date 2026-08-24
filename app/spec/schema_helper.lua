@@ -44,6 +44,7 @@ return function()
 		113, -- drops the superseded moderators / user_profiles tables
 		114, -- CHECK constraints on the enum-ish columns
 		115, -- ON DELETE CASCADE for the personal tables
+		116, -- CHECK constraints on the posts/comments flags
 	}) do
 		if migrations[k] then
 			migrations[k]()
