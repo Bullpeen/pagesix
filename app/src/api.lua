@@ -77,8 +77,36 @@ local function link_listing(self, filters)
 		filters.exclude_hidden_for = user.id
 	end
 	filters.sort = sort
-	filters.limit = S.window(self.params)
 
+	-- `new` has a stable ordering key, so the database can seek straight to the
+	-- cursor row and return only the page -- no depth cap, nothing scanned. The
+	-- ranked sorts cannot: their key is live vote counts, so they page by
+	-- window (S.window) and `paginate` finds the cursor among those rows.
+	local cursor = self.params.after or self.params.before
+	local cursor_id
+	if cursor then
+		-- `x and f()` would truncate to one value, dropping the id.
+		local _
+		_, cursor_id = S.parse_fullname(cursor)
+	end
+	if Posts.KEYSET_SORTS[sort] and cursor_id then
+		local limit = S.clamp_limit(self.params.limit)
+		filters.limit = limit + 1
+		if self.params.after then
+			filters.after_id = cursor_id
+		else
+			filters.before_id = cursor_id
+		end
+		local rows = Posts:get_listing(filters)
+		local page, after, before = S.paginate_keyset(rows, limit, "link", true)
+		local children = {}
+		for _, p in ipairs(page) do
+			children[#children + 1] = S.link(p)
+		end
+		return { json = S.listing(children, { after = after, before = before }) }
+	end
+
+	filters.limit = S.window(self.params)
 	local rows = Posts:get_listing(filters)
 	local page, after, before = S.paginate(rows, self.params, "link")
 	local children = {}

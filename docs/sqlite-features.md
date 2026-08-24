@@ -158,12 +158,31 @@ endpoints size their window to the request (`S.window`):
 - **with a cursor**: `S.MAX_DEPTH` (1000) rows, which caps how deep a cursor can
   address.
 
-Capping is honest for this data rather than a shortcut. True keyset pagination
-would need `WHERE (rank, id) < (cursor_rank, cursor_id)`, and for `hot` /
-`controversial` / `rising` the rank is computed from live vote counts — it moves
-between requests, so a cursor into a ranked listing is inherently approximate no
-matter how it is implemented. Search engines and Reddit itself cap deep paging
-for the same reason.
+**`new` skips the cap entirely.** Its key, `(created_at, id)`, never moves once a
+post is written, so the database can seek straight to the cursor row with a
+row-value comparison and return only the page:
+
+```sql
+WHERE (a.created_at, a.id) < (SELECT created_at, id FROM posts WHERE id = ?)
+```
+
+Comparing the whole key as a row value expresses "strictly past that row in this
+order" in one shot, tiebreaker included. A cursor id that no longer exists makes
+the subquery NULL, so the comparison is NULL and no rows come back — a stale
+cursor reads as "nothing after this", which is exactly the wanted answer.
+Walking *backwards* runs the comparison the other way in ascending order and
+flips the rows, so the caller always sees one order.
+
+The **ranked** sorts keep the window-and-cap treatment, and that is a property
+of the data rather than a shortcut: `hot`, `controversial` and `rising` compute
+rank from live vote counts, so a row's position moves between requests and a
+cursor into one is approximate however it is implemented. Keyset would relocate
+the inaccuracy, not remove it. Search engines and Reddit cap deep paging for the
+same reason.
+
+`Posts.KEYSET_SORTS` is the list, and `get_listing` **asserts** when a cursor is
+passed with a sort that is not on it — an unstable-key cursor would fail
+silently and subtly otherwise.
 
 A cursor that is not in the window (past the cap, or a row since deleted) now
 returns an **empty page**. It used to silently restart at the top, which left a

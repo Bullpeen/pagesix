@@ -337,6 +337,29 @@ local clamp_limit = M.clamp_limit
 -- and a cursor into them is inherently approximate.
 M.MAX_DEPTH = 1000
 
+--- Build a page and its cursors from an already-windowed keyset result.
+--
+-- The counterpart to `paginate` for callers that let the database do the
+-- seeking: the rows are already exactly the page (plus one lookahead row), so
+-- nothing is scanned to find a cursor.
+-- @tparam table rows up to `limit + 1` rows, in display order
+-- @tparam number limit the page size
+-- @tparam string kind the rows' kind, for fullnames
+-- @tparam boolean has_prev whether a cursor got us here (so a `before` exists)
+-- @treturn table page rows
+-- @treturn string|nil after fullname
+-- @treturn string|nil before fullname
+function M.paginate_keyset(rows, limit, kind, has_prev)
+	local more = #rows > limit
+	local page = {}
+	for i = 1, math.min(#rows, limit) do
+		page[i] = rows[i]
+	end
+	local after = (more and page[#page]) and M.fullname(kind, page[#page].id) or nil
+	local before = (has_prev and page[1]) and M.fullname(kind, page[1].id) or nil
+	return page, after, before
+end
+
 --- How many rows a listing endpoint should fetch for this request.
 --
 -- Without a cursor -- the overwhelmingly common case, and every first page --
