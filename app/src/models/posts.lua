@@ -124,6 +124,15 @@ local ORDER_BY = {
 		ELSE 0 END) DESC]],
 }
 
+--- Sorts whose ordering key is stable enough to address with a cursor.
+--
+-- Only `new`: its key is `(created_at, id)`, which never changes once a post is
+-- written. Every other sort ranks on live vote counts, so a row's position moves
+-- between requests and a cursor into it could not be exact however it was
+-- implemented -- those page by window instead (see utils/api_serialize).
+Posts.KEYSET_SORTS = { new = true }
+local KEYSET_SORTS = Posts.KEYSET_SORTS
+
 --- Listing rows for a frontpage / subreddit, with the vote and comment
 -- aggregates the templates expect.
 --
@@ -199,14 +208,45 @@ function Posts:get_listing(filters)
 		)
 	end
 
+	-- Keyset cursors, for the sorts whose key is stable (see KEYSET_SORTS).
+	-- Comparing the whole key as a row value -- `(created_at, id) < (...)` --
+	-- expresses "strictly past that row in this order" in one shot, including
+	-- the tiebreaker. A cursor id that no longer exists makes the subquery NULL,
+	-- so the comparison is NULL, so no rows come back: a stale cursor reads as
+	-- "nothing after this", which is what the API wants.
+	local reversed = false
+	if filters.after_id or filters.before_id then
+		assert(
+			KEYSET_SORTS[filters.sort or "new"],
+			"keyset cursors need a stable sort key; '" .. tostring(filters.sort) .. "' has none"
+		)
+		if filters.after_id then
+			restrict(
+				"(a.created_at, a.id) < (SELECT created_at, id FROM posts WHERE id = ?)",
+				tonumber(filters.after_id)
+			)
+		else
+			-- Walking backwards: take the rows *above* the cursor in ascending
+			-- order (so LIMIT keeps the ones nearest it) and flip them back.
+			restrict(
+				"(a.created_at, a.id) > (SELECT created_at, id FROM posts WHERE id = ?)",
+				tonumber(filters.before_id)
+			)
+			reversed = true
+		end
+	end
+
 	-- `a.id DESC` breaks ties deterministically. Without it, equal-ranked rows
 	-- could swap between requests and LIMIT/OFFSET paging would repeat or skip
 	-- them -- the in-memory `table.sort` this replaces was likewise unstable.
 	local order = ORDER_BY[filters.sort] or ORDER_BY.new
+	if reversed then
+		order = "a.created_at ASC"
+	end
 	if filters.sticky_first then
 		order = "a.stickied DESC, " .. order
 	end
-	query = query .. " ORDER BY " .. order .. ", a.id DESC"
+	query = query .. " ORDER BY " .. order .. (reversed and ", a.id ASC" or ", a.id DESC")
 
 	if filters.limit then
 		query = query .. " LIMIT ? OFFSET ?"
@@ -215,6 +255,13 @@ function Posts:get_listing(filters)
 	end
 
 	local rows = db.select(query, unpack(params))
+
+	if reversed then
+		-- Hand the caller the same descending order every other path returns.
+		for i = 1, math.floor(#rows / 2) do
+			rows[i], rows[#rows - i + 1] = rows[#rows - i + 1], rows[i]
+		end
+	end
 
 	for _, post in ipairs(rows) do
 		post.permalink = "/r/" .. post.subreddit .. "/comments/" .. post.id

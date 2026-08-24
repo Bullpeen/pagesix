@@ -8,6 +8,20 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Exact cursors for the `new` sort
+- **`new` no longer pages by window.** Its key, `(created_at, id)`, never moves
+  once a post is written, so the database seeks straight to the cursor row with a
+  row-value comparison and returns only the page — no depth cap, nothing scanned.
+  Walking backwards runs the comparison the other way and flips the rows, so
+  callers always see one order.
+- A cursor id that no longer exists makes the subquery NULL, so the comparison is
+  NULL and no rows return — a stale cursor reads as "nothing after this".
+- The **ranked** sorts keep the windowed cap, which is a property of the data:
+  `hot`/`controversial`/`rising` rank on live vote counts, so a cursor into them
+  is approximate however it is implemented. `Posts.KEYSET_SORTS` lists what
+  qualifies, and `get_listing` asserts if a cursor is passed with a sort that
+  does not — that failure would be silent and subtly wrong otherwise.
+
 ### The JSON API stops reading the whole table for a page
 - **Listing endpoints fetched every matching row** and then ranked them in Lua,
   even after the web listings moved to SQL. They now pass `sort` to
