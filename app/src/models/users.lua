@@ -269,4 +269,7 @@ function Users:trust_level(reputation)
 	return "new"
 end
 
+-- New rows arrive with their external id already set (see utils/public_id).
+require("src.utils.public_id").mint_on_create(Users)
+
 return Users
