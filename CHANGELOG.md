@@ -8,6 +8,29 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### Listings rank and page in SQL
+- **Every listing page used to read the whole table.** `Posts:get_listing` had
+  no `LIMIT`; `utils/sort` ranked the rows in Lua and `utils/paginate` sliced 25
+  out of the array, so page 1 of a subreddit cost the same as page 40 and grew
+  with the table. `get_listing` now takes `sort`/`limit`/`offset` and orders in
+  SQL, and the six listing actions (frontpage, `/r/all`, `/r/popular`,
+  `/r/:sub`, profile, `/saved`) pass a window.
+- Each SQL ordering is **order-equivalent** to the comparator it replaces —
+  `hot` drops the outer `log()` (monotonic, positive argument), `controversial`
+  uses `POW`. Every ordering ends `, a.id DESC`: without a total order,
+  `LIMIT`/`OFFSET` paging can repeat or skip equally-ranked rows.
+- **Filter values are bound, not interpolated.** `get_listing` built its
+  `WHERE` by concatenating `tonumber(...)`/`escape_literal(...)` results; the
+  filters are now `?` fragments with a params list.
+- `utils/paginate_db` asks for one row more than the page needs to detect a next
+  page, so a listing is one query with no companion `COUNT(*)`.
+- Sticky pinning moved into the `ORDER BY` (`sticky_first`), replacing the
+  partition-in-Lua that ran after fetching everything.
+- `docs/sqlite-features.md` records the mapping and, from `EXPLAIN QUERY PLAN`,
+  what this does *not* buy: ranked sorts still evaluate the vote subqueries for
+  every matching row (`USE TEMP B-TREE FOR ORDER BY`); the work moved into
+  SQLite rather than disappearing. `new` is fully index-driven.
+
 ### One vote per user per target, actually enforced
 - **`UNIQUE(user_id, post_id, comment_id)` never fired for post votes.** SQLite
   treats NULLs as distinct in a UNIQUE index, so with `comment_id IS NULL` the
