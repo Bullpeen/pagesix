@@ -55,7 +55,7 @@ end
 -- aggregates) but without depth/path, or nil. Used to pull in ancestor rows.
 local function fetch_one(comment_id)
 	local rows = db.query([[
-		SELECT c.id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
+		SELECT c.id, c.public_id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
 			c.deleted, c.parent_comment_id, c.is_submitter,
 			u.user_name AS author, s.name AS subreddit,
 			(SELECT COUNT(*) FROM votes v WHERE v.comment_id = c.id AND v.upvote = 1) AS upvotes,
@@ -74,19 +74,19 @@ end
 local function subtree(comment_id)
 	return db.query([[
 		WITH RECURSIVE sub AS (
-			SELECT c.id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
+			SELECT c.id, c.public_id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
 				c.deleted, c.parent_comment_id, c.is_submitter,
 				0 AS depth, printf('%020d', c.id) AS path
 			FROM comments c
 			WHERE c.id = ]] .. tonumber(comment_id) .. [[
 			UNION ALL
-			SELECT c.id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
+			SELECT c.id, c.public_id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
 				c.deleted, c.parent_comment_id, c.is_submitter,
 				t.depth + 1, t.path || '.' || printf('%020d', c.id)
 			FROM comments c
 			JOIN sub t ON c.parent_comment_id = t.id
 		)
-		SELECT t.id, t.post_id, t.user_id, t.body, t.created_at, t.edited,
+		SELECT t.id, t.public_id, t.post_id, t.user_id, t.body, t.created_at, t.edited,
 			t.deleted, t.parent_comment_id, t.is_submitter, t.depth,
 			u.user_name AS author, s.name AS subreddit,
 			(SELECT COUNT(*) FROM votes v WHERE v.comment_id = t.id AND v.upvote = 1) AS upvotes,
@@ -109,7 +109,7 @@ end
 function Comments:thread(post_id)
 	local rows = db.query([[
 		WITH RECURSIVE thread AS (
-			SELECT c.id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
+			SELECT c.id, c.public_id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
 				c.deleted, c.parent_comment_id, c.is_submitter,
 				0 AS depth,
 				printf('%020d', c.id) AS path
@@ -118,7 +118,7 @@ function Comments:thread(post_id)
 				AND c.parent_comment_id IS NULL
 				AND c.approved = 1
 			UNION ALL
-			SELECT c.id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
+			SELECT c.id, c.public_id, c.post_id, c.user_id, c.body, c.created_at, c.edited,
 				c.deleted, c.parent_comment_id, c.is_submitter,
 				t.depth + 1,
 				t.path || '.' || printf('%020d', c.id)
@@ -126,7 +126,7 @@ function Comments:thread(post_id)
 			JOIN thread t ON c.parent_comment_id = t.id
 			WHERE c.approved = 1
 		)
-		SELECT t.id, t.post_id, t.user_id, t.body, t.created_at, t.edited,
+		SELECT t.id, t.public_id, t.post_id, t.user_id, t.body, t.created_at, t.edited,
 			t.deleted, t.parent_comment_id, t.is_submitter, t.depth,
 			u.user_name AS author,
 			s.name AS subreddit,
@@ -148,7 +148,7 @@ end
 -- @treturn table array of comment rows
 function Comments:by_user(user_id)
 	local rows = db.select([[
-		a.id, a.post_id, a.user_id, a.body, a.created_at, a.deleted,
+		a.id, a.public_id, a.post_id, a.user_id, a.body, a.created_at, a.deleted,
 			a.parent_comment_id, a.is_submitter, 0 AS depth,
 			u.user_name AS author,
 			s.name AS subreddit,
@@ -229,5 +229,8 @@ function Comments:permalink_thread(comment_id, context)
 
 	return enrich(rows)
 end
+
+-- New rows arrive with their external id already set (see utils/public_id).
+require("src.utils.public_id").mint_on_create(Comments)
 
 return Comments

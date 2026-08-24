@@ -8,6 +8,22 @@ Format loosely follows [Keep a Changelog](https://keepachangelog.com/).
 This run took the PoC from a rough, non-booting prototype to a running,
 test-covered Reddit clone. Highlights, newest first:
 
+### API serialization no longer costs a query per row
+- **`public_id` was minted lazily**, so every API row that had never been
+  serialized cost an extra `SELECT` (and an `UPDATE`) inside
+  `api_serialize.ensure_public_id`. Migration `[109]` backfilled the rows that
+  existed then, but nothing stamped an id on rows created *afterwards*, and no
+  listing projection selected the column — so a 25-row Listing meant 25 extra
+  queries.
+- **New rows are stamped at insert** (`utils/public_id`, wired into the four
+  models that carry the column). The hook is a no-op until migration `[109]` has
+  added the column, since earlier migrations already create rows.
+- The listing/search/thread projections now select `public_id`, so the
+  serializer's lazy re-read path only ever handles genuinely legacy rows — it is
+  kept for exactly that, with a spec.
+- `api_public_id_spec` counts the queries a serialize issues: **zero** per row
+  for a listing and for a comment thread.
+
 ### Dead schema and silently-broken relations removed
 - **Dropped `moderators`** (migration `[113]`). `[100]` moved its rows into
   `roles` and `Forum:add_moderator` has written to `roles` ever since, so the
