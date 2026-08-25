@@ -27,9 +27,9 @@ consistent and we never want application code to forget to do it.
 ## Views — adopted for read-side aggregation
 
 Earlier work **removed** the `v_hot_*` / `v_forum` listing views (see
-`TODO.md`): the main listing varies per request (sort, time window, hidden/saved
-filters), so a fixed view couldn't capture it and the FK/partial indexes serve
-that path directly.
+`CHANGELOG.md`): the main listing varies per request (sort, time window,
+hidden/saved filters), so a fixed view couldn't capture it and the FK/partial
+indexes serve that path directly.
 
 That objection does **not** apply to *static aggregations*, so we now use one:
 

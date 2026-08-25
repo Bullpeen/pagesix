@@ -31,8 +31,9 @@ actual bundled `sqlean.so` *also* registers unprefixed aliases — `jaro_winkler
 | `fuzzy` | **adopted** | `jaro_winkler` for typo-tolerant subreddit search (`Forum:search`) and a word-level post-search fallback (`Posts:search`) |
 | `regexp` | **adopted (light)** | `regexp_replace` normalizes title punctuation when splitting words for the fuzzy post-search fallback |
 | `crypto` | dropped | tokens use `openssl.rand`; `randomblob`/`hex` cover the rest |
-| `text`, `stats`, `math` | not adopted | doable in Lua / already in `sort.lua` |
-| `uuid` | deferred | stable external ids, for the future API phase |
+| `text`, `stats` | not adopted | doable in Lua |
+| `math` | **not needed** | SQLite's own math functions (3.35+) cover it: `POW` in the `controversial` ranking, `strftime`/arithmetic for the rest. See `docs/sqlite-features.md`. |
+| `uuid` | **adopted** | every public row carries a stable `public_id`, stamped at insert by `utils/public_id` (`uuid4()` where available, `openssl.rand` otherwise) |
 | `define` | not adopted | no reusable SQL func needed (the `url_host` column was dropped) |
 | `ipaddr`, `vsv`, `unicode`, `time`, `besttype` | skip | not this workload |
 
