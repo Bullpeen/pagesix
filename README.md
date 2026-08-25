@@ -7,13 +7,20 @@ A better social link-sharing site.
 A working, test-covered Reddit clone: browsing with all the sorts + time
 windows, FTS5 search, voting, link/self posts, threaded comments, edit/delete,
 subscriptions, saved/hidden posts, profiles + karma, reply notifications,
-RSS in/out, bcrypt + CSRF auth, a forum-generalization layer (RBAC, an Admin
-Control Panel, reputation, an approval queue, tags, @mentions, OAuth), a
-[Reddit-flavoured JSON API](#api), and ops endpoints ([`/health`](#operations--observability)
-+ Prometheus [`/metrics`](#operations--observability)).
+RSS in/out, bcrypt + CSRF auth, self-service account deletion, a
+forum-generalization layer (RBAC, an Admin Control Panel, reputation, an
+approval queue, tags, @mentions, OAuth), a [Reddit-flavoured JSON API](#api),
+and ops endpoints ([`/health`](#operations--observability) + Prometheus
+[`/metrics`](#operations--observability)).
 
-[`TODO.md`](TODO.md) is the living roadmap and changelog of what's shipped;
-[`CHANGELOG.md`](CHANGELOG.md) has the narrative history.
+Where things are written down:
+
+- [`TODO.md`](TODO.md) — what's next and what's known-incomplete. Not a log.
+- [`CHANGELOG.md`](CHANGELOG.md) — what has shipped, newest first.
+- [`docs/sqlite-features.md`](docs/sqlite-features.md) — the schema and query
+  decisions, including the declined ones. **Read before changing the schema:**
+  it records the rules that are easy to get wrong here, like rebuilding a table
+  that other tables reference.
 
 ## API
 
@@ -21,16 +28,19 @@ A Reddit-flavoured JSON API lives under `/api`. Responses are Reddit "Thing"
 envelopes — `{ "kind": "t3", "data": { … } }` for a link (`t1` comment, `t2`
 account, `t5` subreddit) — and `{ "kind": "Listing", "data": { "children": […],
 "after": …, "before": … } }` for a page. Each Thing carries Reddit's base36 `id`
-/ `t?_<id>` fullname plus an opaque, stable `uuid` (a `public_id` minted with
-sqlean's `uuid4()`).
+/ `t?_<id>` fullname plus an opaque, stable `uuid` — a `public_id` stamped on
+every row at insert (`utils/public_id`), using sqlean's `uuid4()` where the
+extension is loaded and `openssl.rand` otherwise.
 
 - **Reads** (public): `GET /api/listing(/:sort)`, `/api/r/:sub(/:sort)`,
   `/api/r/:sub/about`, `/api/comments/:id` (link + nested comment tree),
   `/api/info?id=t3_…,t1_…`, `/api/search?q=`, `/api/subreddits(/:where)`,
-  `/api/subreddits/search?q=`, `/api/user/:name/about`,
+  `/api/subreddits/search?q=`, `/api/user/:username/about`,
   `/api/username_available?user=`. Sorts (`hot`/`new`/`top`/`best`/
   `controversial`/`rising`), `?t=` time windows, and `?after`/`?before`/`?limit`
-  cursor pagination are supported.
+  cursor pagination are supported. `new` pages by keyset and has no depth
+  limit; the ranked sorts address the first 1000 items, since their rank moves
+  with live vote counts (see [`TODO.md`](TODO.md#known-limits)).
 - **Account** (logged in): `GET /api/v1/me`, `/api/v1/me/karma`,
   `/api/me/saved`.
 - **Writes** (logged in): `POST /api/vote` `{id, dir}`, `/api/save`,
@@ -101,10 +111,16 @@ docker run \
     -d pagesix
 ```
 
-Run migrations to populate the DB
+The entrypoint runs `lapis server` only, so create and seed the database from
+inside the container:
 
 ```
-lapis migrate
+# Same two exports the entrypoint does -- `docker exec` bypasses it, and
+# without them lapis can't find its rocks.
+docker exec -w /var/www pagesix bash -lc \
+  'eval "$(luarocks --lua-version=5.1 path)";
+   export LUA_PATH="$LUA_PATH;/usr/local/openresty/lualib/?.lua";
+   lapis migrate'
 ```
 
 (wait patiently) then, visit: http://localhost:8080/
@@ -142,8 +158,19 @@ docker run --rm -v "$PWD:/src" -w /src --entrypoint bash pagesix-test -lc \
 
 (The mount needs the repo dir to be in Docker Desktop's File Sharing list.)
 
-CI (`.github/workflows/spec.yml`) runs `luacheck app` then `busted --coverage`
-across the `5.1 / 5.4 / luajit` matrix, plus a Docker build/run job.
+CI runs two workflows:
+
+- **`spec.yml`** — a `stylua --check app` formatting job; `luacheck app` then
+  `busted --coverage` across the `5.1 / luajit / luajit-openresty` matrix, with
+  a **80% coverage gate**; and a Docker build that runs the whole suite inside
+  the production image.
+- **`lint.yml`** — `actionlint`, `shellcheck`, and `hadolint` for the workflows,
+  shell scripts, and Dockerfile.
+
+Note the Docker job builds a **fresh** database each run, so it proves the
+migrations work on a new install. It does not exercise the upgrade path over an
+existing database; the table rebuilds in `[114]`–`[116]` copy live data and are
+covered by specs that re-run them against seeded rows.
 
 # Notes
 
